@@ -1,0 +1,27 @@
+# Task: Add a comment to a GitHub issue
+
+Your goal is to respond to a GitHub issue being created by adding a comment to it.
+
+## Event Context
+
+- **Repository**: {{event.repository}}
+- **Issue**: #{{event.issue.number}} - "{{event.issue.title}}"
+- **Author**: @{{event.issue.author}}
+- **Event Type**: {{event.type}}
+
+## Process
+
+1. **Get Issue Details**
+   - Use the `github-get_issue_details` tool with parameter `issue_number: {{event.issue.number}}`
+   - This will read the full issue body
+   - Understand what the issue is about
+
+2. **Respond by creating a new comment**
+   - Formulate a reasonable response to the GitHub issue using your best judgement
+   - Use `github-add_comment` with parameter `issue_number: {{event.issue.number}}` to create a GitHub comment with your formulated response
+
+## Output
+
+After adding the comment, provide a brief summary explaining:
+- How you responded to the issue
+- Why you responded the way you did

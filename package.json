@@ -1,0 +1,49 @@
+{
+    "name": "apicurio-axiom",
+    "version": "1.0.0",
+    "description": "A bot that monitors GitHub events and triggers custom actions",
+    "main": "dist/index.js",
+    "type": "module",
+    "scripts": {
+        "reset": "rm -rf dist data node_modules",
+        "clean": "rm -rf dist",
+        "build": "tsc",
+        "dev": "node --loader ts-node/esm --watch src/index.ts",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write ."
+    },
+    "keywords": [
+        "github",
+        "bot",
+        "automation",
+        "events"
+    ],
+    "author": "Apicurio Community",
+    "license": "Apache-2.0",
+    "dependencies": {
+        "@anthropic-ai/sdk": "^0.32.0",
+        "@anthropic-ai/vertex-sdk": "^0.4.0",
+        "@octokit/rest": "^20.0.2",
+        "ajv": "^8.17.1",
+        "ajv-formats": "^3.0.1",
+        "better-sqlite3": "^11.0.0",
+        "handlebars": "^4.7.8",
+        "js-yaml": "^4.1.0",
+        "node-pty": "^1.0.0",
+        "pino": "^10.3.0",
+        "pino-pretty": "^13.1.3"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.14",
+        "@types/better-sqlite3": "^7.6.12",
+        "@types/handlebars": "^4.0.40",
+        "@types/js-yaml": "^4.0.9",
+        "@types/node": "^20.11.0",
+        "@types/pino": "^7.0.4",
+        "ts-node": "^10.9.2",
+        "typescript": "^5.3.3"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

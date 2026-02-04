@@ -1,0 +1,147 @@
+
+# Logging Configuration
+logging:
+  # Log level: trace, debug, info, warn, error, fatal (default: info)
+  level: info
+  # Enable pretty printing for development (default: true)
+  # Set to false for production JSON logging
+  prettyPrint: true
+  # Base path for action logs
+  basePath: ./logs
+  # Path for event JSON logs
+  eventsPath: ./logs/events
+  # How many days to retain logs
+  retentionDays: 30
+
+# Work Directory Configuration
+workDirectory:
+  # Base path for work directories
+  basePath: ./work
+  # Maximum total size in GB
+  maxSizeGB: 100
+  # Start cleanup when size reaches this percentage of max
+  cleanupThresholdPercent: 90
+  # How often to check size and cleanup (seconds)
+  monitorInterval: 3600
+
+# GitHub API Configuration
+github:
+  # Personal Access Token - use ${GITHUB_TOKEN} to read from environment variable
+  # Required scopes: repo (for private repos) or public_repo (for public repos only)
+  token: ${GITHUB_TOKEN}
+  # Polling interval in seconds (default: 60)
+  # How often to check for new events
+  pollInterval: 60
+  # Ignore events that occurred before the application first started (default: true)
+  # When true, only events created after the app's initial startup will be processed
+  # When false, all events will be processed (useful for catching up on historical events)
+  ignoreEventsBeforeStart: true
+
+# Job Queue Configuration
+queue:
+  # Maximum number of concurrent actions to execute
+  maxConcurrent: 3
+  # How often to check the queue for pending jobs (seconds)
+  pollInterval: 5
+
+# Prompts Configuration
+prompts:
+  # Base path for Handlebars prompt templates
+  basePath: ./prompts
+
+# Repositories to Monitor
+# Format: owner/repo
+repositories:
+  - octocat/Hello-World
+  - your-username/your-repo
+
+# Event Mappings
+# Maps events to actions with optional filters
+eventMappings:
+  # Example: When a new issue is opened
+  - event: issue.opened
+    actions:
+      - log-all-events
+
+  # Example: When an issue is labeled as "bug", analyze and potentially fix it
+  - event: issue.labeled
+    filters:
+      - label: bug
+    actions:
+      - analyze-bug
+
+  # Example: When an issue is closed, assign it to a milestone
+  - event: issue.closed
+    actions:
+      - assign-milestone
+
+  # Example: When a pull request is opened, run automated checks
+  - event: pull_request.opened
+    filters:
+      - draft: false  # Only non-draft PRs
+    actions:
+      - welcome-contributor
+
+  # Example: When a new comment is created on an issue
+  - event: issue_comment.created
+    actions:
+      - log-all-events
+
+  # Example: Monitor all events in a specific repository
+  - event: "*"
+    repository: octocat/Hello-World
+    actions:
+      - log-all-events
+
+# Action Definitions
+actions:
+  # Simple logging action using shell
+  log-all-events:
+    type: shell
+    command: echo "[$(date)] Event detected - Type=$EVENT_TYPE Repo=$EVENT_REPOSITORY Actor=$EVENT_ACTOR"
+
+  # AI Agent action: Analyze and fix bugs
+  analyze-bug:
+    type: ai-agent
+    prompt: analyze-bug
+    tools:
+      - github-*
+      - repository-*
+
+  # AI agent action: Assign milestones to closed issues
+  assign-milestone:
+    type: ai-agent
+    prompt: assign-milestone
+    tools:
+      - github-*
+      - repository-*
+
+  # Example: Welcome new contributors (JavaScript)
+  welcome-contributor:
+    type: javascript
+    code: ./actions/welcome-contributor.js
+
+  # Example: Thank contributors when issues are closed (JavaScript)
+  thank-contributor:
+    type: javascript
+    code: ./actions/thank-contributor.js
+
+# Event Type Reference:
+# - issue.opened, issue.closed, issue.reopened, issue.labeled, issue.unlabeled, etc.
+# - pull_request.opened, pull_request.closed, pull_request.reopened, etc.
+# - issue_comment.created, issue_comment.edited, issue_comment.deleted
+# - pull_request_review.submitted, pull_request_review.edited, pull_request_review.dismissed
+# - pull_request_review_comment.created
+# - push
+# - release.published, release.created, etc.
+#
+# Wildcards:
+# - "issue.*" matches all issue events
+# - "pull_request.*" matches all PR events
+# - "*" matches all events
+#
+# Filter Types:
+# - label: Match events with a specific label
+# - state: Match events with a specific state (open, closed)
+# - author: Match events by a specific user
+# - draft: Match PR events based on draft status (true/false)
