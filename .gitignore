@@ -57,3 +57,4 @@ backups/
 # Coverage
 coverage/
 .nyc_output/
+/secrets.env
