@@ -81,9 +81,9 @@ jobs:
 
       - name: Publish Docker Images
         run: |
-          docker push docker.io/apicurio/apicurio-axiom:1.0.0
+          docker push docker.io/apicurio/apicurio-axiom:${{ github.event.inputs.release-version }}
           docker push docker.io/apicurio/apicurio-axiom:latest
-          docker push quay.io/apicurio/apicurio-axiom:1.0.0
+          docker push quay.io/apicurio/apicurio-axiom:${{ github.event.inputs.release-version }}
           docker push quay.io/apicurio/apicurio-axiom:latest
 
       - name: Slack Notification (Always)
