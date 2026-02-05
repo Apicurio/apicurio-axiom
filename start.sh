@@ -24,17 +24,11 @@ for arg in "$@"; do
     fi
 done
 
-# Build TypeScript (if needed and not just listing tools)
-if [ -z "$LIST_TOOLS" ]; then
-    echo "Building TypeScript..."
-    npm run build
-    echo ""
-else
-    # Still need to build for --listTools to work
-    echo "Building TypeScript..."
-    npm run build
-    echo ""
-fi
+echo "Checking lint rules..."
+npm run lint
+
+echo "Building TypeScript..."
+npm run build
 
 # Start the bot
 node dist/index.js $ARGS

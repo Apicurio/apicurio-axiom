@@ -34,7 +34,7 @@ export class WorkDirectoryManager {
      * @param config Work directory configuration
      */
     constructor(config: WorkDirectoryConfig) {
-        this.basePath = resolve(process.cwd(), config.basePath || './work');
+        this.basePath = resolve(process.cwd(), config.basePath || './data/work');
         this.maxSizeGB = config.maxSizeGB || 100;
         this.cleanupThresholdPercent = config.cleanupThresholdPercent || 90;
         this.monitorInterval = (config.monitorInterval || 3600) * 1000; // Convert to ms

@@ -33,7 +33,7 @@ export class StateManager {
      * @param stateConfig State configuration (for state directory path)
      */
     constructor(stateConfig: StateConfig = {}) {
-        this.stateDir = resolve(process.cwd(), stateConfig?.basePath || '.state');
+        this.stateDir = resolve(process.cwd(), stateConfig?.basePath || './data/state');
         this.dbPath = resolve(this.stateDir, 'events.db');
         this.db = null;
     }

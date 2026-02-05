@@ -13,11 +13,12 @@ import { validateConfiguration } from './validators.js';
 /**
  * Loads the configuration from config.yaml
  *
+ * @param customPath Optional custom path to config file
  * @returns Parsed configuration object
  * @throws Error if configuration is invalid or missing
  */
-export async function loadConfig(): Promise<Config> {
-    const configPath = resolve(process.cwd(), 'config.yaml');
+export async function loadConfig(customPath?: string): Promise<Config> {
+    const configPath = customPath ? resolve(customPath) : resolve(process.cwd(), 'config.yaml');
 
     try {
         const fileContent = await readFile(configPath, 'utf8');
@@ -41,7 +42,10 @@ export async function loadConfig(): Promise<Config> {
         return config;
     } catch (error) {
         if ((error as any).code === 'ENOENT') {
-            throw new Error('Configuration file not found. Please create config.yaml from config.example.yaml');
+            const pathMsg = customPath ? `at ${configPath}` : 'config.yaml';
+            throw new Error(
+                `Configuration file not found ${pathMsg}. Please create config.yaml from config.example.yaml`,
+            );
         }
         throw error;
     }
@@ -103,6 +107,7 @@ function validateConfig(config: Config): void {
  *
  * Recursively walks through the configuration object and replaces
  * ${VAR_NAME} patterns with environment variable values.
+ * Supports both full-value substitution (${VAR}) and partial substitution (${VAR}/path).
  * Throws an error if any referenced environment variable is not set.
  *
  * @param obj Configuration object (or sub-object) to process
@@ -119,26 +124,13 @@ function processEnvironmentVariables(obj: any, path: string = 'config', resolved
     if (typeof obj === 'string') {
         // String values can't be modified in place, they need to be replaced by the parent
         // This case only validates; replacement happens in array/object processing below
-        if (obj.startsWith('${') && obj.endsWith('}')) {
-            const varName = obj.slice(2, -1);
-            const value = process.env[varName];
-            if (!value) {
-                throw new Error(`Environment variable ${varName} referenced in ${path} is not set`);
-            }
-            resolvedVars.add(varName);
-        }
+        validateEnvironmentVariables(obj, path);
         return;
     } else if (Array.isArray(obj)) {
         // Process each array element and replace if needed
         for (let i = 0; i < obj.length; i++) {
-            if (typeof obj[i] === 'string' && obj[i].startsWith('${') && obj[i].endsWith('}')) {
-                const varName = obj[i].slice(2, -1);
-                const value = process.env[varName];
-                if (!value) {
-                    throw new Error(`Environment variable ${varName} referenced in ${path}[${i}] is not set`);
-                }
-                obj[i] = value;
-                resolvedVars.add(varName);
+            if (typeof obj[i] === 'string') {
+                obj[i] = substituteEnvironmentVariables(obj[i], `${path}[${i}]`, resolvedVars);
             } else if (typeof obj[i] === 'object') {
                 processEnvironmentVariables(obj[i], `${path}[${i}]`, resolvedVars);
             }
@@ -150,18 +142,56 @@ function processEnvironmentVariables(obj: any, path: string = 'config', resolved
                 const value = obj[key];
                 const currentPath = `${path}.${key}`;
 
-                if (typeof value === 'string' && value.startsWith('${') && value.endsWith('}')) {
-                    const varName = value.slice(2, -1);
-                    const envValue = process.env[varName];
-                    if (!envValue) {
-                        throw new Error(`Environment variable ${varName} referenced in ${currentPath} is not set`);
-                    }
-                    obj[key] = envValue;
-                    resolvedVars.add(varName);
+                if (typeof value === 'string') {
+                    obj[key] = substituteEnvironmentVariables(value, currentPath, resolvedVars);
                 } else if (typeof value === 'object') {
                     processEnvironmentVariables(value, currentPath, resolvedVars);
                 }
             }
         }
     }
+}
+
+/**
+ * Validates that all environment variables referenced in a string are set
+ *
+ * @param str String to validate
+ * @param path Current path in config (for error messages)
+ * @throws Error if a referenced environment variable is not set
+ */
+function validateEnvironmentVariables(str: string, path: string): void {
+    const regex = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
+    const matches = str.matchAll(regex);
+
+    for (const match of matches) {
+        const varName = match[1];
+        if (!process.env[varName]) {
+            throw new Error(`Environment variable ${varName} referenced in ${path} is not set`);
+        }
+    }
+}
+
+/**
+ * Substitutes environment variables in a string
+ *
+ * Replaces all ${VAR_NAME} patterns with their environment variable values.
+ * Supports both full-value substitution (${VAR}) and partial substitution (${VAR}/path).
+ *
+ * @param str String containing environment variable references
+ * @param path Current path in config (for error messages)
+ * @param resolvedVars Set to collect names of resolved environment variables
+ * @returns String with all environment variables substituted
+ * @throws Error if a referenced environment variable is not set
+ */
+function substituteEnvironmentVariables(str: string, path: string, resolvedVars: Set<string>): string {
+    const regex = /\$\{([A-Z_][A-Z0-9_]*)\}/g;
+
+    return str.replace(regex, (_match, varName) => {
+        const value = process.env[varName];
+        if (!value) {
+            throw new Error(`Environment variable ${varName} referenced in ${path} is not set`);
+        }
+        resolvedVars.add(varName);
+        return value;
+    });
 }

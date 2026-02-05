@@ -1,4 +1,9 @@
 
+# State Configuration
+state:
+  # Base path for state database (default: ./data/state)
+  basePath: ./data/state
+
 # Logging Configuration
 logging:
   # Log level: trace, debug, info, warn, error, fatal (default: info)
@@ -6,17 +11,17 @@ logging:
   # Enable pretty printing for development (default: true)
   # Set to false for production JSON logging
   prettyPrint: true
-  # Base path for action logs
-  basePath: ./logs
-  # Path for event JSON logs
-  eventsPath: ./logs/events
+  # Base path for action logs (default: ./data/logs)
+  basePath: ./data/logs
+  # Path for event JSON logs (default: ./data/events)
+  eventsPath: ./data/events
   # How many days to retain logs
   retentionDays: 30
 
 # Work Directory Configuration
 workDirectory:
-  # Base path for work directories
-  basePath: ./work
+  # Base path for work directories (default: ./data/work)
+  basePath: ./data/work
   # Maximum total size in GB
   maxSizeGB: 100
   # Start cleanup when size reaches this percentage of max

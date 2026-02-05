@@ -69,7 +69,7 @@ export class GitHubPoller {
         this.intervalId = null;
         this.isRunning = false;
         this.ignoreEventsBeforeStart = ignoreEventsBeforeStart;
-        this.eventsLogPath = resolve(process.cwd(), loggingConfig?.eventsPath || './logs/events');
+        this.eventsLogPath = resolve(process.cwd(), loggingConfig?.eventsPath || './data/events');
     }
 
     /**

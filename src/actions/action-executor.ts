@@ -76,7 +76,7 @@ export class ActionExecutor {
         this.actions = actions || {};
         this.jobQueue = jobQueue;
         this.workDirManager = workDirManager;
-        this.logsBasePath = resolve(process.cwd(), loggingConfig?.basePath || './logs');
+        this.logsBasePath = resolve(process.cwd(), loggingConfig?.basePath || './data/logs');
         this.dryRun = dryRun;
         this.vertexConfig = config?.vertexAI || null;
         this.safetyConfig = config?.vertexAI?.safety || {};

@@ -1,0 +1,90 @@
+# Git
+.git
+.github
+.gitignore
+
+# Node.js
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist
+
+# Runtime data directories (these will be mounted as volumes)
+data/
+data-docker/
+logs/
+work/
+.state/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation (except README)
+*.md
+!README.md
+docs/
+
+# Tests
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+test/
+tests/
+__tests__/
+
+# Configuration files (will be provided via volumes/environment)
+config.yaml
+config.local.yaml
+.env
+.env.*
+secrets.env
+
+# Docker files (don't need these inside the image)
+Dockerfile
+.dockerignore
+docker-compose.yml
+docker-compose.*.yml
+# EXCEPTION: We need the entrypoint script
+!docker/build/docker-entrypoint.sh
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# SSH keys (will be mounted as volumes)
+.ssh/
+ssh/
+
+# Google Cloud credentials (will be mounted as volumes)
+.gcloud/
+gcloud/
+
+# Backups
+*.backup
+*.bak
+backups/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Project index files
+PROJECT_INDEX.md
+PROJECT_INDEX.json

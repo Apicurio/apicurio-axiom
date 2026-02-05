@@ -39,6 +39,13 @@ async function main(): Promise<void> {
         const dryRun: boolean = args.includes('--dryRun');
         const listTools: boolean = args.includes('--listTools');
 
+        // Parse --config argument
+        let configPath: string | undefined;
+        const configIndex = args.indexOf('--config');
+        if (configIndex !== -1 && configIndex + 1 < args.length) {
+            configPath = args[configIndex + 1];
+        }
+
         // Handle --listTools command
         if (listTools) {
             listAvailableTools();
@@ -46,7 +53,7 @@ async function main(): Promise<void> {
         }
 
         // Load configuration (before logger to get logging config)
-        const config = await loadConfig();
+        const config = await loadConfig(configPath);
 
         // Initialize logger with configuration
         const logger = initializeLogger({

@@ -18,13 +18,73 @@ A locally-running GitHub automation system that monitors GitHub events and trigg
 
 ## Prerequisites
 
-- Node.js 20 or higher
+- Node.js 20 or higher (for native installation) OR Docker (for container deployment)
 - GitHub Personal Access Token (PAT)
 - SSH key configured for GitHub (Axiom clones repositories using SSH)
 - Google Cloud project with Vertex AI enabled (for AI Agent actions)
 - **Forked repositories**: All monitored repositories must be forked to your GitHub account (see below)
 
-## Installation
+## Docker Deployment (Recommended)
+
+Apicurio Axiom uses a **two-phase Docker deployment** that separates image building from deployment:
+
+### For End Users (Deployment)
+
+Use the interactive installer to deploy pre-built Docker images:
+
+```bash
+cd docker/install
+sudo ./install.sh
+```
+
+The installer will:
+- ✅ Pull the official `apicurio/apicurio-axiom` image from Docker Hub
+- ✅ Create directory structure at `/opt/apicurio-axiom/`
+- ✅ Generate SSH keys for GitHub
+- ✅ Configure environment variables
+- ✅ Set up systemd service for automatic startup
+- ✅ Start the application
+
+**Service Management:**
+```bash
+sudo systemctl status axiom     # Check status
+sudo systemctl restart axiom    # Restart service
+sudo journalctl -u axiom -f     # View logs
+```
+
+**Documentation:** See `docker/install/README.md` for complete installation guide.
+
+### For Developers (Building)
+
+Build and publish Docker images to a registry:
+
+```bash
+cd docker/build
+./build.sh 1.0.0      # Build image
+./publish.sh 1.0.0    # Publish to Docker Hub
+```
+
+**Documentation:** See `docker/build/README.md` for build instructions.
+
+### Why Docker?
+
+**Benefits:**
+- ✅ No Node.js version conflicts
+- ✅ Consistent environment across deployments
+- ✅ Easy updates (pull new image version)
+- ✅ Production-ready with systemd integration
+- ✅ Automatic startup on boot
+- ✅ Centralized logging via journald
+
+**Official Images:**
+- Docker Hub: `apicurio/apicurio-axiom:latest`
+- Versioned: `apicurio/apicurio-axiom:1.0.0`
+
+**Learn more:** See `docker/README.md` for overview of both phases.
+
+---
+
+## Installation (Native)
 
 1. **Clone the repository**
    ```bash
@@ -218,9 +278,9 @@ Or start directly:
 npm start
 ```
 
-Axiomwill validate that all required environment variables are set before starting.
+Axiom will validate that all required environment variables are set before starting.
 
-**On startup, Axiomwill:**
+**On startup, Axiom will:**
 - Authenticate with GitHub using your personal access token
 - Display the authenticated user information (username, type, profile URL)
 - Verify all required environment variables are set
@@ -335,7 +395,7 @@ The events log directory can be configured via `logging.eventsPath` in `config.y
 
 ### Structured Logging
 
-Axiomuses structured JSON logging with correlation IDs for tracking events through the system:
+Axiom uses structured JSON logging with correlation IDs for tracking events through the system:
 
 **Log Levels:**
 - `trace`: Verbose debugging information
@@ -373,7 +433,7 @@ logging:
 
 ### Automatic Log Cleanup
 
-Axiomautomatically cleans up old log files to prevent unbounded disk usage:
+Axiom automatically cleans up old log files to prevent unbounded disk usage:
 
 **How it works:**
 - Runs daily cleanup checks automatically
@@ -394,11 +454,11 @@ logging:
 - Empty subdirectories (repository folders with no logs)
 
 **Manual cleanup:**
-To manually clean up old logs immediately, restart Axiom(cleanup runs on startup).
+To manually clean up old logs immediately, restart Axiom (cleanup runs on startup).
 
 ## Configuration Validation
 
-Axiomperforms comprehensive validation of the configuration file:
+Axiom performs comprehensive validation of the configuration file:
 
 **Validation checks:**
 - Action references in event mappings exist
@@ -459,10 +519,10 @@ Check the logs to verify events are being matched correctly and see what actions
 - Verify `GITHUB_TOKEN` environment variable is set correctly
 - Check that the token has not expired
 - Ensure the token has the required permissions (repo access at minimum)
-- Axiomdisplays authenticated user info on startup - check console output
+- Axiom displays authenticated user info on startup - check console output
 
 ### Repository fork validation fails
-- Axiomrequires all monitored repositories to be forked to your account (unless you own them)
+- Axiom requires all monitored repositories to be forked to your account (unless you own them)
 - Check the error message - it will show which forks are missing
 - Follow the fork links provided in the error message to create the required forks
 - Verify that forks are properly created at `https://github.com/YourUsername/repo-name`
@@ -567,7 +627,7 @@ See `docs/Actions.md` for detailed documentation on all action types.
 
 ### Accessing Current GitHub User
 
-Axiomprovides access to the authenticated GitHub user information throughout the application:
+Axiom provides access to the authenticated GitHub user information throughout the application:
 
 ```javascript
 import { getCurrentUser, hasCurrentUser } from './github/current-user.js';

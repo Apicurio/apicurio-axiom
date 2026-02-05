@@ -33,8 +33,8 @@ export class LogManager {
      * @param config Logging configuration
      */
     constructor(config: LoggingConfig) {
-        this.logBasePath = resolve(process.cwd(), config.basePath || './logs');
-        this.eventsPath = resolve(process.cwd(), config.eventsPath || './logs/events');
+        this.logBasePath = resolve(process.cwd(), config.basePath || './data/logs');
+        this.eventsPath = resolve(process.cwd(), config.eventsPath || './data/events');
         this.retentionDays = config.retentionDays || 30;
         this.monitorInterval = 24 * 60 * 60 * 1000; // 24 hours in ms
         this.intervalId = null;

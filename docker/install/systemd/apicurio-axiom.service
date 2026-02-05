@@ -1,0 +1,49 @@
+[Unit]
+Description=Apicurio Axiom - GitHub Automation Service
+Documentation=https://github.com/Apicurio/apicurio-axiom
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=INSTALL_DIR
+
+# Pull latest image on start (optional, comment out for fixed versions)
+#ExecStartPre=/usr/bin/docker pull IMAGE_NAME
+
+# Stop and remove existing container (if any)
+ExecStartPre=-/usr/bin/docker stop apicurio-axiom-sysd
+ExecStartPre=-/usr/bin/docker rm apicurio-axiom-sysd
+
+# Start container
+ExecStart=/usr/bin/docker run --rm \
+    --name apicurio-axiom-sysd \
+    --user 1001:1001 \
+    -e HOME=/home/axiom \
+    --env-file INSTALL_DIR/.env \
+    --volume INSTALL_DIR/config.yaml:/app/config.yaml:ro \
+    --volume INSTALL_DIR/data:/app/data \
+    --volume INSTALL_DIR/prompts:/app/prompts:ro \
+    --volume INSTALL_DIR/actions:/app/actions:ro \
+    --volume INSTALL_DIR/gcloud:/home/axiom/.config/gcloud:ro \
+    IMAGE_NAME
+
+# Stop container on service stop
+ExecStop=/usr/bin/docker stop apicurio-axiom-sysd
+
+# Restart policy
+Restart=always
+RestartSec=10s
+
+# Graceful shutdown
+TimeoutStopSec=30s
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
+
+[Unit]
+StartLimitIntervalSec=300
+StartLimitBurst=5
