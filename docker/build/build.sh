@@ -47,6 +47,8 @@ echo "Building image..."
 docker build \
     --tag "${IMAGE_NAME}:${VERSION}" \
     --tag "${IMAGE_NAME}:latest" \
+    --tag quay.io/"${IMAGE_NAME}:${VERSION}" \
+    --tag quay.io/"${IMAGE_NAME}:latest" \
     --file "${DOCKERFILE}" \
     --label "org.opencontainers.image.version=${VERSION}" \
     --label "org.opencontainers.image.created=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
@@ -60,6 +62,8 @@ echo ""
 echo "Image tags created:"
 echo "  - ${IMAGE_NAME}:${VERSION}"
 echo "  - ${IMAGE_NAME}:latest"
+echo "  - quay.io/${IMAGE_NAME}:${VERSION}"
+echo "  - quay.io/${IMAGE_NAME}:latest"
 echo ""
 echo "Test the image:"
 echo "  docker run --rm ${IMAGE_NAME}:${VERSION} node dist/index.js --help"

@@ -1,6 +1,9 @@
 # Multi-stage build for Apicurio Axiom
 # Optimized for development and production use
 
+# Build arguments
+ARG VERSION=latest
+
 # Stage 1: Builder - Build TypeScript and install dependencies
 FROM node:20-alpine AS builder
 
@@ -35,6 +38,9 @@ RUN npm prune --production
 
 # Stage 2: Production - Minimal runtime image
 FROM node:20-alpine
+
+# Re-declare ARG for this stage
+ARG VERSION=latest
 
 # Install runtime dependencies
 RUN apk add --no-cache \
@@ -99,3 +105,4 @@ LABEL org.opencontainers.image.description="GitHub Automation Service with AI Ag
 LABEL org.opencontainers.image.vendor="Apicurio Community"
 LABEL org.opencontainers.image.source="https://github.com/Apicurio/apicurio-axiom"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL org.opencontainers.image.version="${VERSION}"
