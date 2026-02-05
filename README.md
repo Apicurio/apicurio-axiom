@@ -56,12 +56,11 @@ sudo journalctl -u axiom -f     # View logs
 
 ### For Developers (Building)
 
-Build and publish Docker images to a registry:
+Build Docker images:
 
 ```bash
 cd docker/build
 ./build.sh 1.0.0      # Build image
-./publish.sh 1.0.0    # Publish to Docker Hub
 ```
 
 **Documentation:** See `docker/build/README.md` for build instructions.

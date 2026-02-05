@@ -14,9 +14,6 @@ This directory contains resources for **building** the official Apicurio Axiom D
 
 # Test image
 docker run --rm apicurio/apicurio-axiom:1.0.0 node dist/index.js --help
-
-# Publish to registry
-./publish.sh 1.0.0
 ```
 
 ## Files
@@ -24,7 +21,6 @@ docker run --rm apicurio/apicurio-axiom:1.0.0 node dist/index.js --help
 - **Dockerfile** - Multi-stage Docker image definition
 - **docker-entrypoint.sh** - Container entrypoint with validation
 - **build.sh** - Build Docker image locally
-- **publish.sh** - Publish image to container registry
 - **README.md** - This file
 
 **Note**: `.dockerignore` is located at the project root (build context location)
@@ -49,26 +45,6 @@ Build the image locally for testing:
 **Output:**
 - `apicurio/apicurio-axiom:${VERSION}`
 - `apicurio/apicurio-axiom:latest`
-
-### Publish to Registry
-
-Push built images to a container registry:
-
-```bash
-./publish.sh [version] [registry]
-```
-
-**Examples:**
-```bash
-./publish.sh 1.0.0                    # Push to Docker Hub (default)
-./publish.sh 1.0.0 ghcr.io            # Push to GitHub Container Registry
-./publish.sh 1.0.0 my-registry.com    # Push to private registry
-```
-
-**Registries:**
-- **Docker Hub**: `docker.io/apicurio/apicurio-axiom` (default)
-- **GitHub CR**: `ghcr.io/apicurio/apicurio-axiom`
-- **Private**: `your-registry.com/apicurio/apicurio-axiom`
 
 ## Docker Image Details
 
@@ -169,11 +145,6 @@ jobs:
         run: |
           cd docker/build
           ./build.sh ${{ steps.version.outputs.VERSION }}
-
-      - name: Publish image
-        run: |
-          cd docker/build
-          ./publish.sh ${{ steps.version.outputs.VERSION }}
 ```
 
 ### Multi-Architecture Builds

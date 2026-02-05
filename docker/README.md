@@ -16,7 +16,6 @@ Build and publish official Docker images to a registry.
 ```bash
 cd build
 ./build.sh 1.0.0      # Build image
-./publish.sh 1.0.0    # Publish to registry
 ```
 
 **Learn more**: See `build/README.md`
@@ -62,7 +61,6 @@ Developers building images should use the **build tools**:
 ```bash
 cd build
 ./build.sh 1.0.0      # Build locally
-./publish.sh 1.0.0    # Publish to registry
 ```
 
 ## Directory Structure
@@ -73,7 +71,6 @@ docker/
 │   ├── Dockerfile              # Image definition
 │   ├── .dockerignore           # Build exclusions
 │   ├── build.sh                # Build script
-│   ├── publish.sh              # Publish script
 │   └── README.md               # Build documentation
 │
 ├── install/                    # Phase 2: Deployment

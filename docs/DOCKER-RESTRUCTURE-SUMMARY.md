@@ -24,7 +24,6 @@ docker/
 │   ├── Dockerfile
 │   ├── .dockerignore
 │   ├── build.sh
-│   ├── publish.sh
 │   └── README.md
 │
 ├── install/                   # ✅ Phase 2: Deployment
@@ -49,7 +48,6 @@ docker/
 ```bash
 cd docker/build
 ./build.sh 1.0.0      # Build image locally
-./publish.sh 1.0.0    # Publish to Docker Hub
 ```
 
 **Output**: `apicurio/apicurio-axiom:1.0.0` on Docker Hub
@@ -152,11 +150,6 @@ apicurio/apicurio-axiom
    docker run --rm apicurio/apicurio-axiom:1.0.0 node --version
    ```
 
-3. **Publish image**:
-   ```bash
-   ./publish.sh 1.0.0
-   ```
-
 ## Files Reference
 
 ### Phase 1: Build Files
@@ -166,7 +159,6 @@ apicurio/apicurio-axiom
 | `build/Dockerfile` | Multi-stage Docker image definition |
 | `build/.dockerignore` | Build exclusions |
 | `build/build.sh` | Build image locally |
-| `build/publish.sh` | Publish to registry |
 | `build/README.md` | Build documentation |
 
 ### Phase 2: Install Files
@@ -265,11 +257,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and publish
+      - name: Build image
         run: |
           cd docker/build
           ./build.sh ${{ steps.version.outputs.VERSION }}
-          ./publish.sh ${{ steps.version.outputs.VERSION }}
 ```
 
 ## Documentation

@@ -68,6 +68,8 @@ fi
 
 echo "All required volume mounts validated successfully"
 echo ""
+
+echo "=========================================="
 echo "Starting Apicurio Axiom..."
 echo "=========================================="
 echo ""
