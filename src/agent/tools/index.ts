@@ -29,6 +29,7 @@ import { OpenPullRequestTool } from './github/open_pull_request.js';
 import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
 
 // Import all repository tools
+import { CheckPathExistsTool } from './repository/check_path_exists.js';
 import { GetFileMetadataTool } from './repository/get_file_metadata.js';
 import { ListFilesTool } from './repository/list_files.js';
 import { ReadFileTool } from './repository/read_file.js';
@@ -86,6 +87,7 @@ export class ToolIndex {
         this.register(SetIssueMilestoneTool);
 
         // Register repository tools
+        this.register(CheckPathExistsTool);
         this.register(GetFileMetadataTool);
         this.register(ListFilesTool);
         this.register(ReadFileTool);
