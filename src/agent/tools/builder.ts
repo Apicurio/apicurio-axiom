@@ -9,32 +9,28 @@
 import * as path from 'node:path';
 import { Octokit } from '@octokit/rest';
 import type { Logger } from '../../logging/logger.js';
-import { OpenPullRequestTool } from './composite.js';
-import {
-    AddCommentTool,
-    AddDiscussionResponseTool,
-    AddLabelsTool,
-    AssignIssueTool,
-    CloseIssueTool,
-    CreateIssueTool,
-    CreatePullRequestTool,
-    GetDiscussionTool,
-    GetIssueDetailsTool,
-    GetMilestonesTool,
-    GetRepositoryLabelsTool,
-    SetIssueMilestoneTool,
-} from './github.js';
+import { GitCreateBranchTool } from './git/create_branch.js';
+import { GitDiffTool } from './git/diff.js';
+import { GitLogTool } from './git/log.js';
+import { GitStatusTool } from './git/status.js';
+import { AddCommentTool } from './github/add_comment.js';
+import { AddDiscussionResponseTool } from './github/add_discussion_response.js';
+import { AddLabelsTool } from './github/add_labels.js';
+import { AssignIssueTool } from './github/assign_issue.js';
+import { CloseIssueTool } from './github/close_issue.js';
+import { CreateIssueTool } from './github/create_issue.js';
+import { CreatePullRequestTool } from './github/create_pull_request.js';
+import { GetDiscussionTool } from './github/get_discussion.js';
+import { GetIssueDetailsTool } from './github/get_issue_details.js';
+import { GetMilestonesTool } from './github/get_milestones.js';
+import { GetRepositoryLabelsTool } from './github/get_repository_labels.js';
+import { OpenPullRequestTool } from './github/open_pull_request.js';
+import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
 import { ToolRegistry } from './registry.js';
-import {
-    GetFileMetadataTool,
-    GitCreateBranchTool,
-    GitDiffTool,
-    GitLogTool,
-    GitStatusTool,
-    ListFilesTool,
-    ReadFileTool,
-    SearchCodeTool,
-} from './repository.js';
+import { GetFileMetadataTool } from './repository/get_file_metadata.js';
+import { ListFilesTool } from './repository/list_files.js';
+import { ReadFileTool } from './repository/read_file.js';
+import { SearchCodeTool } from './repository/search_code.js';
 
 /**
  * Tool Builder Configuration

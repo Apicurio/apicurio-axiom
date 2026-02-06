@@ -1,19 +1,4 @@
 /**
- * Composite Tools
- *
- * Complex tools that combine multiple operations (git + GitHub API).
- * These tools orchestrate multi-step workflows that require both local
- * repository operations and remote GitHub API calls.
- */
-
-import { exec } from 'node:child_process';
-import { promisify } from 'node:util';
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../types/agent.js';
-
-const execAsync = promisify(exec);
-
-/**
  * OpenPullRequestTool - Complete workflow to open a pull request
  *
  * This tool orchestrates the entire PR workflow:
@@ -25,6 +10,11 @@ const execAsync = promisify(exec);
  *
  * This is a high-level tool that automates the complete process.
  */
+
+import type { Octokit } from '@octokit/rest';
+import type { Tool } from '../../../types/agent.js';
+import { execAsync } from '../utils.js';
+
 export class OpenPullRequestTool implements Tool {
     name = 'github-open_pull_request';
     description = 'Complete workflow to open a pull request: add changes, commit, push branch, and create PR on GitHub';
