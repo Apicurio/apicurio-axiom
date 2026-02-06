@@ -5,8 +5,8 @@
  * Faster alternative to get_file_metadata when full metadata is not needed.
  */
 
-import fs from 'fs-extra';
 import * as path from 'node:path';
+import fs from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CheckPathExistsTool: Tool = {
