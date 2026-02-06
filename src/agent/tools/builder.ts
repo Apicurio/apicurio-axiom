@@ -9,28 +9,9 @@
 import * as path from 'node:path';
 import { Octokit } from '@octokit/rest';
 import type { Logger } from '../../logging/logger.js';
-import { GitCreateBranchTool } from './git/create_branch.js';
-import { GitDiffTool } from './git/diff.js';
-import { GitLogTool } from './git/log.js';
-import { GitStatusTool } from './git/status.js';
-import { AddCommentTool } from './github/add_comment.js';
-import { AddDiscussionResponseTool } from './github/add_discussion_response.js';
-import { AddLabelsTool } from './github/add_labels.js';
-import { AssignIssueTool } from './github/assign_issue.js';
-import { CloseIssueTool } from './github/close_issue.js';
-import { CreateIssueTool } from './github/create_issue.js';
-import { CreatePullRequestTool } from './github/create_pull_request.js';
-import { GetDiscussionTool } from './github/get_discussion.js';
-import { GetIssueDetailsTool } from './github/get_issue_details.js';
-import { GetMilestonesTool } from './github/get_milestones.js';
-import { GetRepositoryLabelsTool } from './github/get_repository_labels.js';
-import { OpenPullRequestTool } from './github/open_pull_request.js';
-import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
+import type { ToolContext } from '../../types/agent.js';
+import { ToolIndex } from './index.js';
 import { ToolRegistry } from './registry.js';
-import { GetFileMetadataTool } from './repository/get_file_metadata.js';
-import { ListFilesTool } from './repository/list_files.js';
-import { ReadFileTool } from './repository/read_file.js';
-import { SearchCodeTool } from './repository/search_code.js';
 
 /**
  * Tool Builder Configuration
@@ -46,44 +27,6 @@ export interface ToolBuilderConfig {
 }
 
 /**
- * Available tool names
- */
-export const AvailableTools = {
-    // Repository file tools
-    READ_FILE: 'repository-read_file',
-    LIST_FILES: 'repository-list_files',
-    SEARCH_CODE: 'repository-search_code',
-    GET_FILE_METADATA: 'repository-get_file_metadata',
-
-    // Git operation tools
-    GIT_STATUS: 'git-status',
-    GIT_DIFF: 'git-diff',
-    GIT_CREATE_BRANCH: 'git-create_branch',
-    GIT_LOG: 'git-log',
-
-    // GitHub read tools
-    GET_ISSUE_DETAILS: 'github-get_issue_details',
-    GET_REPOSITORY_LABELS: 'github-get_repository_labels',
-    GET_DISCUSSION: 'github-get_discussion',
-    GET_MILESTONES: 'github-get_milestones',
-
-    // GitHub write tools
-    ADD_LABELS: 'github-add_labels',
-    ADD_COMMENT: 'github-add_comment',
-    ADD_DISCUSSION_RESPONSE: 'github-add_discussion_response',
-    CREATE_ISSUE: 'github-create_issue',
-    CREATE_PULL_REQUEST: 'github-create_pull_request',
-    CLOSE_ISSUE: 'github-close_issue',
-    ASSIGN_ISSUE: 'github-assign_issue',
-    SET_ISSUE_MILESTONE: 'github-set_issue_milestone',
-
-    // Composite tools
-    OPEN_PULL_REQUEST: 'github-open_pull_request',
-} as const;
-
-export type ToolName = (typeof AvailableTools)[keyof typeof AvailableTools];
-
-/**
  * Expand tool patterns into concrete tool names
  *
  * Supports glob patterns like:
@@ -96,7 +39,7 @@ export type ToolName = (typeof AvailableTools)[keyof typeof AvailableTools];
  * @returns Array of concrete tool names
  */
 function expandToolPatterns(patterns: string[]): string[] {
-    const allTools = Object.values(AvailableTools);
+    const allTools = ToolIndex.getInstance().getNames();
     const expandedTools = new Set<string>();
 
     for (const pattern of patterns) {
@@ -131,139 +74,29 @@ export function buildToolRegistry(
     logger: Logger,
     dryRun: boolean = false,
 ): ToolRegistry {
-    const registry = new ToolRegistry(dryRun, logger);
+    // Create tool context from config
+    const context: ToolContext = {
+        workDir: config.workDir,
+        logger: logger,
+        octokit: new Octokit({ auth: config.githubToken }),
+        owner: config.owner,
+        repo: config.repo,
+        dryRun: dryRun,
+    };
 
-    // Create Octokit client for GitHub tools
-    const octokit = new Octokit({
-        auth: config.githubToken,
-    });
+    // Create registry with context
+    const registry = new ToolRegistry(context);
 
     // Expand patterns into concrete tool names
     const expandedToolNames = expandToolPatterns(toolNames);
 
     // Register requested tools
     for (const toolName of expandedToolNames) {
-        switch (toolName) {
-            // Repository tools
-            case AvailableTools.READ_FILE:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for read_file tool');
-                }
-                registry.register(new ReadFileTool(config.workDir));
-                break;
-
-            case AvailableTools.LIST_FILES:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for list_files tool');
-                }
-                registry.register(new ListFilesTool(config.workDir));
-                break;
-
-            case AvailableTools.SEARCH_CODE:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for search_code tool');
-                }
-                registry.register(new SearchCodeTool(config.workDir));
-                break;
-
-            case AvailableTools.GET_FILE_METADATA:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for get_file_metadata tool');
-                }
-                registry.register(new GetFileMetadataTool(config.workDir));
-                break;
-
-            // GitHub read tools
-            case AvailableTools.GET_ISSUE_DETAILS:
-                registry.register(new GetIssueDetailsTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.GET_REPOSITORY_LABELS:
-                registry.register(new GetRepositoryLabelsTool(octokit, config.owner, config.repo));
-                break;
-
-            // GitHub write tools
-            case AvailableTools.ADD_LABELS:
-                registry.register(new AddLabelsTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.ADD_COMMENT:
-                registry.register(new AddCommentTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.ADD_DISCUSSION_RESPONSE:
-                registry.register(new AddDiscussionResponseTool(octokit, config.owner, config.repo));
-                break;
-
-            // Git operation tools
-            case AvailableTools.GIT_STATUS:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for git_status tool');
-                }
-                registry.register(new GitStatusTool(config.workDir));
-                break;
-
-            case AvailableTools.GIT_DIFF:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for git_diff tool');
-                }
-                registry.register(new GitDiffTool(config.workDir));
-                break;
-
-            case AvailableTools.GIT_CREATE_BRANCH:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for git_create_branch tool');
-                }
-                registry.register(new GitCreateBranchTool(config.workDir));
-                break;
-
-            case AvailableTools.GIT_LOG:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for git_log tool');
-                }
-                registry.register(new GitLogTool(config.workDir));
-                break;
-
-            // GitHub read tools (additional)
-            case AvailableTools.GET_DISCUSSION:
-                registry.register(new GetDiscussionTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.GET_MILESTONES:
-                registry.register(new GetMilestonesTool(octokit, config.owner, config.repo));
-                break;
-
-            // GitHub write tools (additional)
-            case AvailableTools.CREATE_ISSUE:
-                registry.register(new CreateIssueTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.CREATE_PULL_REQUEST:
-                registry.register(new CreatePullRequestTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.CLOSE_ISSUE:
-                registry.register(new CloseIssueTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.ASSIGN_ISSUE:
-                registry.register(new AssignIssueTool(octokit, config.owner, config.repo));
-                break;
-
-            case AvailableTools.SET_ISSUE_MILESTONE:
-                registry.register(new SetIssueMilestoneTool(octokit, config.owner, config.repo));
-                break;
-
-            // Composite tools
-            case AvailableTools.OPEN_PULL_REQUEST:
-                if (!config.workDir) {
-                    throw new Error('workDir is required for open_pull_request tool');
-                }
-                registry.register(new OpenPullRequestTool(octokit, config.owner, config.repo, config.workDir));
-                break;
-
-            default:
-                logger.warn(`Unknown tool requested: ${toolName}`);
+        const tool = ToolIndex.getInstance().get(toolName);
+        if (tool) {
+            registry.register(tool);
+        } else {
+            logger.warn(`Unknown tool requested: ${toolName}`);
         }
     }
 
@@ -316,7 +149,6 @@ interface ToolCategories {
     'Git Tools': string[];
     'GitHub Read Tools': string[];
     'GitHub Write Tools': string[];
-    'Composite Tools': string[];
     Other: string[];
 }
 
@@ -331,7 +163,7 @@ export function listAvailableTools(): void {
     console.log('='.repeat(80));
     console.log();
 
-    const toolEntries = Object.entries(AvailableTools).sort((a, b) => a[1].localeCompare(b[1]));
+    const toolNames = ToolIndex.getInstance().getNames().sort();
 
     // Group tools by category
     const categories: ToolCategories = {
@@ -339,11 +171,10 @@ export function listAvailableTools(): void {
         'Git Tools': [],
         'GitHub Read Tools': [],
         'GitHub Write Tools': [],
-        'Composite Tools': [],
         Other: [],
     };
 
-    for (const [_key, toolName] of toolEntries) {
+    for (const toolName of toolNames) {
         if (toolName.startsWith('repository-')) {
             categories['Repository Tools'].push(toolName);
         } else if (toolName.startsWith('git-')) {
@@ -351,11 +182,7 @@ export function listAvailableTools(): void {
         } else if (toolName.startsWith('github-get_') || toolName.startsWith('github-get-')) {
             categories['GitHub Read Tools'].push(toolName);
         } else if (toolName.startsWith('github-')) {
-            if (toolName.includes('open_pull_request')) {
-                categories['Composite Tools'].push(toolName);
-            } else {
-                categories['GitHub Write Tools'].push(toolName);
-            }
+            categories['GitHub Write Tools'].push(toolName);
         } else {
             categories.Other.push(toolName);
         }
@@ -372,7 +199,7 @@ export function listAvailableTools(): void {
     }
 
     console.log('='.repeat(80));
-    console.log(`Total: ${toolEntries.length} tools available`);
+    console.log(`Total: ${toolNames.length} tools available`);
     console.log();
     console.log('Usage in config.yaml:');
     console.log('  actions:');

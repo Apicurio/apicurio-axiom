@@ -5,13 +5,12 @@
  * title, body, labels, and assignees.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class CreateIssueTool implements Tool {
-    name = 'github-create_issue';
-    description = 'Create a new GitHub issue in the repository with title, body, optional labels and assignees';
-    input_schema = {
+export const CreateIssueTool: Tool = {
+    name: 'github-create_issue',
+    description: 'Create a new GitHub issue in the repository with title, body, optional labels and assignees',
+    input_schema: {
         type: 'object',
         properties: {
             title: {
@@ -34,22 +33,28 @@ export class CreateIssueTool implements Tool {
             },
         },
         required: ['title'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Created issue details or error
      */
-    async execute(input: { title: string; body?: string; labels?: string[]; assignees?: string[] }): Promise<any> {
+    async execute(
+        input: { title: string; body?: string; labels?: string[]; assignees?: string[] },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Validate input
             if (!input.title || typeof input.title !== 'string') {
                 return {
@@ -66,14 +71,16 @@ export class CreateIssueTool implements Tool {
             }
 
             // Create issue
-            const { data: issue } = await this.octokit.issues.create({
-                owner: this.owner,
-                repo: this.repo,
+            context.logger.info(`Creating issue: "${input.title}"`);
+            const { data: issue } = await context.octokit.issues.create({
+                owner: context.owner,
+                repo: context.repo,
                 title: input.title,
                 body: input.body || '',
                 labels: input.labels || [],
                 assignees: input.assignees || [],
             });
+            context.logger.info(`Issue #${issue.number} created successfully: ${issue.html_url}`);
 
             return {
                 success: true,
@@ -89,13 +96,16 @@ export class CreateIssueTool implements Tool {
                 message: `Failed to create issue: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: { title: string; body?: string; labels?: string[]; assignees?: string[] }): Promise<any> {
+    async executeMock(
+        input: { title: string; body?: string; labels?: string[]; assignees?: string[] },
+        _context: ToolContext,
+    ): Promise<any> {
         return {
             dry_run: true,
             message: 'Would create issue',
@@ -104,5 +114,5 @@ export class CreateIssueTool implements Tool {
             url: 'https://github.com/owner/repo/issues/999',
             success: true,
         };
-    }
-}
+    },
+};

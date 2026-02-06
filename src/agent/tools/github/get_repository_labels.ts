@@ -5,41 +5,43 @@
  * for understanding what labels are available when labeling issues.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class GetRepositoryLabelsTool implements Tool {
-    name = 'github-get_repository_labels';
-    description = 'Get a list of all labels available in the repository with their names, colors, and descriptions';
-    input_schema = {
+export const GetRepositoryLabelsTool: Tool = {
+    name: 'github-get_repository_labels',
+    description: 'Get a list of all labels available in the repository with their names, colors, and descriptions',
+    input_schema: {
         type: 'object',
         properties: {},
         required: [],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param _input Tool parameters (none required)
+     * @param context Tool execution context
      * @returns List of repository labels or error
      */
-    async execute(_input: any): Promise<any> {
+    async execute(_input: any, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Get all labels (paginated)
-            const labels = await this.octokit.paginate(this.octokit.issues.listLabelsForRepo, {
-                owner: this.owner,
-                repo: this.repo,
+            const labels = await context.octokit.paginate(context.octokit.issues.listLabelsForRepo, {
+                owner: context.owner,
+                repo: context.repo,
                 per_page: 100,
             });
 
             return {
-                labels: labels.map((label) => ({
+                labels: labels.map((label: any) => ({
                     name: label.name,
                     description: label.description || '',
                     color: label.color,
@@ -52,13 +54,13 @@ export class GetRepositoryLabelsTool implements Tool {
                 message: `Failed to get repository labels: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: any): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: any, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

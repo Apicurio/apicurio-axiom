@@ -5,13 +5,12 @@
  * Users must have access to the repository to be assigned.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class AssignIssueTool implements Tool {
-    name = 'github-assign_issue';
-    description = 'Assign one or more users to a GitHub issue. Users must have repository access.';
-    input_schema = {
+export const AssignIssueTool: Tool = {
+    name: 'github-assign_issue',
+    description: 'Assign one or more users to a GitHub issue. Users must have repository access.',
+    input_schema: {
         type: 'object',
         properties: {
             issue_number: {
@@ -25,22 +24,25 @@ export class AssignIssueTool implements Tool {
             },
         },
         required: ['issue_number', 'assignees'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Assignment result or error
      */
-    async execute(input: { issue_number: number; assignees: string[] }): Promise<any> {
+    async execute(input: { issue_number: number; assignees: string[] }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             if (!input.issue_number || typeof input.issue_number !== 'number') {
                 return {
                     error: true,
@@ -64,23 +66,25 @@ export class AssignIssueTool implements Tool {
             }
 
             // Get current issue to see existing assignees
-            const { data: currentIssue } = await this.octokit.issues.get({
-                owner: this.owner,
-                repo: this.repo,
+            const { data: currentIssue } = await context.octokit.issues.get({
+                owner: context.owner,
+                repo: context.repo,
                 issue_number: input.issue_number,
             });
 
-            const existingAssignees = currentIssue.assignees?.map((a) => a.login) || [];
+            const existingAssignees = currentIssue.assignees?.map((a: any) => a.login) || [];
 
             // Add assignees
-            const { data: issue } = await this.octokit.issues.addAssignees({
-                owner: this.owner,
-                repo: this.repo,
+            context.logger.info(`Assigning issue #${input.issue_number} to: ${input.assignees.join(', ')}`);
+            const { data: issue } = await context.octokit.issues.addAssignees({
+                owner: context.owner,
+                repo: context.repo,
                 issue_number: input.issue_number,
                 assignees: input.assignees,
             });
+            context.logger.info(`Issue #${input.issue_number} assigned successfully`);
 
-            const newAssignees = issue.assignees?.map((a) => a.login) || [];
+            const newAssignees = issue.assignees?.map((a: any) => a.login) || [];
 
             return {
                 success: true,
@@ -96,13 +100,13 @@ export class AssignIssueTool implements Tool {
                 message: `Failed to assign issue: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: { issue_number: number; assignees: string[] }): Promise<any> {
+    async executeMock(input: { issue_number: number; assignees: string[] }, _context: ToolContext): Promise<any> {
         return {
             dry_run: true,
             message: 'Would assign issue',
@@ -112,5 +116,5 @@ export class AssignIssueTool implements Tool {
             all_assignees: input.assignees,
             success: true,
         };
-    }
-}
+    },
+};

@@ -5,13 +5,12 @@
  * due dates, and progress information.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class GetMilestonesTool implements Tool {
-    name = 'github-get_milestones';
-    description = 'Get a list of all milestones in the repository with their states, due dates, and progress';
-    input_schema = {
+export const GetMilestonesTool: Tool = {
+    name: 'github-get_milestones',
+    description: 'Get a list of all milestones in the repository with their states, due dates, and progress',
+    input_schema: {
         type: 'object',
         properties: {
             state: {
@@ -21,34 +20,37 @@ export class GetMilestonesTool implements Tool {
             },
         },
         required: [],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns List of milestones or error
      */
-    async execute(input: { state?: 'open' | 'closed' | 'all' }): Promise<any> {
+    async execute(input: { state?: 'open' | 'closed' | 'all' }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             const state = input.state || 'open';
 
             // Get all milestones (paginated)
-            const milestones = await this.octokit.paginate(this.octokit.issues.listMilestones, {
-                owner: this.owner,
-                repo: this.repo,
+            const milestones = await context.octokit.paginate(context.octokit.issues.listMilestones, {
+                owner: context.owner,
+                repo: context.repo,
                 state: state,
                 per_page: 100,
             });
 
             return {
-                milestones: milestones.map((milestone) => ({
+                milestones: milestones.map((milestone: any) => ({
                     number: milestone.number,
                     title: milestone.title,
                     description: milestone.description || '',
@@ -68,13 +70,13 @@ export class GetMilestonesTool implements Tool {
                 message: `Failed to get milestones: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { state?: 'open' | 'closed' | 'all' }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: { state?: 'open' | 'closed' | 'all' }, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

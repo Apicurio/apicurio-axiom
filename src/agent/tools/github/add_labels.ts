@@ -5,13 +5,12 @@
  * It validates that labels exist before attempting to add them.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class AddLabelsTool implements Tool {
-    name = 'github-add_labels';
-    description = 'Add one or more labels to a GitHub issue. Labels must exist in the repository.';
-    input_schema = {
+export const AddLabelsTool: Tool = {
+    name: 'github-add_labels',
+    description: 'Add one or more labels to a GitHub issue. Labels must exist in the repository.',
+    input_schema: {
         type: 'object',
         properties: {
             issue_number: {
@@ -25,22 +24,25 @@ export class AddLabelsTool implements Tool {
             },
         },
         required: ['issue_number', 'labels'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Result of adding labels or error
      */
-    async execute(input: { issue_number: number; labels: string[] }): Promise<any> {
+    async execute(input: { issue_number: number; labels: string[] }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Validate input
             if (!input.issue_number || typeof input.issue_number !== 'number') {
                 return {
@@ -64,13 +66,13 @@ export class AddLabelsTool implements Tool {
             }
 
             // Get current issue labels
-            const { data: issue } = await this.octokit.issues.get({
-                owner: this.owner,
-                repo: this.repo,
+            const { data: issue } = await context.octokit.issues.get({
+                owner: context.owner,
+                repo: context.repo,
                 issue_number: input.issue_number,
             });
 
-            const existingLabels = issue.labels.map((label) => {
+            const existingLabels = issue.labels.map((label: any) => {
                 if (typeof label === 'string') {
                     return label;
                 }
@@ -81,6 +83,9 @@ export class AddLabelsTool implements Tool {
             const newLabels = input.labels.filter((label) => !existingLabels.includes(label));
 
             if (newLabels.length === 0) {
+                context.logger.info(
+                    `All labels already applied to issue #${input.issue_number}: ${input.labels.join(', ')}`,
+                );
                 return {
                     success: true,
                     message: 'All labels are already applied to the issue',
@@ -90,12 +95,14 @@ export class AddLabelsTool implements Tool {
             }
 
             // Add labels
-            await this.octokit.issues.addLabels({
-                owner: this.owner,
-                repo: this.repo,
+            context.logger.info(`Adding labels to issue #${input.issue_number}: ${newLabels.join(', ')}`);
+            await context.octokit.issues.addLabels({
+                owner: context.owner,
+                repo: context.repo,
                 issue_number: input.issue_number,
                 labels: newLabels,
             });
+            context.logger.info(`Labels added successfully to issue #${input.issue_number}`);
 
             return {
                 success: true,
@@ -109,13 +116,13 @@ export class AddLabelsTool implements Tool {
                 message: `Failed to add labels: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: { issue_number: number; labels: string[] }): Promise<any> {
+    async executeMock(input: { issue_number: number; labels: string[] }, _context: ToolContext): Promise<any> {
         return {
             dry_run: true,
             message: 'Would add labels',
@@ -125,5 +132,5 @@ export class AddLabelsTool implements Tool {
             all_labels: input.labels,
             success: true,
         };
-    }
-}
+    },
+};

@@ -5,14 +5,14 @@
  * Useful for finding specific functions, classes, or code patterns.
  */
 
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class SearchCodeTool implements Tool {
-    name = 'repository-search_code';
-    description =
-        'Search for a text pattern in repository files using grep. Returns matching lines with file paths and line numbers.';
-    input_schema = {
+export const SearchCodeTool: Tool = {
+    name: 'repository-search_code',
+    description:
+        'Search for a text pattern in repository files using grep. Returns matching lines with file paths and line numbers.',
+    input_schema: {
         type: 'object',
         properties: {
             pattern: {
@@ -29,18 +29,29 @@ export class SearchCodeTool implements Tool {
             },
         },
         required: ['pattern'],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Search results or error
      */
-    async execute(input: { pattern: string; file_pattern?: string; case_sensitive?: boolean }): Promise<any> {
+    async execute(
+        input: { pattern: string; file_pattern?: string; case_sensitive?: boolean },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for repository-search_code',
+                    tool: 'repository-search_code',
+                };
+            }
+
             // Validate input
             if (!input.pattern) {
                 return {
@@ -71,8 +82,10 @@ export class SearchCodeTool implements Tool {
             grepCmd += ' --exclude-dir=.git';
 
             // Execute grep
+            const filePatternInfo = input.file_pattern ? ` in files matching "${input.file_pattern}"` : '';
+            context.logger.info(`Searching for pattern "${input.pattern}"${filePatternInfo}...`);
             const { stdout } = await execAsync(grepCmd, {
-                cwd: this.workDir,
+                cwd: context.workDir,
                 maxBuffer: 10 * 1024 * 1024, // 10MB max output
             });
 
@@ -95,6 +108,8 @@ export class SearchCodeTool implements Tool {
                 }
             }
 
+            context.logger.info(`Search completed: found ${matches.length} matches`);
+
             return {
                 pattern: input.pattern,
                 file_pattern: input.file_pattern,
@@ -104,6 +119,7 @@ export class SearchCodeTool implements Tool {
         } catch (error) {
             // grep exits with code 1 if no matches found
             if ((error as any).code === 1) {
+                context.logger.info(`Search completed: no matches found`);
                 return {
                     pattern: input.pattern,
                     file_pattern: input.file_pattern,
@@ -117,13 +133,13 @@ export class SearchCodeTool implements Tool {
                 message: `Search failed: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { pattern: string; file_pattern?: string }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: { pattern: string; file_pattern?: string }, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

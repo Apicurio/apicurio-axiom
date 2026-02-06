@@ -5,13 +5,13 @@
  * Useful for automated feature branch creation workflows.
  */
 
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class GitCreateBranchTool implements Tool {
-    name = 'git-create_branch';
-    description = 'Create a new git branch from current branch or specified ref (tag, commit, branch)';
-    input_schema = {
+export const GitCreateBranchTool: Tool = {
+    name: 'git-create_branch',
+    description: 'Create a new git branch from current branch or specified ref (tag, commit, branch)',
+    input_schema: {
         type: 'object',
         properties: {
             branch_name: {
@@ -28,18 +28,29 @@ export class GitCreateBranchTool implements Tool {
             },
         },
         required: ['branch_name'],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Branch creation result or error
      */
-    async execute(input: { branch_name: string; from_ref?: string; checkout?: boolean }): Promise<any> {
+    async execute(
+        input: { branch_name: string; from_ref?: string; checkout?: boolean },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for git-create_branch',
+                    tool: 'git-create_branch',
+                };
+            }
+
             // Validate input
             if (!input.branch_name || typeof input.branch_name !== 'string') {
                 return {
@@ -61,7 +72,7 @@ export class GitCreateBranchTool implements Tool {
             // Check if branch already exists
             try {
                 await execAsync(`git rev-parse --verify ${sanitizedName}`, {
-                    cwd: this.workDir,
+                    cwd: context.workDir,
                 });
                 return {
                     error: true,
@@ -81,14 +92,19 @@ export class GitCreateBranchTool implements Tool {
             }
 
             // Create branch
+            const fromRef = input.from_ref || 'current branch';
+            context.logger.info(
+                `Creating branch "${sanitizedName}" from ${fromRef}${checkout ? ' and checking out' : ''}`,
+            );
             await execAsync(createCmd, {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             // Get current branch to confirm
             const { stdout: currentBranch } = await execAsync('git branch --show-current', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
+            context.logger.info(`Branch "${sanitizedName}" created successfully`);
 
             return {
                 success: true,
@@ -103,13 +119,16 @@ export class GitCreateBranchTool implements Tool {
                 message: `Failed to create branch: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: { branch_name: string; from_ref?: string; checkout?: boolean }): Promise<any> {
+    async executeMock(
+        input: { branch_name: string; from_ref?: string; checkout?: boolean },
+        _context: ToolContext,
+    ): Promise<any> {
         return {
             dry_run: true,
             message: 'Would create branch',
@@ -119,5 +138,5 @@ export class GitCreateBranchTool implements Tool {
             current_branch: input.checkout !== false ? input.branch_name : 'current-branch',
             success: true,
         };
-    }
-}
+    },
+};

@@ -8,12 +8,12 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class ReadFileTool implements Tool {
-    name = 'repository-read_file';
-    description = 'Read the contents of a file from the repository';
-    input_schema = {
+export const ReadFileTool: Tool = {
+    name: 'repository-read_file',
+    description: 'Read the contents of a file from the repository',
+    input_schema: {
         type: 'object',
         properties: {
             path: {
@@ -22,18 +22,26 @@ export class ReadFileTool implements Tool {
             },
         },
         required: ['path'],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns File contents or error
      */
-    async execute(input: { path: string }): Promise<any> {
+    async execute(input: { path: string }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for repository-read_file',
+                    tool: 'repository-read_file',
+                };
+            }
+
             // Validate input
             if (!input.path) {
                 return {
@@ -43,8 +51,8 @@ export class ReadFileTool implements Tool {
             }
 
             // Construct full path and validate it's within work directory
-            const fullPath = path.resolve(this.workDir, input.path);
-            const normalizedWorkDir = path.resolve(this.workDir);
+            const fullPath = path.resolve(context.workDir, input.path);
+            const normalizedWorkDir = path.resolve(context.workDir);
 
             if (!fullPath.startsWith(normalizedWorkDir)) {
                 return {
@@ -83,13 +91,13 @@ export class ReadFileTool implements Tool {
                 message: `Failed to read file: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { path: string }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: { path: string }, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

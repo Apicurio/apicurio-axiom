@@ -5,13 +5,12 @@
  * has already been pushed to the remote repository.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class CreatePullRequestTool implements Tool {
-    name = 'github-create_pull_request';
-    description = 'Create a pull request from the current branch to the base branch (assumes branch is already pushed)';
-    input_schema = {
+export const CreatePullRequestTool: Tool = {
+    name: 'github-create_pull_request',
+    description: 'Create a pull request from the current branch to the base branch (assumes branch is already pushed)',
+    input_schema: {
         type: 'object',
         properties: {
             title: {
@@ -36,22 +35,28 @@ export class CreatePullRequestTool implements Tool {
             },
         },
         required: ['title', 'head'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Created PR details or error
      */
-    async execute(input: { title: string; body?: string; head: string; base?: string; draft?: boolean }): Promise<any> {
+    async execute(
+        input: { title: string; body?: string; head: string; base?: string; draft?: boolean },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Validate input
             if (!input.title || typeof input.title !== 'string') {
                 return {
@@ -70,15 +75,17 @@ export class CreatePullRequestTool implements Tool {
             const base = input.base || 'main';
 
             // Create pull request
-            const { data: pr } = await this.octokit.pulls.create({
-                owner: this.owner,
-                repo: this.repo,
+            context.logger.info(`Creating pull request: "${input.title}" (${input.head} -> ${base})`);
+            const { data: pr } = await context.octokit.pulls.create({
+                owner: context.owner,
+                repo: context.repo,
                 title: input.title,
                 body: input.body || '',
                 head: input.head,
                 base: base,
                 draft: input.draft || false,
             });
+            context.logger.info(`Pull request #${pr.number} created successfully: ${pr.html_url}`);
 
             return {
                 success: true,
@@ -97,19 +104,22 @@ export class CreatePullRequestTool implements Tool {
                 message: `Failed to create pull request: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: {
-        title: string;
-        head: string;
-        body?: string;
-        base?: string;
-        draft?: boolean;
-    }): Promise<any> {
+    async executeMock(
+        input: {
+            title: string;
+            head: string;
+            body?: string;
+            base?: string;
+            draft?: boolean;
+        },
+        _context: ToolContext,
+    ): Promise<any> {
         return {
             dry_run: true,
             message: 'Would create pull request',
@@ -118,5 +128,5 @@ export class CreatePullRequestTool implements Tool {
             url: 'https://github.com/owner/repo/pull/999',
             success: true,
         };
-    }
-}
+    },
+};

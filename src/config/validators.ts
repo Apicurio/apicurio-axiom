@@ -6,7 +6,7 @@
  */
 
 import { Octokit } from '@octokit/rest';
-import { AvailableTools } from '../agent/tools/builder.js';
+import { ToolIndex } from '../agent/tools/index.js';
 import type { AIAgentAction } from '../types/actions.js';
 import type { Config } from '../types/config.js';
 
@@ -53,8 +53,8 @@ export function validateActionReferences(config: Config): void {
  * @throws ConfigValidationError if any tool pattern is invalid
  */
 export function validateToolPatterns(config: Config): void {
-    // Get valid tools from the authoritative source (AvailableTools from builder)
-    const validTools: string[] = Object.values(AvailableTools);
+    // Get valid tools from the authoritative source (ToolIndex)
+    const validTools: string[] = ToolIndex.getInstance().getNames();
 
     // Extract valid prefixes from the tool names
     const prefixSet = new Set<string>();

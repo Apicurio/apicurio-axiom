@@ -5,14 +5,14 @@
  * Supports viewing staged changes, unstaged changes, or differences between branches.
  */
 
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class GitDiffTool implements Tool {
-    name = 'git-diff';
-    description =
-        'Get git diff output. Shows differences in the working directory, staged changes, or between branches.';
-    input_schema = {
+export const GitDiffTool: Tool = {
+    name: 'git-diff',
+    description:
+        'Get git diff output. Shows differences in the working directory, staged changes, or between branches.',
+    input_schema: {
         type: 'object',
         properties: {
             staged: {
@@ -30,18 +30,26 @@ export class GitDiffTool implements Tool {
             },
         },
         required: [],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Git diff output or error
      */
-    async execute(input: { staged?: boolean; file_path?: string; ref?: string }): Promise<any> {
+    async execute(input: { staged?: boolean; file_path?: string; ref?: string }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for git-diff',
+                    tool: 'git-diff',
+                };
+            }
+
             // Build git diff command
             let diffCmd = 'git diff';
 
@@ -62,7 +70,7 @@ export class GitDiffTool implements Tool {
 
             // Execute diff
             const { stdout } = await execAsync(diffCmd, {
-                cwd: this.workDir,
+                cwd: context.workDir,
                 maxBuffer: 10 * 1024 * 1024, // 10MB max output
             });
 
@@ -114,13 +122,16 @@ export class GitDiffTool implements Tool {
                 message: `Failed to get git diff: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { staged?: boolean; file_path?: string; ref?: string }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(
+        input: { staged?: boolean; file_path?: string; ref?: string },
+        context: ToolContext,
+    ): Promise<any> {
+        return this.execute(input, context);
+    },
+};

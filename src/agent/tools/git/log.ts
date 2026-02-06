@@ -5,13 +5,13 @@
  * Useful for understanding project history, generating changelogs, and finding related changes.
  */
 
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class GitLogTool implements Tool {
-    name = 'git-log';
-    description = 'Get git commit history with optional filtering by count, date range, author, or file path';
-    input_schema = {
+export const GitLogTool: Tool = {
+    name: 'git-log',
+    description: 'Get git commit history with optional filtering by count, date range, author, or file path',
+    input_schema: {
         type: 'object',
         properties: {
             max_count: {
@@ -44,26 +44,37 @@ export class GitLogTool implements Tool {
             },
         },
         required: [],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Commit history or error
      */
-    async execute(input: {
-        max_count?: number;
-        since?: string;
-        until?: string;
-        author?: string;
-        ref?: string;
-        file_path?: string;
-        grep?: string;
-    }): Promise<any> {
+    async execute(
+        input: {
+            max_count?: number;
+            since?: string;
+            until?: string;
+            author?: string;
+            ref?: string;
+            file_path?: string;
+            grep?: string;
+        },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for git-log',
+                    tool: 'git-log',
+                };
+            }
+
             // Build git log command
             const maxCount = input.max_count || 10;
             let logCmd = `git log -n ${maxCount}`;
@@ -100,7 +111,7 @@ export class GitLogTool implements Tool {
 
             // Execute command
             const { stdout } = await execAsync(logCmd, {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             // Parse output
@@ -152,21 +163,24 @@ export class GitLogTool implements Tool {
                 message: `Failed to get git log: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: {
-        max_count?: number;
-        since?: string;
-        until?: string;
-        author?: string;
-        ref?: string;
-        file_path?: string;
-        grep?: string;
-    }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(
+        input: {
+            max_count?: number;
+            since?: string;
+            until?: string;
+            author?: string;
+            ref?: string;
+            file_path?: string;
+            grep?: string;
+        },
+        context: ToolContext,
+    ): Promise<any> {
+        return this.execute(input, context);
+    },
+};

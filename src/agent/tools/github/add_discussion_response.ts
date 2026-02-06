@@ -4,14 +4,13 @@
  * This tool posts a comment to a discussion thread.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class AddDiscussionResponseTool implements Tool {
-    name = 'github-add_discussion_response';
-    description =
-        'Add a comment/response to a GitHub discussion. Use this to provide insights, ask questions, or participate in discussions.';
-    input_schema = {
+export const AddDiscussionResponseTool: Tool = {
+    name: 'github-add_discussion_response',
+    description:
+        'Add a comment/response to a GitHub discussion. Use this to provide insights, ask questions, or participate in discussions.',
+    input_schema: {
         type: 'object',
         properties: {
             discussion_number: {
@@ -24,22 +23,25 @@ export class AddDiscussionResponseTool implements Tool {
             },
         },
         required: ['discussion_number', 'body'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Result of posting comment or error
      */
-    async execute(input: { discussion_number: number; body: string }): Promise<any> {
+    async execute(input: { discussion_number: number; body: string }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Validate input
             if (!input.discussion_number || typeof input.discussion_number !== 'number') {
                 return {
@@ -73,15 +75,18 @@ export class AddDiscussionResponseTool implements Tool {
                 }
             `;
 
-            const discussionResult: any = await this.octokit.graphql(discussionQuery, {
-                owner: this.owner,
-                repo: this.repo,
+            const discussionResult: any = await context.octokit.graphql(discussionQuery, {
+                owner: context.owner,
+                repo: context.repo,
                 number: input.discussion_number,
             });
 
             const discussionId = discussionResult.repository.discussion.id;
 
             // Post comment to discussion using GraphQL
+            context.logger.info(
+                `Adding comment to discussion #${input.discussion_number} (${input.body.length} characters)`,
+            );
             const mutation = `
                 mutation($discussionId: ID!, $body: String!) {
                     addDiscussionComment(input: {
@@ -97,12 +102,13 @@ export class AddDiscussionResponseTool implements Tool {
                 }
             `;
 
-            const result: any = await this.octokit.graphql(mutation, {
+            const result: any = await context.octokit.graphql(mutation, {
                 discussionId: discussionId,
                 body: input.body,
             });
 
             const comment = result.addDiscussionComment.comment;
+            context.logger.info(`Discussion comment posted successfully: ${comment.url}`);
 
             return {
                 success: true,
@@ -116,13 +122,13 @@ export class AddDiscussionResponseTool implements Tool {
                 message: `Failed to add discussion comment: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: { discussion_number: number; body: string }): Promise<any> {
+    async executeMock(input: { discussion_number: number; body: string }, _context: ToolContext): Promise<any> {
         return {
             dry_run: true,
             message: 'Would add discussion comment',
@@ -130,5 +136,5 @@ export class AddDiscussionResponseTool implements Tool {
             body: input.body,
             success: true,
         };
-    }
-}
+    },
+};

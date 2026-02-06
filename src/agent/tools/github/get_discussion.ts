@@ -5,13 +5,12 @@
  * Note: Uses GraphQL API since discussions are not available in REST API.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class GetDiscussionTool implements Tool {
-    name = 'github-get_discussion';
-    description = 'Get detailed information about a GitHub discussion including title, body, category, and comments';
-    input_schema = {
+export const GetDiscussionTool: Tool = {
+    name: 'github-get_discussion',
+    description: 'Get detailed information about a GitHub discussion including title, body, category, and comments',
+    input_schema: {
         type: 'object',
         properties: {
             discussion_number: {
@@ -20,22 +19,25 @@ export class GetDiscussionTool implements Tool {
             },
         },
         required: ['discussion_number'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns Discussion details or error
      */
-    async execute(input: { discussion_number: number }): Promise<any> {
+    async execute(input: { discussion_number: number }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
             // Validate input
             if (!input.discussion_number || typeof input.discussion_number !== 'number') {
                 return {
@@ -79,9 +81,9 @@ export class GetDiscussionTool implements Tool {
                 }
             `;
 
-            const result: any = await this.octokit.graphql(discussionQuery, {
-                owner: this.owner,
-                repo: this.repo,
+            const result: any = await context.octokit.graphql(discussionQuery, {
+                owner: context.owner,
+                repo: context.repo,
                 number: input.discussion_number,
             });
 
@@ -120,13 +122,13 @@ export class GetDiscussionTool implements Tool {
                 message: `Failed to get discussion details: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { discussion_number: number }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: { discussion_number: number }, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

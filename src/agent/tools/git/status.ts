@@ -5,37 +5,45 @@
  * staged changes, unstaged changes, and untracked files.
  */
 
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class GitStatusTool implements Tool {
-    name = 'git-status';
-    description = 'Get git repository status including current branch, staged/unstaged changes, and untracked files';
-    input_schema = {
+export const GitStatusTool: Tool = {
+    name: 'git-status',
+    description: 'Get git repository status including current branch, staged/unstaged changes, and untracked files',
+    input_schema: {
         type: 'object',
         properties: {},
         required: [],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param _input Tool parameters (none required)
+     * @param context Tool execution context
      * @returns Git status information or error
      */
-    async execute(_input: any): Promise<any> {
+    async execute(_input: any, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for git-status',
+                    tool: 'git-status',
+                };
+            }
+
             // Get current branch
             const { stdout: branchOutput } = await execAsync('git branch --show-current', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
             const currentBranch = branchOutput.trim();
 
             // Get status in porcelain format for easier parsing
             const { stdout: statusOutput } = await execAsync('git status --porcelain', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             // Parse status output
@@ -85,13 +93,13 @@ export class GitStatusTool implements Tool {
                 message: `Failed to get git status: ${(error as Error).message}`,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: any): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: any, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};

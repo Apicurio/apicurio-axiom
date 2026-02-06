@@ -11,14 +11,13 @@
  * This is a high-level tool that automates the complete process.
  */
 
-import type { Octokit } from '@octokit/rest';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
-export class OpenPullRequestTool implements Tool {
-    name = 'github-open_pull_request';
-    description = 'Complete workflow to open a pull request: add changes, commit, push branch, and create PR on GitHub';
-    input_schema = {
+export const OpenPullRequestTool: Tool = {
+    name: 'github-open_pull_request',
+    description: 'Complete workflow to open a pull request: add changes, commit, push branch, and create PR on GitHub',
+    input_schema: {
         type: 'object',
         properties: {
             commit_message: {
@@ -43,29 +42,41 @@ export class OpenPullRequestTool implements Tool {
             },
         },
         required: ['commit_message', 'pr_title'],
-    };
-
-    constructor(
-        private octokit: Octokit,
-        private owner: string,
-        private repo: string,
-        private workDir: string,
-    ) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns PR creation result or error
      */
-    async execute(input: {
-        commit_message: string;
-        pr_title: string;
-        pr_body?: string;
-        base_branch?: string;
-        draft?: boolean;
-    }): Promise<any> {
+    async execute(
+        input: {
+            commit_message: string;
+            pr_title: string;
+            pr_body?: string;
+            base_branch?: string;
+            draft?: boolean;
+        },
+        context: ToolContext,
+    ): Promise<any> {
         try {
+            // Validate context
+            if (!context.octokit || !context.owner || !context.repo) {
+                return {
+                    error: true,
+                    message: 'Missing required context: octokit, owner, or repo',
+                };
+            }
+
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'Missing required context: workDir',
+                };
+            }
+
             // Validate input
             if (!input.commit_message || typeof input.commit_message !== 'string') {
                 return {
@@ -83,11 +94,14 @@ export class OpenPullRequestTool implements Tool {
 
             const baseBranch = input.base_branch || 'main';
 
+            context.logger.info(`Starting PR workflow: "${input.pr_title}"`);
+
             // Step 1: Get current branch
             const { stdout: branchOutput } = await execAsync('git branch --show-current', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
             const currentBranch = branchOutput.trim();
+            context.logger.info(`Current branch: ${currentBranch}`);
 
             if (!currentBranch) {
                 return {
@@ -106,7 +120,7 @@ export class OpenPullRequestTool implements Tool {
 
             // Step 3: Check if there are changes to commit
             const { stdout: statusOutput } = await execAsync('git status --porcelain', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             const hasChanges = statusOutput.trim().length > 0;
@@ -119,15 +133,17 @@ export class OpenPullRequestTool implements Tool {
             }
 
             // Step 4: Add all changes
+            context.logger.info('Adding all changes to git...');
             await execAsync('git add -A', {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             // Step 5: Commit changes
+            context.logger.info(`Committing changes: "${input.commit_message}"`);
             // Use heredoc to safely handle multi-line commit messages
             const escapedMessage = input.commit_message.replace(/'/g, "'\\''");
             await execAsync(`git commit -m '${escapedMessage}'`, {
-                cwd: this.workDir,
+                cwd: context.workDir,
             });
 
             // Step 6: Push branch to remote
@@ -135,7 +151,7 @@ export class OpenPullRequestTool implements Tool {
             let remoteBranchExists = false;
             try {
                 await execAsync(`git ls-remote --heads origin ${currentBranch}`, {
-                    cwd: this.workDir,
+                    cwd: context.workDir,
                 });
                 remoteBranchExists = true;
             } catch {
@@ -144,27 +160,31 @@ export class OpenPullRequestTool implements Tool {
             }
 
             // Push with appropriate flags
+            context.logger.info(`Pushing branch "${currentBranch}" to remote...`);
             if (remoteBranchExists) {
                 await execAsync(`git push origin ${currentBranch}`, {
-                    cwd: this.workDir,
+                    cwd: context.workDir,
                 });
             } else {
                 // First push, set upstream
                 await execAsync(`git push -u origin ${currentBranch}`, {
-                    cwd: this.workDir,
+                    cwd: context.workDir,
                 });
             }
+            context.logger.info('Branch pushed successfully');
 
             // Step 7: Create pull request via GitHub API
-            const { data: pr } = await this.octokit.pulls.create({
-                owner: this.owner,
-                repo: this.repo,
+            context.logger.info(`Creating pull request: "${input.pr_title}" (${currentBranch} -> ${baseBranch})`);
+            const { data: pr } = await context.octokit.pulls.create({
+                owner: context.owner,
+                repo: context.repo,
                 title: input.pr_title,
                 body: input.pr_body || '',
                 head: currentBranch,
                 base: baseBranch,
                 draft: input.draft || false,
             });
+            context.logger.info(`Pull request #${pr.number} created successfully: ${pr.html_url}`);
 
             return {
                 success: true,
@@ -214,19 +234,22 @@ export class OpenPullRequestTool implements Tool {
                     'This is a multi-step operation. The error may have occurred during: add, commit, push, or PR creation.',
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Write tool - returns simulated result
      */
-    async executeMock(input: {
-        commit_message: string;
-        pr_title: string;
-        pr_body?: string;
-        base_branch?: string;
-        draft?: boolean;
-    }): Promise<any> {
+    async executeMock(
+        input: {
+            commit_message: string;
+            pr_title: string;
+            pr_body?: string;
+            base_branch?: string;
+            draft?: boolean;
+        },
+        _context: ToolContext,
+    ): Promise<any> {
         return {
             dry_run: true,
             message: 'Would commit changes, push, and create PR',
@@ -242,5 +265,5 @@ export class OpenPullRequestTool implements Tool {
             ],
             success: true,
         };
-    }
-}
+    },
+};

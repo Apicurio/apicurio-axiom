@@ -5,27 +5,23 @@
  * Provides tool schemas to AI Agent and executes tool calls safely.
  */
 
-import type { Logger } from '../../logging/logger.js';
-import type { Tool, ToolResult, ToolSchema } from '../../types/agent.js';
+import type { Tool, ToolContext, ToolResult, ToolSchema } from '../../types/agent.js';
 
 export class ToolRegistry {
     private tools: Map<string, Tool>;
-    private dryRun: boolean;
-    private logger: Logger;
+    private context: ToolContext;
 
     /**
      * Creates a new ToolRegistry instance
      *
-     * @param dryRun If true, write tools will be simulated instead of executed
-     * @param logger The logger to use for logging
+     * @param context Tool execution context (includes logger, dryRun, workDir, etc.)
      */
-    constructor(dryRun: boolean = false, logger: Logger) {
+    constructor(context: ToolContext) {
         this.tools = new Map();
-        this.dryRun = dryRun;
-        this.logger = logger;
+        this.context = context;
 
-        if (dryRun) {
-            this.logger.info('⚠️  ToolRegistry in DRY-RUN mode - write operations will be simulated');
+        if (context.dryRun) {
+            context.logger.info('⚠️  ToolRegistry in DRY-RUN mode - write operations will be simulated');
         }
     }
 
@@ -58,7 +54,7 @@ export class ToolRegistry {
         }
 
         this.tools.set(tool.name, tool);
-        this.logger.info(`Registered tool: ${tool.name}`);
+        this.context.logger.info(`Registered tool: ${tool.name}`);
     }
 
     /**
@@ -92,16 +88,16 @@ export class ToolRegistry {
         }
 
         try {
-            if (this.dryRun) {
-                this.logger.info(`🔸 [DRY-RUN] Simulating tool: ${name}`);
-                this.logger.info(`🔸 [DRY-RUN] Input: ${JSON.stringify(input, null, 2)}`);
-                const result = await tool.executeMock(input);
-                this.logger.info(`🔸 [DRY-RUN] Simulated result: ${JSON.stringify(result, null, 2)}`);
+            if (this.context.dryRun) {
+                this.context.logger.info(`🔸 [DRY-RUN] Simulating tool: ${name}`);
+                this.context.logger.info(`🔸 [DRY-RUN] Input: ${JSON.stringify(input, null, 2)}`);
+                const result = await tool.executeMock(input, this.context);
+                this.context.logger.info(`🔸 [DRY-RUN] Simulated result: ${JSON.stringify(result, null, 2)}`);
                 return result;
             } else {
-                this.logger.info(`Executing tool: ${name}`);
-                const result = await tool.execute(input);
-                this.logger.info(`Tool completed: ${name}`);
+                this.context.logger.info(`Executing tool: ${name}`);
+                const result = await tool.execute(input, this.context);
+                this.context.logger.info(`Tool completed: ${name}`);
                 return result;
             }
         } catch (error) {

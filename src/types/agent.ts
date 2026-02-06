@@ -88,9 +88,21 @@ export interface ToolSchema {
     };
 }
 
+/**
+ * Context provided to tools at execution time
+ */
+export interface ToolContext {
+    workDir?: string;
+    logger: any; // Logger type
+    octokit?: any; // Octokit type
+    owner?: string;
+    repo?: string;
+    dryRun: boolean;
+}
+
 export interface Tool extends ToolSchema {
-    execute: (input: any) => Promise<any>;
-    executeMock: (input: any) => Promise<any>;
+    execute: (input: any, context: ToolContext) => Promise<any>;
+    executeMock: (input: any, context: ToolContext) => Promise<any>;
 }
 
 export interface ToolResult {

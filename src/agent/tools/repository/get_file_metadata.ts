@@ -9,13 +9,13 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
-import type { Tool } from '../../../types/agent.js';
+import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export class GetFileMetadataTool implements Tool {
-    name = 'repository-get_file_metadata';
-    description =
-        'Get detailed metadata about a file or directory including size, timestamps, permissions, and file characteristics';
-    input_schema = {
+export const GetFileMetadataTool: Tool = {
+    name: 'repository-get_file_metadata',
+    description:
+        'Get detailed metadata about a file or directory including size, timestamps, permissions, and file characteristics',
+    input_schema: {
         type: 'object',
         properties: {
             path: {
@@ -24,18 +24,26 @@ export class GetFileMetadataTool implements Tool {
             },
         },
         required: ['path'],
-    };
-
-    constructor(private workDir: string) {}
+    },
 
     /**
      * Execute the tool
      *
      * @param input Tool parameters
+     * @param context Tool execution context
      * @returns File metadata or error
      */
-    async execute(input: { path: string }): Promise<any> {
+    async execute(input: { path: string }, context: ToolContext): Promise<any> {
         try {
+            // Validate context
+            if (!context.workDir) {
+                return {
+                    error: true,
+                    message: 'workDir is required in context for repository-get_file_metadata',
+                    tool: 'repository-get_file_metadata',
+                };
+            }
+
             // Validate input
             if (!input.path) {
                 return {
@@ -46,8 +54,8 @@ export class GetFileMetadataTool implements Tool {
             }
 
             // Construct full path and validate it's within work directory
-            const fullPath = path.resolve(this.workDir, input.path);
-            const normalizedWorkDir = path.resolve(this.workDir);
+            const fullPath = path.resolve(context.workDir, input.path);
+            const normalizedWorkDir = path.resolve(context.workDir);
 
             if (!fullPath.startsWith(normalizedWorkDir)) {
                 return {
@@ -141,13 +149,13 @@ export class GetFileMetadataTool implements Tool {
                 tool: this.name,
             };
         }
-    }
+    },
 
     /**
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { path: string }): Promise<any> {
-        return this.execute(input);
-    }
-}
+    async executeMock(input: { path: string }, context: ToolContext): Promise<any> {
+        return this.execute(input, context);
+    },
+};
