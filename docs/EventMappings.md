@@ -90,6 +90,8 @@ The following table lists all available event types supported by the bot:
 | `release.deleted` | A release was deleted |
 | `release.prereleased` | A pre-release was created |
 | `release.released` | A release was released |
+| `create` | A branch or tag was created |
+| `fork` | A repository was forked |
 
 ## Wildcard Patterns
 

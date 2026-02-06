@@ -216,8 +216,8 @@ export class GitHubPoller {
         // Log full event JSON for all events
         await this.logEventJson(repo, event);
 
-        // Convert GitHub event to our internal format
-        const normalizedEvent = this.normalizeEvent(repo, event);
+        // Convert GitHub event to our internal format (may fetch additional data)
+        const normalizedEvent = await this.normalizeEvent(repo, event);
 
         // Validate the normalized event
         const validationResult = this.eventValidator.validateEvent(normalizedEvent);
@@ -290,7 +290,7 @@ export class GitHubPoller {
      * @param event GitHub event object
      * @returns Normalized event
      */
-    normalizeEvent(repo: string, event: GitHubEvent): Event {
+    async normalizeEvent(repo: string, event: GitHubEvent): Promise<Event> {
         const [owner, repoName] = repo.split('/');
 
         const normalized: Event = {
@@ -305,8 +305,8 @@ export class GitHubPoller {
             rawEvent: event,
         };
 
-        // Add event-specific fields
-        this.enrichEvent(normalized, event);
+        // Add event-specific fields (may fetch additional data from REST API)
+        await this.enrichEvent(normalized, event);
 
         return normalized;
     }
@@ -333,6 +333,10 @@ export class GitHubPoller {
             return `pull_request_review_comment.${event.payload.action}`;
         } else if (type === 'PushEvent') {
             return 'push';
+        } else if (type === 'CreateEvent') {
+            return 'create';
+        } else if (type === 'ForkEvent') {
+            return 'fork';
         } else if (type === 'ReleaseEvent') {
             return `release.${event.payload.action}`;
         } else if (type === 'DiscussionEvent') {
@@ -349,7 +353,7 @@ export class GitHubPoller {
      * @param normalized Normalized event object
      * @param event GitHub event object
      */
-    enrichEvent(normalized: Event, event: GitHubEvent): void {
+    async enrichEvent(normalized: Event, event: GitHubEvent): Promise<void> {
         const payload = event.payload;
 
         if (payload.issue) {
@@ -364,15 +368,63 @@ export class GitHubPoller {
         }
 
         if (payload.pull_request) {
-            normalized.pullRequest = {
-                number: payload.pull_request.number,
-                title: payload.pull_request.title,
-                state: payload.pull_request.state,
-                labels: (payload.pull_request.labels || []).map((l) => l.name),
-                author: payload.pull_request.user?.login || 'unknown',
-                url: payload.pull_request.html_url,
-                draft: payload.pull_request.draft,
-            };
+            // Check if we have a complete PR object or an abbreviated one from the Events API
+            const pr = payload.pull_request;
+            const needsFullData = !pr.title || !pr.state || pr.html_url === undefined || pr.draft === undefined;
+
+            if (needsFullData && pr.number) {
+                // Fetch full PR details from REST API
+                try {
+                    const [owner, repo] = normalized.repository.split('/');
+                    const { data: fullPR } = await this.octokit.pulls.get({
+                        owner,
+                        repo,
+                        pull_number: pr.number,
+                    });
+
+                    normalized.pullRequest = {
+                        number: fullPR.number,
+                        title: fullPR.title,
+                        state: fullPR.state,
+                        labels: (fullPR.labels || []).map((l) => l.name),
+                        author: fullPR.user?.login || 'unknown',
+                        url: fullPR.html_url,
+                        draft: fullPR.draft || false,
+                    };
+
+                    getLogger().debug('Fetched full PR details from REST API', {
+                        prNumber: pr.number,
+                        repository: normalized.repository,
+                    });
+                } catch (error) {
+                    getLogger().warn('Failed to fetch full PR details, using partial data', {
+                        error: error as Error,
+                        prNumber: pr.number,
+                        repository: normalized.repository,
+                    });
+                    // Fallback to whatever data we have
+                    normalized.pullRequest = {
+                        number: pr.number,
+                        title: pr.title || '',
+                        state: pr.state || 'open',
+                        labels: (pr.labels || []).map((l) => l.name),
+                        author: pr.user?.login || 'unknown',
+                        url: pr.html_url || pr.url || '',
+                        draft: pr.draft || false,
+                    };
+                }
+            } else {
+                // We have complete data
+                normalized.pullRequest = {
+                    number: pr.number,
+                    title: pr.title,
+                    state: pr.state,
+                    labels: (pr.labels || []).map((l) => l.name),
+                    author: pr.user?.login || 'unknown',
+                    url: pr.html_url,
+                    draft: pr.draft,
+                };
+            }
         }
 
         if (payload.discussion) {
