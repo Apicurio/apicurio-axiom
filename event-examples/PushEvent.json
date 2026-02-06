@@ -1,0 +1,33 @@
+{
+  "id": "8189571953",
+  "type": "PushEvent",
+  "actor": {
+    "id": 12640103,
+    "login": "carlesarnal",
+    "display_login": "carlesarnal",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/carlesarnal",
+    "avatar_url": "https://avatars.githubusercontent.com/u/12640103?"
+  },
+  "repo": {
+    "id": 197192301,
+    "name": "Apicurio/apicurio-registry",
+    "url": "https://api.github.com/repos/Apicurio/apicurio-registry"
+  },
+  "payload": {
+    "repository_id": 197192301,
+    "push_id": 30484467033,
+    "ref": "refs/heads/main",
+    "head": "eee0f6412e372e6c8936dc1d32045a3df362c212",
+    "before": "809ae17b21a55f701c43d80f704d0d4ccbfc177c"
+  },
+  "public": true,
+  "created_at": "2026-02-06T07:14:39Z",
+  "org": {
+    "id": 28107283,
+    "login": "Apicurio",
+    "gravatar_id": "",
+    "url": "https://api.github.com/orgs/Apicurio",
+    "avatar_url": "https://avatars.githubusercontent.com/u/28107283?"
+  }
+}

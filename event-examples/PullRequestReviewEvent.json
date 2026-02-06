@@ -1,0 +1,92 @@
+{
+  "id": "6363253325",
+  "type": "PullRequestReviewEvent",
+  "actor": {
+    "id": 12640103,
+    "login": "carlesarnal",
+    "display_login": "carlesarnal",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/carlesarnal",
+    "avatar_url": "https://avatars.githubusercontent.com/u/12640103?"
+  },
+  "repo": {
+    "id": 197192301,
+    "name": "Apicurio/apicurio-registry",
+    "url": "https://api.github.com/repos/Apicurio/apicurio-registry"
+  },
+  "payload": {
+    "review": {
+      "id": 3761247476,
+      "node_id": "PRR_kwDOC8Dqbc7gMBT0",
+      "user": {
+        "login": "carlesarnal",
+        "id": 12640103,
+        "node_id": "MDQ6VXNlcjEyNjQwMTAz",
+        "avatar_url": "https://avatars.githubusercontent.com/u/12640103?v=4",
+        "gravatar_id": "",
+        "url": "https://api.github.com/users/carlesarnal",
+        "html_url": "https://github.com/carlesarnal",
+        "followers_url": "https://api.github.com/users/carlesarnal/followers",
+        "following_url": "https://api.github.com/users/carlesarnal/following{/other_user}",
+        "gists_url": "https://api.github.com/users/carlesarnal/gists{/gist_id}",
+        "starred_url": "https://api.github.com/users/carlesarnal/starred{/owner}{/repo}",
+        "subscriptions_url": "https://api.github.com/users/carlesarnal/subscriptions",
+        "organizations_url": "https://api.github.com/users/carlesarnal/orgs",
+        "repos_url": "https://api.github.com/users/carlesarnal/repos",
+        "events_url": "https://api.github.com/users/carlesarnal/events{/privacy}",
+        "received_events_url": "https://api.github.com/users/carlesarnal/received_events",
+        "type": "User",
+        "user_view_type": "public",
+        "site_admin": false
+      },
+      "body": null,
+      "commit_id": "a116c0912a0870c0731dfc98ec43a881204e20b2",
+      "submitted_at": "2026-02-06T07:13:42Z",
+      "state": "approved",
+      "html_url": "https://github.com/Apicurio/apicurio-registry/pull/7271#pullrequestreview-3761247476",
+      "pull_request_url": "https://api.github.com/repos/Apicurio/apicurio-registry/pulls/7271",
+      "_links": {
+        "html": {
+          "href": "https://github.com/Apicurio/apicurio-registry/pull/7271#pullrequestreview-3761247476"
+        },
+        "pull_request": {
+          "href": "https://api.github.com/repos/Apicurio/apicurio-registry/pulls/7271"
+        }
+      },
+      "updated_at": "2026-02-06T07:13:42Z"
+    },
+    "pull_request": {
+      "url": "https://api.github.com/repos/Apicurio/apicurio-registry/pulls/7271",
+      "id": 3251075870,
+      "number": 7271,
+      "head": {
+        "ref": "issues/7267",
+        "sha": "a116c0912a0870c0731dfc98ec43a881204e20b2",
+        "repo": {
+          "id": 197192301,
+          "url": "https://api.github.com/repos/Apicurio/apicurio-registry",
+          "name": "apicurio-registry"
+        }
+      },
+      "base": {
+        "ref": "main",
+        "sha": "809ae17b21a55f701c43d80f704d0d4ccbfc177c",
+        "repo": {
+          "id": 197192301,
+          "url": "https://api.github.com/repos/Apicurio/apicurio-registry",
+          "name": "apicurio-registry"
+        }
+      }
+    },
+    "action": "created"
+  },
+  "public": true,
+  "created_at": "2026-02-06T07:13:43Z",
+  "org": {
+    "id": 28107283,
+    "login": "Apicurio",
+    "gravatar_id": "",
+    "url": "https://api.github.com/orgs/Apicurio",
+    "avatar_url": "https://avatars.githubusercontent.com/u/28107283?"
+  }
+}

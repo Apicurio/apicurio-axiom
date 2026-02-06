@@ -1,0 +1,53 @@
+{
+  "id": "6356157263",
+  "type": "PullRequestEvent",
+  "actor": {
+    "id": 49699333,
+    "login": "dependabot[bot]",
+    "display_login": "dependabot",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/dependabot[bot]",
+    "avatar_url": "https://avatars.githubusercontent.com/u/49699333?"
+  },
+  "repo": {
+    "id": 197192301,
+    "name": "Apicurio/apicurio-registry",
+    "url": "https://api.github.com/repos/Apicurio/apicurio-registry"
+  },
+  "payload": {
+    "action": "opened",
+    "number": 7272,
+    "pull_request": {
+      "url": "https://api.github.com/repos/Apicurio/apicurio-registry/pulls/7272",
+      "id": 3252355152,
+      "number": 7272,
+      "head": {
+        "ref": "dependabot/npm_and_yarn/ui/ui-editors/multi-a02d49999e",
+        "sha": "64ddc0bdc59a31cbc445e9afb7fe8f5149f91ebc",
+        "repo": {
+          "id": 197192301,
+          "url": "https://api.github.com/repos/Apicurio/apicurio-registry",
+          "name": "apicurio-registry"
+        }
+      },
+      "base": {
+        "ref": "main",
+        "sha": "809ae17b21a55f701c43d80f704d0d4ccbfc177c",
+        "repo": {
+          "id": 197192301,
+          "url": "https://api.github.com/repos/Apicurio/apicurio-registry",
+          "name": "apicurio-registry"
+        }
+      }
+    }
+  },
+  "public": true,
+  "created_at": "2026-02-05T23:23:30Z",
+  "org": {
+    "id": 28107283,
+    "login": "Apicurio",
+    "gravatar_id": "",
+    "url": "https://api.github.com/orgs/Apicurio",
+    "avatar_url": "https://avatars.githubusercontent.com/u/28107283?"
+  }
+}

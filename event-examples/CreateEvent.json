@@ -1,0 +1,34 @@
+{
+  "id": "8180637637",
+  "type": "CreateEvent",
+  "actor": {
+    "id": 49699333,
+    "login": "dependabot[bot]",
+    "display_login": "dependabot",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/dependabot[bot]",
+    "avatar_url": "https://avatars.githubusercontent.com/u/49699333?"
+  },
+  "repo": {
+    "id": 197192301,
+    "name": "Apicurio/apicurio-registry",
+    "url": "https://api.github.com/repos/Apicurio/apicurio-registry"
+  },
+  "payload": {
+    "ref": "dependabot/npm_and_yarn/ui/ui-editors/multi-a02d49999e",
+    "ref_type": "branch",
+    "full_ref": "refs/heads/dependabot/npm_and_yarn/ui/ui-editors/multi-a02d49999e",
+    "master_branch": "main",
+    "description": "An API/Schema registry - stores APIs and Schemas.",
+    "pusher_type": "user"
+  },
+  "public": true,
+  "created_at": "2026-02-05T23:23:29Z",
+  "org": {
+    "id": 28107283,
+    "login": "Apicurio",
+    "gravatar_id": "",
+    "url": "https://api.github.com/orgs/Apicurio",
+    "avatar_url": "https://avatars.githubusercontent.com/u/28107283?"
+  }
+}
