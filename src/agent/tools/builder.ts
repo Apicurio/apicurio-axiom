@@ -26,6 +26,7 @@ import {
 } from './github.js';
 import { ToolRegistry } from './registry.js';
 import {
+    GetFileMetadataTool,
     GitCreateBranchTool,
     GitDiffTool,
     GitLogTool,
@@ -56,6 +57,7 @@ export const AvailableTools = {
     READ_FILE: 'repository-read_file',
     LIST_FILES: 'repository-list_files',
     SEARCH_CODE: 'repository-search_code',
+    GET_FILE_METADATA: 'repository-get_file_metadata',
 
     // Git operation tools
     GIT_STATUS: 'git-status',
@@ -166,6 +168,13 @@ export function buildToolRegistry(
                     throw new Error('workDir is required for search_code tool');
                 }
                 registry.register(new SearchCodeTool(config.workDir));
+                break;
+
+            case AvailableTools.GET_FILE_METADATA:
+                if (!config.workDir) {
+                    throw new Error('workDir is required for get_file_metadata tool');
+                }
+                registry.register(new GetFileMetadataTool(config.workDir));
                 break;
 
             // GitHub read tools

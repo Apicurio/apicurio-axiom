@@ -46,7 +46,7 @@ The implementation leverages these primary libraries:
 | ID | Tool Name | Description | Status |
 |---|---|---|---|
 | **File System Analysis** | | | |
-| FSA-001 | `repository-get_file_metadata` | Get detailed metadata about a file or directory | Not Implemented |
+| FSA-001 | `repository-get_file_metadata` | Get detailed metadata about a file or directory | Implemented |
 | FSA-002 | `repository-check_path_exists` | Quick existence check for files or directories | Not Implemented |
 | FSA-003 | `repository-get_directory_tree` | Get hierarchical tree structure of a directory | Not Implemented |
 | FSA-004 | `repository-find_files` | Find files matching glob patterns | Not Implemented |
@@ -145,6 +145,16 @@ and file characteristics.
 **Estimated Effort**: Low (4-6 hours)
 
 **Dependencies**: None
+
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-06
+- Uses `fs-extra` for path existence checking and native Node.js `fs/promises` for file operations
+- Binary detection: Reads first 8000 bytes and checks for null bytes
+- Line counting: For text files, reads entire file and counts newline characters
+- Encoding detection: Attempts UTF-8 decode; if successful, marks as utf-8, otherwise marks as unknown
+- Path safety: Uses `path.resolve()` and validates paths are within work directory
+- Error handling: Returns structured error objects with tool name for easier debugging
+- All tests pass: text files, directories, non-existent paths, and directory traversal prevention
 
 ---
 
@@ -2311,4 +2321,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-06
 **Total Tools Proposed**: 35
-**Tools Implemented**: 0
+**Tools Implemented**: 1
