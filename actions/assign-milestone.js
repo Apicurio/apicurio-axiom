@@ -53,19 +53,17 @@ function compareSemver(a, b) {
  * Executes the assign-milestone action
  *
  * @param {Object} event Event object
- * @param {Object} logger Logger instance
+ * @param {Object} context Action context containing logger, githubToken, etc.
  */
-export default async function (event, logger) {
-    const token = process.env.GITHUB_TOKEN;
+export default async function (event, context) {
+    const { logger, githubToken, owner, repo } = context;
 
-    if (!token) {
-        throw new Error('GITHUB_TOKEN environment variable is required');
+    if (!githubToken) {
+        throw new Error('GitHub token is required');
     }
 
-    const octokit = new Octokit({ auth: token });
+    const octokit = new Octokit({ auth: githubToken });
 
-    const owner = event.repositoryOwner;
-    const repo = event.repositoryName;
     const issueNumber = event.issue?.number;
 
     if (!issueNumber) {

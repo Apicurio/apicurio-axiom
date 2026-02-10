@@ -7,8 +7,8 @@
  */
 
 import * as path from 'node:path';
-import fs from 'fs-extra';
 import fg from 'fast-glob';
+import fs from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const FindFilesTool: Tool = {
@@ -100,9 +100,7 @@ export const FindFilesTool: Tool = {
             }
 
             // Log the search operation
-            context.logger.info(
-                `Searching for files matching pattern: ${input.pattern} in ${startPath}`,
-            );
+            context.logger.info(`Searching for files matching pattern: ${input.pattern} in ${startPath}`);
 
             // Build ignore patterns - always exclude .git directory
             const ignorePatterns = ['.git/**', ...excludePatterns];

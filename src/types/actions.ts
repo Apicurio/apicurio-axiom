@@ -28,3 +28,38 @@ export interface ActionConfigurations {
 export interface LoggingConfig {
     basePath?: string;
 }
+
+/**
+ * Context provided to JavaScript actions at execution time
+ */
+export interface ActionContext {
+    /**
+     * Logger instance for logging action output
+     */
+    logger: any; // Logger type
+
+    /**
+     * GitHub token for API access
+     */
+    githubToken?: string;
+
+    /**
+     * Dry-run mode indicator
+     */
+    dryRun: boolean;
+
+    /**
+     * Work directory for this action execution
+     */
+    workDir?: string;
+
+    /**
+     * Repository owner (extracted from event)
+     */
+    owner?: string;
+
+    /**
+     * Repository name (extracted from event)
+     */
+    repo?: string;
+}

@@ -6,11 +6,19 @@
 
 import { resolve } from 'node:path';
 import type { Logger } from '../../logging/logger.js';
-import type { ActionConfig, JavaScriptAction } from '../../types/actions.js';
+import type { ActionConfig, ActionContext, JavaScriptAction } from '../../types/actions.js';
 import type { Event } from '../../types/events.js';
 import type { ActionExecutorInterface } from './action-executor-interface.js';
 
 export class JavaScriptActionExecutor implements ActionExecutorInterface {
+    private dryRun: boolean;
+    private githubToken?: string;
+
+    constructor(dryRun: boolean = false, githubToken?: string) {
+        this.dryRun = dryRun;
+        this.githubToken = githubToken;
+    }
+
     /**
      * Executes a JavaScript action
      *
@@ -34,10 +42,19 @@ export class JavaScriptActionExecutor implements ActionExecutorInterface {
         actionLogger.info(`Running JavaScript code: ${codePath}`);
 
         try {
+            // Build the action context
+            const context: ActionContext = {
+                logger: actionLogger,
+                githubToken: this.githubToken || process.env.BOT_GITHUB_TOKEN,
+                dryRun: this.dryRun,
+                owner: event.repositoryOwner,
+                repo: event.repositoryName,
+            };
+
             // Dynamically import the JavaScript module
             const module = (await import(absolutePath)) as {
-                default: (event: Event, actionLogger: Logger) => Promise<void> | undefined;
-                run: (event: Event, actionLogger: Logger) => Promise<void> | undefined;
+                default: (event: Event, context: ActionContext) => Promise<void> | undefined;
+                run: (event: Event, context: ActionContext) => Promise<void> | undefined;
             };
 
             // Look for a default export or a 'run' function
@@ -47,8 +64,8 @@ export class JavaScriptActionExecutor implements ActionExecutorInterface {
                 throw new Error(`JavaScript module must export a default function or a "run" function`);
             }
 
-            // Execute the handler with the event and logger
-            await handler(event, actionLogger);
+            // Execute the handler with the event and context
+            await handler(event, context);
 
             actionLogger.info('JavaScript action completed successfully');
         } catch (error) {

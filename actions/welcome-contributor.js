@@ -4,7 +4,9 @@
  * This action welcomes new contributors when they open a pull request.
  */
 
-export default async function welcomeContributor(event, logger) {
+export default async function welcomeContributor(event, context) {
+    const { logger } = context;
+
     logger.info('=== Welcome Contributor Action ===');
     logger.info(`PR: ${event.pullRequest.title}`);
     logger.info(`Author: ${event.pullRequest.author}`);

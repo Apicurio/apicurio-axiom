@@ -91,7 +91,7 @@ export class ActionExecutor {
 
         // Initialize executor instances
         this.shellExecutor = new ShellActionExecutor(workDirManager, this.repositoryManager);
-        this.javascriptExecutor = new JavaScriptActionExecutor();
+        this.javascriptExecutor = new JavaScriptActionExecutor(dryRun, this.githubToken);
 
         // AI Agent executor requires Vertex AI configuration
         if (this.vertexConfig) {

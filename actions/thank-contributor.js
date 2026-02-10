@@ -4,7 +4,9 @@
  * This action thanks contributors when an issue they reported is closed.
  */
 
-export default async function thankContributor(event, logger) {
+export default async function thankContributor(event, context) {
+    const { logger } = context;
+
     logger.info('=== Thank Contributor Action ===');
     logger.info(`Issue: ${event.issue.title}`);
     logger.info(`Author: ${event.issue.author}`);
