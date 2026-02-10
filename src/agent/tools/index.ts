@@ -38,6 +38,7 @@ import { GetProjectStructureTool } from './repository/get_project_structure.js';
 import { ListFilesTool } from './repository/list_files.js';
 import { ReadFileTool } from './repository/read_file.js';
 import { SearchCodeTool } from './repository/search_code.js';
+import { WriteFileTool } from './repository/write_file.js';
 
 /**
  * ToolIndex - Singleton registry of all available tools
@@ -100,6 +101,7 @@ export class ToolIndex {
         this.register(ListFilesTool);
         this.register(ReadFileTool);
         this.register(SearchCodeTool);
+        this.register(WriteFileTool);
     }
 
     /**
