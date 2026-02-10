@@ -201,23 +201,28 @@ echo ""
 if [ -n "${VERTEX_PROJECT_ID}" ]; then
     info "Setting up Google Cloud credentials..."
 
-    # Check if user has gcloud config in their home directory
-    if [ -d "$HOME/.config/gcloud" ]; then
-        prompt "Copy gcloud config from $HOME/.config/gcloud? (Y/n): "
+    # Prompt for gcloud config path
+    prompt "Path to gcloud config directory [\$HOME/.config/gcloud]: "
+    read -r GCLOUD_CONFIG_PATH
+    GCLOUD_CONFIG_PATH="${GCLOUD_CONFIG_PATH:-$HOME/.config/gcloud}"
+
+    # Check if the specified path exists
+    if [ -d "${GCLOUD_CONFIG_PATH}" ]; then
+        prompt "Copy gcloud config from ${GCLOUD_CONFIG_PATH}? (Y/n): "
         read -n 1 -r
         echo ""
 
         if [[ ! $REPLY =~ ^[Nn]$ ]]; then
             info "Copying gcloud configuration..."
-            cp -r "$HOME/.config/gcloud/"* "${INSTALL_DIR}/gcloud/"
-            success "Google Cloud credentials configured from $HOME/.config/gcloud"
+            cp -r "${GCLOUD_CONFIG_PATH}/"* "${INSTALL_DIR}/gcloud/"
+            success "Google Cloud credentials configured from ${GCLOUD_CONFIG_PATH}"
         else
             warn "Skipped copying gcloud config. You can:"
-            echo "  1. Copy manually: cp -r ~/.config/gcloud/* ${INSTALL_DIR}/gcloud/"
+            echo "  1. Copy manually: cp -r ${GCLOUD_CONFIG_PATH}/* ${INSTALL_DIR}/gcloud/"
             echo "  2. Provide credentials.json: cp credentials.json ${INSTALL_DIR}/gcloud/"
         fi
     else
-      warn "Could not configure Google Cloud credentials, $HOME/.config/gcloud not found."
+      warn "Could not configure Google Cloud credentials, ${GCLOUD_CONFIG_PATH} not found."
     fi
 
     echo ""
