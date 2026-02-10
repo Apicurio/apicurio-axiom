@@ -11,38 +11,15 @@
   "packageRules": [
     {
       "groupName": "GitHub Actions",
-      "matchManagers": ["github-actions"],
-      "automerge": false
+      "matchManagers": ["github-actions"]
     },
     {
-      "groupName": "TypeScript ecosystem",
-      "matchPackagePatterns": ["^typescript$", "^ts-node$", "^@types/"],
-      "automerge": false
+      "groupName": "package.json dependencies",
+      "matchDepTypes": ["dependencies"]
     },
     {
-      "groupName": "Biome",
-      "matchPackagePatterns": ["^@biomejs/"],
-      "automerge": false
-    },
-    {
-      "groupName": "Anthropic SDK",
-      "matchPackagePatterns": ["^@anthropic-ai/"],
-      "automerge": false
-    },
-    {
-      "groupName": "Octokit",
-      "matchPackagePatterns": ["^@octokit/"],
-      "automerge": false
-    },
-    {
-      "groupName": "Pino logging",
-      "matchPackagePatterns": ["^pino"],
-      "automerge": false
-    },
-    {
-      "matchDepTypes": ["devDependencies"],
-      "matchUpdateTypes": ["patch", "minor"],
-      "automerge": false
+      "groupName": "package.json devDependencies",
+      "matchDepTypes": ["devDependencies"]
     }
   ],
   "vulnerabilityAlerts": {
