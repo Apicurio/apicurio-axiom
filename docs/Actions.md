@@ -126,8 +126,8 @@ fi
 
 ### 2. JavaScript Actions
 
-JavaScript actions execute Node.js code with full access to the Node.js API and event data passed as a
-parameter.
+JavaScript actions execute Node.js code with full access to the Node.js API, event data, and execution context
+passed as parameters.
 
 #### Configuration
 
@@ -141,14 +141,29 @@ actions:
 #### Features
 
 - **Node.js Support**: Full access to Node.js APIs and npm packages.
-- **Event Object**: Event data passed as parameter to the action function.
+- **Event Object**: Event data passed as first parameter to the action function.
+- **Action Context**: Execution context (logger, GitHub token, etc.) passed as second parameter.
 - **Console Capture**: Console output is captured and logged.
 - **Async/Await**: Supports asynchronous operations.
 - **Module Format**: Uses ES6 module syntax (export default).
 
+#### Function Signature
+
+JavaScript actions must export a default function with the following signature:
+
+```javascript
+export default async function (event, context) {
+  // Action implementation
+}
+```
+
+**Parameters:**
+- `event` - Event object containing event data (see structure below)
+- `context` - ActionContext object containing execution context (see structure below)
+
 #### Event Object Structure
 
-JavaScript actions receive an event object with the following structure:
+The first parameter is an event object with the following structure:
 
 ```javascript
 {
@@ -204,43 +219,198 @@ JavaScript actions receive an event object with the following structure:
 }
 ```
 
+#### ActionContext Structure
+
+The second parameter is an ActionContext object with the following properties:
+
+```javascript
+{
+  logger: Logger,           // Logger instance for action output
+  githubToken: string,      // GitHub API token for authentication
+  dryRun: boolean,          // Dry-run mode indicator
+  workDir: string,          // Work directory for this action execution
+  owner: string,            // Repository owner (extracted from event)
+  repo: string              // Repository name (extracted from event)
+}
+```
+
+**Context Properties:**
+
+- **logger** - Logger instance for logging action output. Use `logger.info()`, `logger.warn()`, `logger.error()`, etc.
+- **githubToken** - GitHub API token for authenticating with GitHub API (via Octokit or other clients)
+- **dryRun** - Boolean indicating if the action is running in dry-run mode (should not make actual changes)
+- **workDir** - Path to the work directory for this action execution
+- **owner** - Repository owner, pre-extracted from event for convenience
+- **repo** - Repository name, pre-extracted from event for convenience
+
 #### Example JavaScript Action
 
 ```javascript
 // actions/welcome-contributor.js
+import { Octokit } from '@octokit/rest';
 
-export default async function welcomeContributor(event) {
-    console.log('=== Welcome Contributor Action ===');
-    console.log(`PR: ${event.pullRequest.title}`);
-    console.log(`Author: ${event.pullRequest.author}`);
-    console.log(`Repository: ${event.repository}`);
+/**
+ * Welcomes new contributors when they open a pull request
+ *
+ * @param {Object} event - Event object
+ * @param {Object} context - Action context
+ */
+export default async function welcomeContributor(event, context) {
+    const { logger, githubToken, owner, repo } = context;
 
-    // Example: Post a welcome comment using Octokit
-    // const { Octokit } = await import('@octokit/rest');
-    // const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-    //
-    // await octokit.issues.createComment({
-    //     owner: event.repositoryOwner,
-    //     repo: event.repositoryName,
-    //     issue_number: event.pullRequest.number,
-    //     body: `Thanks for your contribution, @${event.pullRequest.author}! 🎉`
-    // });
+    logger.info('=== Welcome Contributor Action ===');
+    logger.info(`PR: ${event.pullRequest.title}`);
+    logger.info(`Author: ${event.pullRequest.author}`);
+    logger.info(`Repository: ${event.repository}`);
 
-    console.log('Welcome message would be posted here');
+    // Create GitHub API client using token from context
+    const octokit = new Octokit({ auth: githubToken });
+
+    // Post a welcome comment
+    await octokit.issues.createComment({
+        owner,
+        repo,
+        issue_number: event.pullRequest.number,
+        body: `Thanks for your contribution, @${event.pullRequest.author}! 🎉`
+    });
+
+    logger.info('Welcome message posted successfully');
+}
+```
+
+#### Another Example: Auto-Close Pull Requests
+
+```javascript
+// actions/autoclose-dependabot-pr.js
+import { Octokit } from '@octokit/rest';
+
+/**
+ * Automatically closes pull requests opened by dependabot
+ *
+ * @param {Object} event - Event object
+ * @param {Object} context - Action context
+ */
+export default async function (event, context) {
+    const { logger, githubToken, owner, repo, dryRun } = context;
+
+    const prNumber = event.pullRequest?.number;
+
+    if (!prNumber) {
+        throw new Error('No pull request number found in event');
+    }
+
+    logger.info(`Auto-closing dependabot PR #${prNumber} in ${owner}/${repo}...`);
+
+    if (dryRun) {
+        logger.info('DRY RUN: Would close PR but not actually executing');
+        return;
+    }
+
+    const octokit = new Octokit({ auth: githubToken });
+
+    // Add a comment explaining the closure
+    await octokit.rest.issues.createComment({
+        owner,
+        repo,
+        issue_number: prNumber,
+        body: '🤖 This pull request was automatically closed because it was opened by dependabot.\n\n' +
+              'Dependabot pull requests are not accepted in this repository.\n\n' +
+              '_This action was performed automatically by apicurio-axiom_'
+    });
+
+    // Close the pull request
+    await octokit.rest.pulls.update({
+        owner,
+        repo,
+        pull_number: prNumber,
+        state: 'closed'
+    });
+
+    logger.info(`Successfully closed PR #${prNumber}`);
 }
 ```
 
 #### Alternative Export Format
 
-JavaScript actions can also export a `run` function:
+JavaScript actions can also export a `run` function instead of default export:
 
 ```javascript
 // actions/my-action.js
 
-export async function run(event) {
-    console.log('Processing event:', event.type);
+export async function run(event, context) {
+    const { logger } = context;
+    logger.info('Processing event:', event.type);
     // Action logic here
 }
+```
+
+#### Best Practices
+
+**1. Use the logger from context instead of console**
+```javascript
+// Good
+const { logger } = context;
+logger.info('Processing event');
+
+// Avoid
+console.log('Processing event');
+```
+
+**2. Use githubToken from context instead of environment variables**
+```javascript
+// Good
+const { githubToken } = context;
+const octokit = new Octokit({ auth: githubToken });
+
+// Avoid
+const octokit = new Octokit({ auth: process.env.BOT_GITHUB_TOKEN });
+```
+
+**3. Use pre-extracted owner/repo from context**
+```javascript
+// Good
+const { owner, repo } = context;
+await octokit.issues.createComment({ owner, repo, ... });
+
+// Avoid
+await octokit.issues.createComment({
+    owner: event.repositoryOwner,
+    repo: event.repositoryName,
+    ...
+});
+```
+
+**4. Respect the dryRun flag**
+```javascript
+const { logger, dryRun } = context;
+
+if (dryRun) {
+    logger.info('DRY RUN: Would execute action but skipping');
+    return;
+}
+
+// Perform actual operations
+```
+
+**5. Handle errors appropriately**
+```javascript
+const { logger } = context;
+
+try {
+    // Action logic
+} catch (error) {
+    logger.error('Action failed:', error);
+    throw error; // Re-throw to mark job as failed
+}
+```
+
+**6. Destructure only what you need**
+```javascript
+// Good - only destructure what you use
+const { logger, githubToken } = context;
+
+// Avoid - don't destructure everything unnecessarily
+const { logger, githubToken, owner, repo, dryRun, workDir } = context;
 ```
 
 ### 3. AI Agent Actions
