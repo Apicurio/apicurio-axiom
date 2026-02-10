@@ -47,9 +47,9 @@ The installer will:
 
 **Service Management:**
 ```bash
-sudo systemctl status axiom     # Check status
-sudo systemctl restart axiom    # Restart service
-sudo journalctl -u axiom -f     # View logs
+sudo systemctl status apicurio-axiom     # Check status
+sudo systemctl restart apicurio-axiom    # Restart service
+sudo journalctl -u apicurio-axiom -f     # View logs
 ```
 
 **Documentation:** See `docker/install/README.md` for complete installation guide.
