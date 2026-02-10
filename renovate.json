@@ -1,0 +1,55 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "dependencyDashboard": true,
+  "rangeStrategy": "bump",
+  "semanticCommits": "enabled",
+  "prConcurrentLimit": 5,
+  "prHourlyLimit": 5,
+  "packageRules": [
+    {
+      "groupName": "GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "automerge": false
+    },
+    {
+      "groupName": "TypeScript ecosystem",
+      "matchPackagePatterns": ["^typescript$", "^ts-node$", "^@types/"],
+      "automerge": false
+    },
+    {
+      "groupName": "Biome",
+      "matchPackagePatterns": ["^@biomejs/"],
+      "automerge": false
+    },
+    {
+      "groupName": "Anthropic SDK",
+      "matchPackagePatterns": ["^@anthropic-ai/"],
+      "automerge": false
+    },
+    {
+      "groupName": "Octokit",
+      "matchPackagePatterns": ["^@octokit/"],
+      "automerge": false
+    },
+    {
+      "groupName": "Pino logging",
+      "matchPackagePatterns": ["^pino"],
+      "automerge": false
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch", "minor"],
+      "automerge": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "schedule": [
+    "before 10am on Monday"
+  ]
+}
