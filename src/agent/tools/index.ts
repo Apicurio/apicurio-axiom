@@ -29,6 +29,7 @@ import { OpenPullRequestTool } from './github/open_pull_request.js';
 import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
 
 // Import all repository tools
+import { AnalyzeFileTypeTool } from './repository/analyze_file_type.js';
 import { CheckPathExistsTool } from './repository/check_path_exists.js';
 import { FindFilesTool } from './repository/find_files.js';
 import { GetDirectoryTreeTool } from './repository/get_directory_tree.js';
@@ -89,6 +90,7 @@ export class ToolIndex {
         this.register(SetIssueMilestoneTool);
 
         // Register repository tools
+        this.register(AnalyzeFileTypeTool);
         this.register(CheckPathExistsTool);
         this.register(FindFilesTool);
         this.register(GetDirectoryTreeTool);
