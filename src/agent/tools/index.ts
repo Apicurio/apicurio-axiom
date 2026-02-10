@@ -34,6 +34,7 @@ import { CheckPathExistsTool } from './repository/check_path_exists.js';
 import { FindFilesTool } from './repository/find_files.js';
 import { GetDirectoryTreeTool } from './repository/get_directory_tree.js';
 import { GetFileMetadataTool } from './repository/get_file_metadata.js';
+import { GetProjectStructureTool } from './repository/get_project_structure.js';
 import { ListFilesTool } from './repository/list_files.js';
 import { ReadFileTool } from './repository/read_file.js';
 import { SearchCodeTool } from './repository/search_code.js';
@@ -95,6 +96,7 @@ export class ToolIndex {
         this.register(FindFilesTool);
         this.register(GetDirectoryTreeTool);
         this.register(GetFileMetadataTool);
+        this.register(GetProjectStructureTool);
         this.register(ListFilesTool);
         this.register(ReadFileTool);
         this.register(SearchCodeTool);
