@@ -65,7 +65,7 @@ The implementation leverages these primary libraries:
 | **File Modification** | | | |
 | FM-001 | `repository-write_file` | Write content to a file (create or overwrite) | Implemented |
 | FM-002 | `repository-append_to_file` | Append content to end of file | Implemented |
-| FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Not Implemented |
+| FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Implemented |
 | FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Not Implemented |
 | FM-005 | `repository-replace_lines` | Replace specific line range with new content | Not Implemented |
 | FM-006 | `repository-delete_file` | Delete a file or directory | Not Implemented |
@@ -1261,6 +1261,20 @@ or other code at precise locations.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-10
+- Uses native Node.js `fs/promises` for file operations and `fs-extra` for path existence checking
+- Line numbers are 1-based, allowing insertion from line 1 to line count + 1 (after last line)
+- Indentation matching: When `indent` is true, detects indentation from target line or adjacent line
+- Multi-line content support: Content can contain newlines, and each line is properly inserted
+- Path safety: Uses `path.resolve()` and validates paths are within work directory to prevent directory traversal attacks
+- File validation: Returns structured error if file doesn't exist or line number is out of bounds
+- Line counting: Accurately tracks number of lines inserted and reports in result
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs insertion operations and results for audit trail
+- Dry-run support: `executeMock()` returns simulated results without actually modifying files
+- All tests pass: insertion at beginning/middle/end, multi-line insertion, indentation matching, error cases (invalid line, missing file, directory traversal), and dry-run mode
+
 ---
 
 ### FM-004: repository-replace_in_file
@@ -2414,4 +2428,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-10
 **Total Tools Proposed**: 35
-**Tools Implemented**: 8
+**Tools Implemented**: 9
