@@ -65,7 +65,7 @@ export const ReplaceInFileTool: Tool = {
             all_occurrences?: boolean;
             preserve_case?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -130,7 +130,7 @@ export const ReplaceInFileTool: Tool = {
             const preserveCase = input.preserve_case === true;
 
             context.logger.info(
-                `Replacing in file: ${input.path} (regex: ${useRegex}, all: ${replaceAll}, preserveCase: ${preserveCase})`
+                `Replacing in file: ${input.path} (regex: ${useRegex}, all: ${replaceAll}, preserveCase: ${preserveCase})`,
             );
 
             // Read file contents
@@ -182,9 +182,10 @@ export const ReplaceInFileTool: Tool = {
                         if (match[0] && match.index !== undefined) {
                             // Preserve the case pattern of the matched text
                             const preservedReplacement = preserveCaseTransform(match[0], input.replace);
-                            modifiedLine = modifiedLine.substring(0, match.index) +
-                                          preservedReplacement +
-                                          modifiedLine.substring(match.index + match[0].length);
+                            modifiedLine =
+                                modifiedLine.substring(0, match.index) +
+                                preservedReplacement +
+                                modifiedLine.substring(match.index + match[0].length);
                             replacementsMade++;
                             lineModified = true;
                         }
@@ -243,7 +244,7 @@ export const ReplaceInFileTool: Tool = {
             const preview = generatePreview(originalContent, newContent, 200);
 
             context.logger.info(
-                `Replacements made: ${replacementsMade} in ${linesAffected.length} lines in ${input.path}`
+                `Replacements made: ${replacementsMade} in ${linesAffected.length} lines in ${input.path}`,
             );
 
             return {
@@ -275,7 +276,7 @@ export const ReplaceInFileTool: Tool = {
             all_occurrences?: boolean;
             preserve_case?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -371,7 +372,7 @@ export const ReplaceInFileTool: Tool = {
             const replacementsMade = matches ? matches.length : 0;
 
             // Simulate the replacement to find affected lines
-            let linesAffected: number[] = [];
+            const linesAffected: number[] = [];
             if (replacementsMade > 0) {
                 const newContent = originalContent.replace(searchPattern, input.replace);
                 const originalLines = originalContent.split('\n');
@@ -425,7 +426,11 @@ function preserveCaseTransform(original: string, replacement: string): string {
     }
 
     // If original is title case (first char upper, rest lower)
-    if (original.length > 0 && original[0] === original[0].toUpperCase() && original.slice(1) === original.slice(1).toLowerCase()) {
+    if (
+        original.length > 0 &&
+        original[0] === original[0].toUpperCase() &&
+        original.slice(1) === original.slice(1).toLowerCase()
+    ) {
         return replacement.charAt(0).toUpperCase() + replacement.slice(1).toLowerCase();
     }
 
@@ -456,8 +461,8 @@ function generatePreview(original: string, modified: string, maxLength: number):
     const end = Math.min(modified.length, firstDiffIndex + maxLength);
 
     let preview = modified.substring(start, end);
-    if (start > 0) preview = '...' + preview;
-    if (end < modified.length) preview = preview + '...';
+    if (start > 0) preview = `...${preview}`;
+    if (end < modified.length) preview = `${preview}...`;
 
     return preview;
 }

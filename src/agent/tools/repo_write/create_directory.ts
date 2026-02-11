@@ -43,7 +43,7 @@ export const CreateDirectoryTool: Tool = {
             path: string;
             recursive?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -83,7 +83,7 @@ export const CreateDirectoryTool: Tool = {
             const alreadyExists = await fse.pathExists(fullPath);
 
             context.logger.info(
-                `Creating directory: ${input.path} (recursive: ${recursive}, exists: ${alreadyExists})`
+                `Creating directory: ${input.path} (recursive: ${recursive}, exists: ${alreadyExists})`,
             );
 
             // Track which parent directories will be created
@@ -91,7 +91,7 @@ export const CreateDirectoryTool: Tool = {
 
             if (!alreadyExists && recursive) {
                 // Check which parent directories don't exist
-                const parts = input.path.split(path.sep).filter(p => p.length > 0);
+                const parts = input.path.split(path.sep).filter((p) => p.length > 0);
                 let currentPath = '';
 
                 for (let i = 0; i < parts.length; i++) {
@@ -129,7 +129,7 @@ export const CreateDirectoryTool: Tool = {
             }
 
             context.logger.info(
-                `Directory created: ${input.path} (created: ${!alreadyExists}, parents: ${parentsCreated.length})`
+                `Directory created: ${input.path} (created: ${!alreadyExists}, parents: ${parentsCreated.length})`,
             );
 
             return {
@@ -156,7 +156,7 @@ export const CreateDirectoryTool: Tool = {
             path: string;
             recursive?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -202,7 +202,7 @@ export const CreateDirectoryTool: Tool = {
 
             if (!alreadyExists && recursive) {
                 // Check which parent directories don't exist
-                const parts = input.path.split(path.sep).filter(p => p.length > 0);
+                const parts = input.path.split(path.sep).filter((p) => p.length > 0);
                 let currentPath = '';
 
                 for (let i = 0; i < parts.length; i++) {

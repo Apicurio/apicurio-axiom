@@ -14,7 +14,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 export const WriteFileTool: Tool = {
     name: 'repo_write-write_file',
     description:
-        'Write content to a file, creating it if it doesn\'t exist or overwriting if it does. Supports creating parent directories and backing up existing files.',
+        "Write content to a file, creating it if it doesn't exist or overwriting if it does. Supports creating parent directories and backing up existing files.",
     input_schema: {
         type: 'object',
         properties: {
@@ -60,7 +60,7 @@ export const WriteFileTool: Tool = {
             create_directories?: boolean;
             backup?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -131,9 +131,7 @@ export const WriteFileTool: Tool = {
             // Get file size
             const stats = await fs.stat(fullPath);
 
-            context.logger.info(
-                `File written successfully: ${input.path} (${stats.size} bytes, created: ${!exists})`
-            );
+            context.logger.info(`File written successfully: ${input.path} (${stats.size} bytes, created: ${!exists})`);
 
             return {
                 success: true,
@@ -163,7 +161,7 @@ export const WriteFileTool: Tool = {
             create_directories?: boolean;
             backup?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context

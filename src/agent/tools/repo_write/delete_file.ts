@@ -49,7 +49,7 @@ export const DeleteFileTool: Tool = {
             recursive?: boolean;
             backup?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -120,7 +120,7 @@ export const DeleteFileTool: Tool = {
             }
 
             context.logger.info(
-                `Deleting ${pathType}: ${input.path} (recursive: ${recursive}, backup: ${createBackup})`
+                `Deleting ${pathType}: ${input.path} (recursive: ${recursive}, backup: ${createBackup})`,
             );
 
             // Count files that will be deleted
@@ -147,7 +147,7 @@ export const DeleteFileTool: Tool = {
             await fse.remove(fullPath);
 
             context.logger.info(
-                `Deleted ${pathType}: ${input.path} (${filesDeleted} file${filesDeleted !== 1 ? 's' : ''})`
+                `Deleted ${pathType}: ${input.path} (${filesDeleted} file${filesDeleted !== 1 ? 's' : ''})`,
             );
 
             return {
@@ -176,7 +176,7 @@ export const DeleteFileTool: Tool = {
             recursive?: boolean;
             backup?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -260,9 +260,7 @@ export const DeleteFileTool: Tool = {
             }
 
             // Simulate backup path
-            const backupPath = createBackup
-                ? `${path.basename(fullPath)}.backup-[timestamp]`
-                : undefined;
+            const backupPath = createBackup ? `${path.basename(fullPath)}.backup-[timestamp]` : undefined;
 
             return {
                 dry_run: true,
@@ -305,7 +303,7 @@ async function countFilesRecursive(dirPath: string): Promise<number> {
                 count++;
             }
         }
-    } catch (error) {
+    } catch (_error) {
         // If we can't read a directory, just return current count
         // This can happen with permission issues
     }

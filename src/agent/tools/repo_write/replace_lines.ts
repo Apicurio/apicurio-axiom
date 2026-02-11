@@ -54,7 +54,7 @@ export const ReplaceLinesTool: Tool = {
             end_line: number;
             new_content: string;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -150,9 +150,7 @@ export const ReplaceLinesTool: Tool = {
                 };
             }
 
-            context.logger.info(
-                `Replacing lines ${input.start_line}-${input.end_line} in file: ${input.path}`
-            );
+            context.logger.info(`Replacing lines ${input.start_line}-${input.end_line} in file: ${input.path}`);
 
             // Extract old content for reference (convert 1-based to 0-based indexing)
             const startIndex = input.start_line - 1;
@@ -175,7 +173,7 @@ export const ReplaceLinesTool: Tool = {
             await fs.writeFile(fullPath, newFileContent, 'utf-8');
 
             context.logger.info(
-                `Lines replaced successfully: ${input.path} (${linesReplaced} lines replaced with ${newContentLines.length} lines)`
+                `Lines replaced successfully: ${input.path} (${linesReplaced} lines replaced with ${newContentLines.length} lines)`,
             );
 
             return {
@@ -204,7 +202,7 @@ export const ReplaceLinesTool: Tool = {
             end_line: number;
             new_content: string;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context

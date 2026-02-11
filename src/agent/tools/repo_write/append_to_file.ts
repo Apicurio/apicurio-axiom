@@ -48,7 +48,7 @@ export const AppendToFileTool: Tool = {
             content: string;
             newline?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -120,7 +120,7 @@ export const AppendToFileTool: Tool = {
             const bytesAppended = sizeAfter - sizeBefore;
 
             context.logger.info(
-                `Content appended successfully: ${input.path} (appended: ${bytesAppended} bytes, new size: ${sizeAfter} bytes)`
+                `Content appended successfully: ${input.path} (appended: ${bytesAppended} bytes, new size: ${sizeAfter} bytes)`,
             );
 
             return {
@@ -148,7 +148,7 @@ export const AppendToFileTool: Tool = {
             content: string;
             newline?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context

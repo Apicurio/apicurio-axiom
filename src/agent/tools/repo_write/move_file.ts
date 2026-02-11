@@ -54,7 +54,7 @@ export const MoveFileTool: Tool = {
             overwrite?: boolean;
             create_directories?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -144,7 +144,7 @@ export const MoveFileTool: Tool = {
             }
 
             context.logger.info(
-                `Moving ${sourceType}: ${input.source} -> ${input.destination} (overwrite: ${overwrite})`
+                `Moving ${sourceType}: ${input.source} -> ${input.destination} (overwrite: ${overwrite})`,
             );
 
             // Create parent directories if needed
@@ -158,7 +158,7 @@ export const MoveFileTool: Tool = {
             await fse.move(sourcePath, destPath, { overwrite });
 
             context.logger.info(
-                `Moved ${sourceType}: ${input.source} -> ${input.destination} (overwritten: ${destExists})`
+                `Moved ${sourceType}: ${input.source} -> ${input.destination} (overwritten: ${destExists})`,
             );
 
             return {
@@ -188,7 +188,7 @@ export const MoveFileTool: Tool = {
             overwrite?: boolean;
             create_directories?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context

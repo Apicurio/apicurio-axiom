@@ -54,7 +54,7 @@ export const InsertAtLineTool: Tool = {
             content: string;
             indent?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -153,10 +153,12 @@ export const InsertAtLineTool: Tool = {
                 // Apply indentation to each line of content
                 if (indentation) {
                     const contentLines = contentToInsert.split('\n');
-                    contentToInsert = contentLines.map(line => {
-                        // Only add indentation to non-empty lines
-                        return line.length > 0 ? indentation + line : line;
-                    }).join('\n');
+                    contentToInsert = contentLines
+                        .map((line) => {
+                            // Only add indentation to non-empty lines
+                            return line.length > 0 ? indentation + line : line;
+                        })
+                        .join('\n');
                 }
             }
 
@@ -171,7 +173,7 @@ export const InsertAtLineTool: Tool = {
             await fs.writeFile(fullPath, newContent, 'utf-8');
 
             context.logger.info(
-                `Content inserted successfully at line ${input.line}: ${input.path} (${insertedLines.length} lines inserted)`
+                `Content inserted successfully at line ${input.line}: ${input.path} (${insertedLines.length} lines inserted)`,
             );
 
             return {
@@ -199,7 +201,7 @@ export const InsertAtLineTool: Tool = {
             content: string;
             indent?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context

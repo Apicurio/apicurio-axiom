@@ -7,8 +7,8 @@
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { applyPatch, parsePatch } from 'diff';
 import * as fse from 'fs-extra';
-import { parsePatch, applyPatch } from 'diff';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const ApplyPatchTool: Tool = {
@@ -49,7 +49,7 @@ export const ApplyPatchTool: Tool = {
             dry_run?: boolean;
             reverse?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -74,9 +74,7 @@ export const ApplyPatchTool: Tool = {
             const dryRun = input.dry_run === true;
             const reverse = input.reverse === true;
 
-            context.logger.info(
-                `Applying patch (dry_run: ${dryRun}, reverse: ${reverse})`
-            );
+            context.logger.info(`Applying patch (dry_run: ${dryRun}, reverse: ${reverse})`);
 
             // Parse the patch
             const parsedPatches = parsePatch(input.patch);
@@ -98,10 +96,12 @@ export const ApplyPatchTool: Tool = {
             for (const filePatch of parsedPatches) {
                 // Get the target file path (use newFileName for normal patches, oldFileName for reverse)
                 let targetFile: string;
-                const isFileDeletion = (filePatch.newFileName === '/dev/null' && !reverse) ||
-                                     (filePatch.oldFileName === '/dev/null' && reverse);
-                const isFileCreation = (filePatch.oldFileName === '/dev/null' && !reverse) ||
-                                     (filePatch.newFileName === '/dev/null' && reverse);
+                const isFileDeletion =
+                    (filePatch.newFileName === '/dev/null' && !reverse) ||
+                    (filePatch.oldFileName === '/dev/null' && reverse);
+                const isFileCreation =
+                    (filePatch.oldFileName === '/dev/null' && !reverse) ||
+                    (filePatch.newFileName === '/dev/null' && reverse);
 
                 if (reverse) {
                     targetFile = (filePatch.oldFileName || '').replace(/^[ab]\//, '');
@@ -164,7 +164,12 @@ export const ApplyPatchTool: Tool = {
                         } else {
                             // Normal file creation
                             const newContent = filePatch.hunks
-                                .map(hunk => hunk.lines.filter(l => !l.startsWith('-')).map(l => l.substring(1)).join('\n'))
+                                .map((hunk) =>
+                                    hunk.lines
+                                        .filter((l) => !l.startsWith('-'))
+                                        .map((l) => l.substring(1))
+                                        .join('\n'),
+                                )
                                 .join('\n');
 
                             if (!dryRun) {
@@ -190,7 +195,12 @@ export const ApplyPatchTool: Tool = {
                         if (reverse) {
                             // Reverse deletion = creation
                             const newContent = filePatch.hunks
-                                .map(hunk => hunk.lines.filter(l => !l.startsWith('+')).map(l => l.substring(1)).join('\n'))
+                                .map((hunk) =>
+                                    hunk.lines
+                                        .filter((l) => !l.startsWith('+'))
+                                        .map((l) => l.substring(1))
+                                        .join('\n'),
+                                )
                                 .join('\n');
 
                             if (!dryRun) {
@@ -228,17 +238,17 @@ export const ApplyPatchTool: Tool = {
                         // Create a reversed version of the patch
                         patchToApply = {
                             ...filePatch,
-                            hunks: filePatch.hunks.map(hunk => ({
+                            hunks: filePatch.hunks.map((hunk) => ({
                                 ...hunk,
-                                lines: hunk.lines.map(line => {
+                                lines: hunk.lines.map((line) => {
                                     if (line.startsWith('+')) {
-                                        return '-' + line.substring(1);
+                                        return `-${line.substring(1)}`;
                                     } else if (line.startsWith('-')) {
-                                        return '+' + line.substring(1);
+                                        return `+${line.substring(1)}`;
                                     }
                                     return line;
-                                })
-                            }))
+                                }),
+                            })),
                         };
                     }
 
@@ -271,7 +281,7 @@ export const ApplyPatchTool: Tool = {
             const success = hunksFailed === 0 && errors.length === 0;
 
             context.logger.info(
-                `Patch ${dryRun ? 'dry-run' : 'application'} complete: ${filesModified.length} files, ${hunksApplied} hunks applied, ${hunksFailed} failed`
+                `Patch ${dryRun ? 'dry-run' : 'application'} complete: ${filesModified.length} files, ${hunksApplied} hunks applied, ${hunksFailed} failed`,
             );
 
             return {
@@ -300,7 +310,7 @@ export const ApplyPatchTool: Tool = {
             dry_run?: boolean;
             reverse?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         // For this tool, we just run execute with dry_run=true
         return this.execute({ ...input, dry_run: true }, context);

@@ -54,7 +54,7 @@ export const CopyFileTool: Tool = {
             overwrite?: boolean;
             recursive?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -153,7 +153,7 @@ export const CopyFileTool: Tool = {
             }
 
             context.logger.info(
-                `Copying: ${input.source} -> ${input.destination} (overwrite: ${overwrite}, recursive: ${recursive})`
+                `Copying: ${input.source} -> ${input.destination} (overwrite: ${overwrite}, recursive: ${recursive})`,
             );
 
             // Copy the file or directory
@@ -163,7 +163,7 @@ export const CopyFileTool: Tool = {
             const { bytesCopied, filesCopied } = await calculateCopyStats(destPath);
 
             context.logger.info(
-                `Copied: ${input.source} -> ${input.destination} (${filesCopied} file${filesCopied !== 1 ? 's' : ''}, ${bytesCopied} bytes)`
+                `Copied: ${input.source} -> ${input.destination} (${filesCopied} file${filesCopied !== 1 ? 's' : ''}, ${bytesCopied} bytes)`,
             );
 
             return {
@@ -193,7 +193,7 @@ export const CopyFileTool: Tool = {
             overwrite?: boolean;
             recursive?: boolean;
         },
-        context: ToolContext
+        context: ToolContext,
     ): Promise<any> {
         try {
             // Validate context
@@ -357,7 +357,7 @@ async function calculateCopyStats(dirPath: string): Promise<{ bytesCopied: numbe
             bytesCopied = stats.size;
             filesCopied = 1;
         }
-    } catch (error) {
+    } catch (_error) {
         // If we can't read, just return what we have
     }
 
