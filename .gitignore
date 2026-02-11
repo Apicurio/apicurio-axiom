@@ -5,6 +5,13 @@ yarn-error.log
 
 # Build output
 dist/
+dist-test/
+
+# Test compiled artifacts (Vitest compiles on-the-fly)
+test/**/*.js
+test/**/*.js.map
+test/**/*.d.ts
+test/**/*.d.ts.map
 
 # Runtime data directories
 data/

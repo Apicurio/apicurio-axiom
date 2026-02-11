@@ -32,8 +32,11 @@
         "checkJs": false,
 
         /* Skip type checking for library files to improve performance */
-        "skipLibCheck": true
+        "skipLibCheck": true,
+
+        /* Test environment - for IDE support */
+        "types": ["node", "vitest/globals"]
     },
     "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "work", "**/*.test.ts", "**/*.test.js", "test-*.js"]
+    "exclude": ["node_modules", "dist", "work", "coverage", "test"]
 }

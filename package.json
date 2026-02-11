@@ -10,7 +10,11 @@
         "build": "tsc",
         "dev": "node --loader ts-node/esm --watch src/index.ts",
         "lint": "biome check .",
-        "lint:fix": "biome check --write ."
+        "lint:fix": "biome check --write .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "test:ui": "vitest --ui"
     },
     "keywords": [
         "github",
@@ -43,8 +47,11 @@
         "@types/fs-extra": "11.0.4",
         "@types/js-yaml": "4.0.9",
         "@types/node": "25.2.3",
+        "@vitest/coverage-v8": "4.0.18",
+        "@vitest/ui": "4.0.18",
         "ts-node": "10.9.2",
-        "typescript": "5.9.3"
+        "typescript": "5.9.3",
+        "vitest": "4.0.18"
     },
     "engines": {
         "node": ">=20.0.0"
