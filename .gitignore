@@ -67,3 +67,4 @@ coverage/
 /secrets.env
 /.serena/
 /.claude/
+test/temp/
