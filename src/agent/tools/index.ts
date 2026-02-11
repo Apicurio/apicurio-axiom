@@ -40,6 +40,7 @@ import { InsertAtLineTool } from './repository/insert_at_line.js';
 import { ListFilesTool } from './repository/list_files.js';
 import { ReadFileTool } from './repository/read_file.js';
 import { ReplaceInFileTool } from './repository/replace_in_file.js';
+import { ReplaceLinesTool } from './repository/replace_lines.js';
 import { SearchCodeTool } from './repository/search_code.js';
 import { WriteFileTool } from './repository/write_file.js';
 
@@ -106,6 +107,7 @@ export class ToolIndex {
         this.register(ListFilesTool);
         this.register(ReadFileTool);
         this.register(ReplaceInFileTool);
+        this.register(ReplaceLinesTool);
         this.register(SearchCodeTool);
         this.register(WriteFileTool);
     }

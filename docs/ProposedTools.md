@@ -67,7 +67,7 @@ The implementation leverages these primary libraries:
 | FM-002 | `repository-append_to_file` | Append content to end of file | Implemented |
 | FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Implemented |
 | FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
-| FM-005 | `repository-replace_lines` | Replace specific line range with new content | Not Implemented |
+| FM-005 | `repository-replace_lines` | Replace specific line range with new content | Implemented |
 | FM-006 | `repository-delete_file` | Delete a file or directory | Not Implemented |
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Not Implemented |
 | FM-008 | `repository-copy_file` | Copy a file/directory to another location | Not Implemented |
@@ -1424,6 +1424,22 @@ when line numbers are known.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-10
+- Uses native Node.js `fs/promises` for file operations and `fs-extra` for path existence checking
+- Line numbers are 1-based and inclusive (both start_line and end_line)
+- Validates start_line <= end_line to prevent invalid ranges
+- Validates line numbers are within file bounds before replacement
+- Returns old content that was replaced for reference/undo purposes
+- Supports replacing with different number of lines (3 lines can be replaced with 1 line or vice versa)
+- Empty new_content effectively deletes the specified line range (replaces with empty string)
+- Line replacement: Uses array splice to remove old lines and insert new lines at exact position
+- Path safety: Uses `path.resolve()` and validates paths are within work directory to prevent directory traversal attacks
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs replacement operations with line numbers and results for audit trail
+- Dry-run support: `executeMock()` returns what would be replaced without modifying files
+- All tests pass: single line replacement, multiple line replacement, replace with fewer/more lines, replace entire file, code replacement, empty content (deletion), error cases (invalid line range, line beyond file, missing file, directory traversal), and dry-run mode
+
 ---
 
 ### FM-006: repository-delete_file
@@ -2445,4 +2461,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-10
 **Total Tools Proposed**: 35
-**Tools Implemented**: 10
+**Tools Implemented**: 11
