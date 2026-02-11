@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const GetRepositoryLabelsTool: Tool = {
-    name: 'github-get_repository_labels',
+    name: 'github_read-get_repository_labels',
     description: 'Get a list of all labels available in the repository with their names, colors, and descriptions',
     input_schema: {
         type: 'object',

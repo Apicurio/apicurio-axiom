@@ -9,7 +9,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const GitStatusTool: Tool = {
-    name: 'git-status',
+    name: 'git_read-status',
     description: 'Get git repository status including current branch, staged/unstaged changes, and untracked files',
     input_schema: {
         type: 'object',
@@ -30,8 +30,8 @@ export const GitStatusTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for git-status',
-                    tool: 'git-status',
+                    message: 'workDir is required in context for git_read-status',
+                    tool: 'git_read-status',
                 };
             }
 

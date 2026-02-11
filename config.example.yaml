@@ -110,8 +110,8 @@ actions:
     type: ai-agent
     prompt: analyze-bug
     tools:
-      - github-*
-      - repository-*
+      - github_read-*
+      - repo_read-*
 
   # AI agent action: Assign milestones to closed issues
   assign-milestone:

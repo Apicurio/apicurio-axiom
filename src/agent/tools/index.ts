@@ -7,26 +7,30 @@
 
 import type { Tool } from '../../types/agent.js';
 
-// Import all git tools
-import { GitCreateBranchTool } from './git/create_branch.js';
-import { GitDiffTool } from './git/diff.js';
-import { GitLogTool } from './git/log.js';
-import { GitStatusTool } from './git/status.js';
+// Import all git_read tools (read-only git operations)
+import { GitDiffTool } from './git_read/diff.js';
+import { GitLogTool } from './git_read/log.js';
+import { GitStatusTool } from './git_read/status.js';
 
-// Import all GitHub tools
-import { AddCommentTool } from './github/add_comment.js';
-import { AddDiscussionResponseTool } from './github/add_discussion_response.js';
-import { AddLabelsTool } from './github/add_labels.js';
-import { AssignIssueTool } from './github/assign_issue.js';
-import { CloseIssueTool } from './github/close_issue.js';
-import { CreateIssueTool } from './github/create_issue.js';
-import { CreatePullRequestTool } from './github/create_pull_request.js';
-import { GetDiscussionTool } from './github/get_discussion.js';
-import { GetIssueDetailsTool } from './github/get_issue_details.js';
-import { GetMilestonesTool } from './github/get_milestones.js';
-import { GetRepositoryLabelsTool } from './github/get_repository_labels.js';
-import { OpenPullRequestTool } from './github/open_pull_request.js';
-import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
+// Import all git_write tools (git operations that make changes)
+import { GitCreateBranchTool } from './git_write/create_branch.js';
+
+// Import all github_read tools (read-only GitHub operations)
+import { GetDiscussionTool } from './github_read/get_discussion.js';
+import { GetIssueDetailsTool } from './github_read/get_issue_details.js';
+import { GetMilestonesTool } from './github_read/get_milestones.js';
+import { GetRepositoryLabelsTool } from './github_read/get_repository_labels.js';
+
+// Import all github_write tools (GitHub operations that make changes)
+import { AddCommentTool } from './github_write/add_comment.js';
+import { AddDiscussionResponseTool } from './github_write/add_discussion_response.js';
+import { AddLabelsTool } from './github_write/add_labels.js';
+import { AssignIssueTool } from './github_write/assign_issue.js';
+import { CloseIssueTool } from './github_write/close_issue.js';
+import { CreateIssueTool } from './github_write/create_issue.js';
+import { CreatePullRequestTool } from './github_write/create_pull_request.js';
+import { OpenPullRequestTool } from './github_write/open_pull_request.js';
+import { SetIssueMilestoneTool } from './github_write/set_issue_milestone.js';
 
 // Import all repo_read tools (read-only repository operations)
 import { AnalyzeFileTypeTool } from './repo_read/analyze_file_type.js';
@@ -81,13 +85,21 @@ export class ToolIndex {
      * Initialize the tool index by registering all tools
      */
     private initialize(): void {
-        // Register git tools
-        this.register(GitCreateBranchTool);
+        // Register git_read tools (read-only operations)
         this.register(GitDiffTool);
         this.register(GitLogTool);
         this.register(GitStatusTool);
 
-        // Register GitHub tools
+        // Register git_write tools (operations that make changes)
+        this.register(GitCreateBranchTool);
+
+        // Register github_read tools (read-only operations)
+        this.register(GetDiscussionTool);
+        this.register(GetIssueDetailsTool);
+        this.register(GetMilestonesTool);
+        this.register(GetRepositoryLabelsTool);
+
+        // Register github_write tools (operations that make changes)
         this.register(AddCommentTool);
         this.register(AddDiscussionResponseTool);
         this.register(AddLabelsTool);
@@ -95,10 +107,6 @@ export class ToolIndex {
         this.register(CloseIssueTool);
         this.register(CreateIssueTool);
         this.register(CreatePullRequestTool);
-        this.register(GetDiscussionTool);
-        this.register(GetIssueDetailsTool);
-        this.register(GetMilestonesTool);
-        this.register(GetRepositoryLabelsTool);
         this.register(OpenPullRequestTool);
         this.register(SetIssueMilestoneTool);
 

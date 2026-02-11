@@ -9,7 +9,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const GitCreateBranchTool: Tool = {
-    name: 'git-create_branch',
+    name: 'git_write-create_branch',
     description: 'Create a new git branch from current branch or specified ref (tag, commit, branch)',
     input_schema: {
         type: 'object',
@@ -46,8 +46,8 @@ export const GitCreateBranchTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for git-create_branch',
-                    tool: 'git-create_branch',
+                    message: 'workDir is required in context for git_write-create_branch',
+                    tool: 'git_write-create_branch',
                 };
             }
 

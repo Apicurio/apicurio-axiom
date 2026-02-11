@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const AddLabelsTool: Tool = {
-    name: 'github-add_labels',
+    name: 'github_write-add_labels',
     description: 'Add one or more labels to a GitHub issue. Labels must exist in the repository.',
     input_schema: {
         type: 'object',

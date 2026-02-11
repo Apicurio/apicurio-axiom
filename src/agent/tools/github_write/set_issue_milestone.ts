@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const SetIssueMilestoneTool: Tool = {
-    name: 'github-set_issue_milestone',
+    name: 'github_write-set_issue_milestone',
     description: 'Set or update the milestone for a GitHub issue using milestone number',
     input_schema: {
         type: 'object',

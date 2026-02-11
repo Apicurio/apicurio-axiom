@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CloseIssueTool: Tool = {
-    name: 'github-close_issue',
+    name: 'github_write-close_issue',
     description: 'Close a GitHub issue with optional comment and state reason (completed or not_planned)',
     input_schema: {
         type: 'object',

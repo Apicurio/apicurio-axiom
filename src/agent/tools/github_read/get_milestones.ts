@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const GetMilestonesTool: Tool = {
-    name: 'github-get_milestones',
+    name: 'github_read-get_milestones',
     description: 'Get a list of all milestones in the repository with their states, due dates, and progress',
     input_schema: {
         type: 'object',

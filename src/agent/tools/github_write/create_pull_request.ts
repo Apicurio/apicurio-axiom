@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CreatePullRequestTool: Tool = {
-    name: 'github-create_pull_request',
+    name: 'github_write-create_pull_request',
     description: 'Create a pull request from the current branch to the base branch (assumes branch is already pushed)',
     input_schema: {
         type: 'object',

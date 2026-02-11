@@ -9,7 +9,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const GitLogTool: Tool = {
-    name: 'git-log',
+    name: 'git_read-log',
     description: 'Get git commit history with optional filtering by count, date range, author, or file path',
     input_schema: {
         type: 'object',
@@ -70,8 +70,8 @@ export const GitLogTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for git-log',
-                    tool: 'git-log',
+                    message: 'workDir is required in context for git_read-log',
+                    tool: 'git_read-log',
                 };
             }
 

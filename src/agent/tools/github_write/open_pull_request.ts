@@ -15,7 +15,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const OpenPullRequestTool: Tool = {
-    name: 'github-open_pull_request',
+    name: 'github_write-open_pull_request',
     description: 'Complete workflow to open a pull request: add changes, commit, push branch, and create PR on GitHub',
     input_schema: {
         type: 'object',

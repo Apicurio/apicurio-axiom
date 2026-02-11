@@ -9,7 +9,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const GitDiffTool: Tool = {
-    name: 'git-diff',
+    name: 'git_read-diff',
     description:
         'Get git diff output. Shows differences in the working directory, staged changes, or between branches.',
     input_schema: {
@@ -45,8 +45,8 @@ export const GitDiffTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for git-diff',
-                    tool: 'git-diff',
+                    message: 'workDir is required in context for git_read-diff',
+                    tool: 'git_read-diff',
                 };
             }
 

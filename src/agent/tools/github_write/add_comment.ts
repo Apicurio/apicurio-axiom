@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const AddCommentTool: Tool = {
-    name: 'github-add_comment',
+    name: 'github_write-add_comment',
     description: 'Add a comment to a GitHub issue. Use this to provide analysis, ask questions, or explain actions.',
     input_schema: {
         type: 'object',

@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CreateIssueTool: Tool = {
-    name: 'github-create_issue',
+    name: 'github_write-create_issue',
     description: 'Create a new GitHub issue in the repository with title, body, optional labels and assignees',
     input_schema: {
         type: 'object',

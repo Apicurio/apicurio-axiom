@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const AssignIssueTool: Tool = {
-    name: 'github-assign_issue',
+    name: 'github_write-assign_issue',
     description: 'Assign one or more users to a GitHub issue. Users must have repository access.',
     input_schema: {
         type: 'object',

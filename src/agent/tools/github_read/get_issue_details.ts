@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const GetIssueDetailsTool: Tool = {
-    name: 'github-get_issue_details',
+    name: 'github_read-get_issue_details',
     description:
         'Get detailed information about a GitHub issue including title, body, labels, state, author, and comments',
     input_schema: {

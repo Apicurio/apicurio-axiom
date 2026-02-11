@@ -8,7 +8,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const GetDiscussionTool: Tool = {
-    name: 'github-get_discussion',
+    name: 'github_read-get_discussion',
     description: 'Get detailed information about a GitHub discussion including title, body, category, and comments',
     input_schema: {
         type: 'object',

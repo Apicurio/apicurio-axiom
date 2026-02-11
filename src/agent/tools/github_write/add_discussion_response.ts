@@ -7,7 +7,7 @@
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const AddDiscussionResponseTool: Tool = {
-    name: 'github-add_discussion_response',
+    name: 'github_write-add_discussion_response',
     description:
         'Add a comment/response to a GitHub discussion. Use this to provide insights, ask questions, or participate in discussions.',
     input_schema: {
