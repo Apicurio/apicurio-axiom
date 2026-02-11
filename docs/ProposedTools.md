@@ -68,7 +68,7 @@ The implementation leverages these primary libraries:
 | FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Implemented |
 | FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
 | FM-005 | `repository-replace_lines` | Replace specific line range with new content | Implemented |
-| FM-006 | `repository-delete_file` | Delete a file or directory | Not Implemented |
+| FM-006 | `repository-delete_file` | Delete a file or directory | Implemented |
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Not Implemented |
 | FM-008 | `repository-copy_file` | Copy a file/directory to another location | Not Implemented |
 | FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Not Implemented |
@@ -1496,6 +1496,22 @@ when line numbers are known.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-11
+- Uses `fs-extra` for file operations with `remove()` and `copy()` methods
+- Supports deleting both files and directories
+- Requires `recursive: true` flag for directory deletion as a safety measure
+- Optional backup creation before deletion with timestamped backup names
+- File counting: Recursively counts files in directories before deletion
+- Returns path type (file or directory) and count of files deleted
+- Backup naming: Uses timestamp format YYYY-MM-DDTHH-MM-SS-mmmZ to prevent conflicts
+- Safety checks: Prevents deletion of work directory itself and paths outside work directory
+- Path safety: Uses `path.resolve()` and validates paths are within work directory to prevent directory traversal attacks
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs deletion operations with file counts and backup creation for audit trail
+- Dry-run support: `executeMock()` simulates deletion and returns what would be deleted without actually removing files
+- All tests pass: delete file, delete with backup, delete empty directory, delete directory with files, delete directory with backup, error cases (directory without recursive, missing file, directory traversal, work directory deletion), and dry-run mode for both files and directories
+
 ---
 
 ### FM-007: repository-move_file
@@ -2459,6 +2475,6 @@ This document should be updated as tools are implemented:
 ---
 
 **Document Version**: 1.0
-**Last Updated**: 2026-02-10
+**Last Updated**: 2026-02-11
 **Total Tools Proposed**: 35
-**Tools Implemented**: 11
+**Tools Implemented**: 12
