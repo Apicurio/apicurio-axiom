@@ -70,7 +70,7 @@ The implementation leverages these primary libraries:
 | FM-005 | `repository-replace_lines` | Replace specific line range with new content | Implemented |
 | FM-006 | `repository-delete_file` | Delete a file or directory | Implemented |
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Implemented |
-| FM-008 | `repository-copy_file` | Copy a file/directory to another location | Not Implemented |
+| FM-008 | `repository-copy_file` | Copy a file/directory to another location | Implemented |
 | FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Not Implemented |
 | FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Not Implemented |
 | **Code Transformation** | | | |
@@ -1647,6 +1647,21 @@ when line numbers are known.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-11
+- Uses `fs-extra` for file operations with `copy()` method
+- Supports copying both files and directories
+- Optional overwrite flag to replace existing destinations (default: false)
+- Recursive copying for directories (default: true, required for directories)
+- Returns bytes_copied and files_copied for transparency
+- Source preservation: Original files/directories remain unchanged after copy
+- Statistics calculation: Recursively counts files and bytes in directories
+- Path safety: Uses `path.resolve()` and validates both source and destination are within work directory to prevent directory traversal attacks
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs copy operations with file counts and byte counts for audit trail
+- Dry-run support: `executeMock()` simulates copies and returns statistics without actually copying files
+- All tests pass: copy single file, copy directory with subdirectories, overwrite existing file, error cases (destination exists without overwrite, missing source, directory without recursive, same source/destination, source directory traversal, destination directory traversal), and dry-run mode for both files and directories
+
 ---
 
 ### FM-009: repository-create_directory
@@ -2493,4 +2508,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-11
 **Total Tools Proposed**: 35
-**Tools Implemented**: 13
+**Tools Implemented**: 14
