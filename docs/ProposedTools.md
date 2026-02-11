@@ -72,7 +72,7 @@ The implementation leverages these primary libraries:
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Implemented |
 | FM-008 | `repository-copy_file` | Copy a file/directory to another location | Implemented |
 | FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Implemented |
-| FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Not Implemented |
+| FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Implemented |
 | **Code Transformation** | | | |
 | CT-001 | `repository-format_code` | Format code according to project style | Not Implemented |
 | CT-002 | `repository-add_import` | Add an import statement to a file (language-aware) | Not Implemented |
@@ -1785,6 +1785,23 @@ from generated patches.
 **Estimated Effort**: Medium (1-2 days)
 
 **Dependencies**: None
+
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-10
+- Uses the `diff` npm package (v5.2.0) for parsing and applying unified diff patches
+- Supports standard unified diff format with file creation, modification, and deletion
+- Handles git-style patches with `a/` and `b/` prefixes automatically
+- Properly handles `/dev/null` for file creation and deletion operations
+- Reverse patch mode works by swapping hunk additions (+) and deletions (-)
+- Dry-run mode allows testing patches without actually modifying files
+- Multi-hunk patches are fully supported
+- Multi-file patches (multiple files in one patch) are fully supported
+- Path safety: Validates all file paths are within work directory to prevent directory traversal attacks
+- Returns detailed statistics: files_modified, hunks_applied, hunks_failed, and error messages
+- Partial success: Returns partial results if some hunks fail while others succeed
+- Error handling: Returns structured error objects with detailed messages for debugging
+- Logging: Logs all patch operations (applications, failures) for audit trail
+- All tests pass: simple modification, file creation, file deletion, multi-hunk patches, reverse patches, dry-run mode, failed patches (hunks don't match), git-style patches with a/ b/ prefixes, and security (path traversal prevention)
 
 ---
 
