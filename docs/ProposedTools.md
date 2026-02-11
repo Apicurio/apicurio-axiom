@@ -66,7 +66,7 @@ The implementation leverages these primary libraries:
 | FM-001 | `repository-write_file` | Write content to a file (create or overwrite) | Implemented |
 | FM-002 | `repository-append_to_file` | Append content to end of file | Implemented |
 | FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Implemented |
-| FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Not Implemented |
+| FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
 | FM-005 | `repository-replace_lines` | Replace specific line range with new content | Not Implemented |
 | FM-006 | `repository-delete_file` | Delete a file or directory | Not Implemented |
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Not Implemented |
@@ -1346,6 +1346,23 @@ regex patterns.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-10
+- Uses native Node.js `fs/promises` for file operations and `fs-extra` for path existence checking
+- Supports both literal string matching and regex patterns
+- Replace all occurrences or just the first match via `all_occurrences` parameter
+- Preserve case functionality: Detects case pattern (uppercase, lowercase, title case) and applies to replacement
+- Special regex character escaping: In literal mode, automatically escapes special regex characters ($, ., *, etc.)
+- Line tracking: Accurately tracks which lines were affected by replacements
+- Preview generation: Provides first 200 characters of changes for review
+- Replacement counting: Tracks total number of replacements made
+- Path safety: Uses `path.resolve()` and validates paths are within work directory to prevent directory traversal attacks
+- Regex validation: Returns structured error for invalid regex patterns
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs replacement operations and results for audit trail
+- Dry-run support: `executeMock()` simulates replacements and returns count without modifying files
+- All tests pass: literal replacement (all/first), regex replacement, multi-line replacement, preserve case, special characters, no matches, error cases (invalid regex, missing file, directory traversal), dry-run mode, and preview generation
+
 ---
 
 ### FM-005: repository-replace_lines
@@ -2428,4 +2445,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-10
 **Total Tools Proposed**: 35
-**Tools Implemented**: 9
+**Tools Implemented**: 10
