@@ -71,7 +71,7 @@ The implementation leverages these primary libraries:
 | FM-006 | `repository-delete_file` | Delete a file or directory | Implemented |
 | FM-007 | `repository-move_file` | Move or rename a file/directory | Implemented |
 | FM-008 | `repository-copy_file` | Copy a file/directory to another location | Implemented |
-| FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Not Implemented |
+| FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Implemented |
 | FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Not Implemented |
 | **Code Transformation** | | | |
 | CT-001 | `repository-format_code` | Format code according to project style | Not Implemented |
@@ -1711,6 +1711,21 @@ when line numbers are known.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-11
+- Uses `fs-extra` for directory operations with `ensureDir()` method and native `fs.mkdir()` for non-recursive
+- Supports creating parent directories automatically (default: true)
+- Idempotent: Succeeds if directory already exists
+- Returns whether directory was newly created or already existed
+- Tracks which parent directories were created in parents_created array
+- Non-recursive mode: Requires immediate parent to exist, uses native fs.mkdir()
+- Recursive mode: Creates all necessary parent directories using fse.ensureDir()
+- Path safety: Uses `path.resolve()` and validates paths are within work directory to prevent directory traversal attacks
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs directory creation operations with parent count for audit trail
+- Dry-run support: `executeMock()` simulates directory creation without actually creating directories
+- All tests pass: simple directory, nested parents, idempotent (already exists), non-recursive with parent, error cases (non-recursive without parent, directory traversal), deeply nested, dry-run mode (new and existing), and mixed parent creation (some parents already exist)
+
 ---
 
 ### FM-010: repository-apply_patch
@@ -2508,4 +2523,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-11
 **Total Tools Proposed**: 35
-**Tools Implemented**: 14
+**Tools Implemented**: 15

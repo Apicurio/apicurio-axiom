@@ -33,6 +33,7 @@ import { AnalyzeFileTypeTool } from './repository/analyze_file_type.js';
 import { AppendToFileTool } from './repository/append_to_file.js';
 import { CheckPathExistsTool } from './repository/check_path_exists.js';
 import { CopyFileTool } from './repository/copy_file.js';
+import { CreateDirectoryTool } from './repository/create_directory.js';
 import { DeleteFileTool } from './repository/delete_file.js';
 import { FindFilesTool } from './repository/find_files.js';
 import { GetDirectoryTreeTool } from './repository/get_directory_tree.js';
@@ -103,6 +104,7 @@ export class ToolIndex {
         this.register(AppendToFileTool);
         this.register(CheckPathExistsTool);
         this.register(CopyFileTool);
+        this.register(CreateDirectoryTool);
         this.register(DeleteFileTool);
         this.register(FindFilesTool);
         this.register(GetDirectoryTreeTool);
