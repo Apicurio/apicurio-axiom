@@ -68,7 +68,7 @@ async function searchFile(
                 matches.push(match);
             }
         }
-    } catch (error) {
+    } catch (_error) {
         // Skip files that can't be read as UTF-8 (likely binary files)
         // This is expected behavior, not an error
     }
@@ -252,8 +252,7 @@ export const SearchCodeTool: Tool = {
 
             for (const file of files) {
                 // Convert file path to be relative to repository root
-                const relativeFilePath =
-                    normalizedStartPath === '.' ? file : path.join(normalizedStartPath, file);
+                const relativeFilePath = normalizedStartPath === '.' ? file : path.join(normalizedStartPath, file);
                 const fullFilePath = path.join(fullStartPath, file);
 
                 const fileMatches = await searchFile(fullFilePath, relativeFilePath, regex, contextLines);

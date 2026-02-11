@@ -1,0 +1,118 @@
+version: 1.0.0
+description: Available AI agent tools for GitHub automation
+
+tools:
+  # Issue Management Tools
+  - id: github-get_issue_details
+    name: Get Issue Details
+    description: Retrieves detailed information about a specific GitHub issue
+    category: issue
+    parameters:
+      - name: issue_number
+        type: integer
+        required: true
+        description: The issue number to retrieve
+
+  - id: github-add_labels
+    name: Add Labels to Issue
+    description: Adds one or more labels to a GitHub issue
+    category: issue
+    parameters:
+      - name: issue_number
+        type: integer
+        required: true
+        description: The issue number to label
+      - name: labels
+        type: array
+        required: true
+        description: Array of label names to add
+
+  - id: github-remove_labels
+    name: Remove Labels from Issue
+    description: Removes one or more labels from a GitHub issue
+    category: issue
+    parameters:
+      - name: issue_number
+        type: integer
+        required: true
+        description: The issue number
+      - name: labels
+        type: array
+        required: true
+        description: Array of label names to remove
+
+  - id: github-add_comment
+    name: Add Comment to Issue
+    description: Adds a comment to a GitHub issue
+    category: issue
+    parameters:
+      - name: issue_number
+        type: integer
+        required: true
+        description: The issue number
+      - name: body
+        type: string
+        required: true
+        description: The comment text (supports markdown)
+
+  - id: github-close_issue
+    name: Close Issue
+    description: Closes a GitHub issue
+    category: issue
+    parameters:
+      - name: issue_number
+        type: integer
+        required: true
+        description: The issue number to close
+
+  # Repository Tools
+  - id: github-get_repository_labels
+    name: Get Repository Labels
+    description: Retrieves all labels defined in the repository
+    category: repository
+    parameters: []
+
+  - id: github-search_issues
+    name: Search Issues
+    description: Searches for issues in the repository using GitHub search syntax
+    category: repository
+    parameters:
+      - name: query
+        type: string
+        required: true
+        description: Search query using GitHub search syntax
+      - name: max_results
+        type: integer
+        required: false
+        description: Maximum number of results to return (default 10)
+
+  - id: github-get_repository_info
+    name: Get Repository Information
+    description: Retrieves general information about the repository
+    category: repository
+    parameters: []
+
+  # Pull Request Tools
+  - id: github-get_pull_request_details
+    name: Get Pull Request Details
+    description: Retrieves detailed information about a specific pull request
+    category: pull_request
+    parameters:
+      - name: pr_number
+        type: integer
+        required: true
+        description: The pull request number
+
+  - id: github-add_pr_review_comment
+    name: Add PR Review Comment
+    description: Adds a review comment to a pull request
+    category: pull_request
+    parameters:
+      - name: pr_number
+        type: integer
+        required: true
+        description: The pull request number
+      - name: body
+        type: string
+        required: true
+        description: The review comment text

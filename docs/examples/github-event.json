@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "github-event.json",
+  "title": "GitHub Event",
+  "description": "Schema for GitHub webhook event data",
+  "type": "object",
+  "required": ["repository", "issue", "type"],
+  "properties": {
+    "repository": {
+      "type": "string",
+      "description": "The full name of the repository (e.g., 'owner/repo')"
+    },
+    "type": {
+      "type": "string",
+      "description": "The type of GitHub event",
+      "enum": ["issue_opened", "issue_edited", "issue_closed", "issue_reopened"]
+    },
+    "issue": {
+      "type": "object",
+      "description": "Details about the GitHub issue",
+      "required": ["number", "title", "author"],
+      "properties": {
+        "number": {
+          "type": "integer",
+          "description": "The issue number",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "description": "The issue title"
+        },
+        "author": {
+          "type": "string",
+          "description": "The GitHub username of the issue author"
+        },
+        "labels": {
+          "type": "array",
+          "description": "List of labels currently applied to the issue",
+          "items": {
+            "type": "string"
+          },
+          "default": []
+        },
+        "body": {
+          "type": "string",
+          "description": "The full text content of the issue"
+        },
+        "state": {
+          "type": "string",
+          "description": "The current state of the issue",
+          "enum": ["open", "closed"]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp when the issue was created"
+        }
+      }
+    }
+  }
+}
