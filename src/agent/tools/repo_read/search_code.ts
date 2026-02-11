@@ -1,17 +1,85 @@
 /**
  * SearchCodeTool - Search for patterns in code
  *
- * This tool uses grep to search for patterns in repository files.
- * Useful for finding specific functions, classes, or code patterns.
+ * This tool uses fast-glob for file discovery and native fs operations for searching,
+ * providing high-performance pattern matching across the repository. Supports regex patterns,
+ * context lines, exclusion filters, and result limiting.
  */
 
+import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
+import fg from 'fast-glob';
 import type { Tool, ToolContext } from '../../../types/agent.js';
-import { execAsync } from '../utils.js';
+
+/**
+ * Search result for a single match
+ */
+interface SearchMatch {
+    file: string;
+    line_number: number;
+    content: string;
+    context_before?: string[];
+    context_after?: string[];
+}
+
+/**
+ * Search a single file for pattern matches
+ *
+ * @param filePath Full path to the file
+ * @param relativeFilePath Relative path from repository root
+ * @param pattern Regex pattern to search for
+ * @param caseSensitive Whether search is case-sensitive
+ * @param contextLines Number of context lines before/after each match
+ * @returns Array of matches in this file
+ */
+async function searchFile(
+    filePath: string,
+    relativeFilePath: string,
+    pattern: RegExp,
+    contextLines: number,
+): Promise<SearchMatch[]> {
+    const matches: SearchMatch[] = [];
+
+    try {
+        // Read file content
+        const content = await fs.readFile(filePath, 'utf-8');
+        const lines = content.split('\n');
+
+        // Search each line
+        for (let i = 0; i < lines.length; i++) {
+            if (pattern.test(lines[i])) {
+                const match: SearchMatch = {
+                    file: relativeFilePath,
+                    line_number: i + 1,
+                    content: lines[i],
+                };
+
+                // Add context lines if requested
+                if (contextLines > 0) {
+                    // Lines before
+                    const beforeStart = Math.max(0, i - contextLines);
+                    match.context_before = lines.slice(beforeStart, i);
+
+                    // Lines after
+                    const afterEnd = Math.min(lines.length, i + contextLines + 1);
+                    match.context_after = lines.slice(i + 1, afterEnd);
+                }
+
+                matches.push(match);
+            }
+        }
+    } catch (error) {
+        // Skip files that can't be read as UTF-8 (likely binary files)
+        // This is expected behavior, not an error
+    }
+
+    return matches;
+}
 
 export const SearchCodeTool: Tool = {
     name: 'repo_read-search_code',
     description:
-        'Search for a text pattern in repository files using grep. Returns matching lines with file paths and line numbers.',
+        'Search for text patterns in repository files using regex. Supports file filtering, context lines, exclusion patterns, and result limiting. Much faster than grep for large repositories.',
     input_schema: {
         type: 'object',
         properties: {
@@ -19,13 +87,33 @@ export const SearchCodeTool: Tool = {
                 type: 'string',
                 description: 'Text pattern to search for (supports regex)',
             },
+            path: {
+                type: 'string',
+                description: 'Starting directory to search (default: repository root)',
+            },
             file_pattern: {
                 type: 'string',
-                description: 'Optional glob pattern to limit search to specific files (e.g., "*.ts", "src/**/*.js")',
+                description: 'Glob pattern to limit search to specific files (e.g., "*.ts", "src/**/*.java")',
             },
             case_sensitive: {
                 type: 'boolean',
                 description: 'If true, search is case-sensitive (default: false)',
+            },
+            context_lines: {
+                type: 'number',
+                description: 'Number of lines to show before and after each match (default: 0, max: 10)',
+                minimum: 0,
+                maximum: 10,
+            },
+            exclude: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Glob patterns to exclude from search',
+            },
+            max_results: {
+                type: 'number',
+                description: 'Maximum number of results to return (default: 1000)',
+                minimum: 1,
             },
         },
         required: ['pattern'],
@@ -39,7 +127,15 @@ export const SearchCodeTool: Tool = {
      * @returns Search results or error
      */
     async execute(
-        input: { pattern: string; file_pattern?: string; case_sensitive?: boolean },
+        input: {
+            pattern: string;
+            path?: string;
+            file_pattern?: string;
+            case_sensitive?: boolean;
+            context_lines?: number;
+            exclude?: string[];
+            max_results?: number;
+        },
         context: ToolContext,
     ): Promise<any> {
         try {
@@ -53,84 +149,148 @@ export const SearchCodeTool: Tool = {
             }
 
             // Validate input
-            if (!input.pattern) {
+            if (!input.pattern || typeof input.pattern !== 'string') {
                 return {
                     error: true,
-                    message: 'pattern parameter is required',
+                    message: 'pattern parameter is required and must be a string',
+                    tool: this.name,
                 };
             }
 
-            // Build grep command
-            let grepCmd = 'grep -r -n';
+            // Set defaults
+            const startPath = input.path || '.';
+            const caseSensitive = input.case_sensitive ?? false;
+            const contextLines = Math.min(input.context_lines ?? 0, 10);
+            const maxResults = input.max_results ?? 1000;
 
-            // Case sensitivity
-            if (!input.case_sensitive) {
-                grepCmd += ' -i';
+            // Default exclude patterns - common build/dependency directories
+            const defaultExcludes = [
+                '.git/**',
+                'node_modules/**',
+                'dist/**',
+                'build/**',
+                '.next/**',
+                'target/**',
+                '*.min.js',
+                '*.map',
+            ];
+            const excludePatterns = [...defaultExcludes, ...(input.exclude || [])];
+
+            // Normalize and resolve the starting path
+            const normalizedStartPath = path.normalize(startPath);
+            const fullStartPath = path.resolve(context.workDir, normalizedStartPath);
+
+            // Security: Ensure the path is within the work directory
+            const normalizedWorkDir = path.resolve(context.workDir);
+            if (!fullStartPath.startsWith(normalizedWorkDir)) {
+                return {
+                    error: true,
+                    message: 'Access denied: path is outside work directory',
+                    tool: this.name,
+                };
             }
 
-            // Add pattern (escape for shell)
-            const escapedPattern = input.pattern.replace(/'/g, "'\\''");
-            grepCmd += ` '${escapedPattern}'`;
-
-            // File pattern (use find if specified)
-            if (input.file_pattern) {
-                const escapedFilePattern = input.file_pattern.replace(/'/g, "'\\''");
-                grepCmd = `find . -type f -name '${escapedFilePattern}' -exec grep -n${!input.case_sensitive ? 'i' : ''} '${escapedPattern}' {} +`;
+            // Check if start path exists
+            try {
+                const stats = await fs.stat(fullStartPath);
+                if (!stats.isDirectory()) {
+                    return {
+                        error: true,
+                        message: `Path is not a directory: ${startPath}`,
+                        tool: this.name,
+                    };
+                }
+            } catch (_err) {
+                return {
+                    error: true,
+                    message: `Directory not found: ${startPath}`,
+                    tool: this.name,
+                };
             }
 
-            // Exclude .git directory
-            grepCmd += ' --exclude-dir=.git';
+            // Build regex pattern
+            let regex: RegExp;
+            try {
+                const flags = caseSensitive ? '' : 'i';
+                regex = new RegExp(input.pattern, flags);
+            } catch (error) {
+                return {
+                    error: true,
+                    message: `Invalid regex pattern: ${(error as Error).message}`,
+                    tool: this.name,
+                };
+            }
 
-            // Execute grep
+            // Log the search operation
             const filePatternInfo = input.file_pattern ? ` in files matching "${input.file_pattern}"` : '';
-            context.logger.info(`Searching for pattern "${input.pattern}"${filePatternInfo}...`);
-            const { stdout } = await execAsync(grepCmd, {
-                cwd: context.workDir,
-                maxBuffer: 10 * 1024 * 1024, // 10MB max output
-            });
+            context.logger.info(`Searching for pattern "${input.pattern}"${filePatternInfo} in ${startPath}...`);
 
-            // Parse results
-            const lines = stdout
-                .trim()
-                .split('\n')
-                .filter((line) => line.length > 0);
-            const matches: Array<{ file: string; line_number: number; content: string }> = [];
+            // Determine glob pattern for file discovery
+            const globPattern = input.file_pattern || '**/*';
 
-            for (const line of lines) {
-                // Parse grep output format: file:line_number:content
-                const match = line.match(/^([^:]+):(\d+):(.*)$/);
-                if (match) {
-                    matches.push({
-                        file: match[1],
-                        line_number: parseInt(match[2], 10),
-                        content: match[3],
-                    });
+            // Find all matching files using fast-glob
+            let files: string[];
+            try {
+                files = await fg(globPattern, {
+                    cwd: fullStartPath,
+                    ignore: excludePatterns,
+                    absolute: false,
+                    onlyFiles: true,
+                    dot: false, // Don't match dotfiles by default
+                });
+            } catch (error) {
+                return {
+                    error: true,
+                    message: `Invalid file pattern: ${(error as Error).message}`,
+                    tool: this.name,
+                };
+            }
+
+            // Search each file for the pattern
+            const allMatches: SearchMatch[] = [];
+            let filesSearched = 0;
+
+            for (const file of files) {
+                // Convert file path to be relative to repository root
+                const relativeFilePath =
+                    normalizedStartPath === '.' ? file : path.join(normalizedStartPath, file);
+                const fullFilePath = path.join(fullStartPath, file);
+
+                const fileMatches = await searchFile(fullFilePath, relativeFilePath, regex, contextLines);
+                allMatches.push(...fileMatches);
+                filesSearched++;
+
+                // Stop if we've exceeded max results
+                if (allMatches.length >= maxResults) {
+                    break;
                 }
             }
 
-            context.logger.info(`Search completed: found ${matches.length} matches`);
+            // Limit results
+            const totalCount = allMatches.length;
+            const truncated = totalCount > maxResults;
+            const matches = allMatches.slice(0, maxResults);
+
+            context.logger.info(
+                `Search completed: found ${totalCount} matches in ${filesSearched} files${truncated ? ` (limited to ${maxResults})` : ''}`,
+            );
 
             return {
                 pattern: input.pattern,
                 file_pattern: input.file_pattern,
+                path: startPath,
+                case_sensitive: caseSensitive,
                 matches: matches,
-                count: matches.length,
+                count: totalCount,
+                truncated: truncated,
+                files_searched: filesSearched,
             };
         } catch (error) {
-            // grep exits with code 1 if no matches found
-            if ((error as any).code === 1) {
-                context.logger.info(`Search completed: no matches found`);
-                return {
-                    pattern: input.pattern,
-                    file_pattern: input.file_pattern,
-                    matches: [],
-                    count: 0,
-                };
-            }
-
+            context.logger.error(`Error in repo_read-search_code: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Search failed: ${(error as Error).message}`,
+                tool: this.name,
             };
         }
     },
@@ -139,7 +299,18 @@ export const SearchCodeTool: Tool = {
      * Execute mock (for dry-run mode)
      * Read-only tool - executes normally even in dry-run mode
      */
-    async executeMock(input: { pattern: string; file_pattern?: string }, context: ToolContext): Promise<any> {
+    async executeMock(
+        input: {
+            pattern: string;
+            path?: string;
+            file_pattern?: string;
+            case_sensitive?: boolean;
+            context_lines?: number;
+            exclude?: string[];
+            max_results?: number;
+        },
+        context: ToolContext,
+    ): Promise<any> {
         return this.execute(input, context);
     },
 };
