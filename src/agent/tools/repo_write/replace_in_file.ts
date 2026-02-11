@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const ReplaceInFileTool: Tool = {
-    name: 'repository-replace_in_file',
+    name: 'repo_write-replace_in_file',
     description:
         'Search for text in a file and replace it with new text. Supports both literal and regex patterns. Can replace all occurrences or just the first match.',
     input_schema: {
@@ -72,8 +72,8 @@ export const ReplaceInFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-replace_in_file',
-                    tool: 'repository-replace_in_file',
+                    message: 'workDir is required in context for repo_write-replace_in_file',
+                    tool: 'repo_write-replace_in_file',
                 };
             }
 
@@ -254,7 +254,7 @@ export const ReplaceInFileTool: Tool = {
                 preview: preview,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-replace_in_file: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-replace_in_file: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to replace in file: ${(error as Error).message}`,
@@ -282,8 +282,8 @@ export const ReplaceInFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-replace_in_file',
-                    tool: 'repository-replace_in_file',
+                    message: 'workDir is required in context for repo_write-replace_in_file',
+                    tool: 'repo_write-replace_in_file',
                 };
             }
 

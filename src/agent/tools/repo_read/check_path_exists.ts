@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CheckPathExistsTool: Tool = {
-    name: 'repository-check_path_exists',
+    name: 'repo_read-check_path_exists',
     description:
         'Quick existence check for a file or directory. Returns whether the path exists and its type (file, directory, or symlink).',
     input_schema: {
@@ -37,8 +37,8 @@ export const CheckPathExistsTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-check_path_exists',
-                    tool: 'repository-check_path_exists',
+                    message: 'workDir is required in context for repo_read-check_path_exists',
+                    tool: 'repo_read-check_path_exists',
                 };
             }
 

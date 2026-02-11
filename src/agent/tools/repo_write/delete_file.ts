@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const DeleteFileTool: Tool = {
-    name: 'repository-delete_file',
+    name: 'repo_write-delete_file',
     description:
         'Delete a file or directory from the repository. Supports recursive deletion and optional backup creation.',
     input_schema: {
@@ -56,8 +56,8 @@ export const DeleteFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-delete_file',
-                    tool: 'repository-delete_file',
+                    message: 'workDir is required in context for repo_write-delete_file',
+                    tool: 'repo_write-delete_file',
                 };
             }
 
@@ -158,7 +158,7 @@ export const DeleteFileTool: Tool = {
                 files_deleted: filesDeleted,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-delete_file: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-delete_file: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to delete: ${(error as Error).message}`,
@@ -183,8 +183,8 @@ export const DeleteFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-delete_file',
-                    tool: 'repository-delete_file',
+                    message: 'workDir is required in context for repo_write-delete_file',
+                    tool: 'repo_write-delete_file',
                 };
             }
 

@@ -47,7 +47,7 @@ async function listRecursive(
 }
 
 export const ListFilesTool: Tool = {
-    name: 'repository-list_files',
+    name: 'repo_read-list_files',
     description: 'List files and directories in a path. Returns file names, types (file/directory), and sizes.',
     input_schema: {
         type: 'object',
@@ -77,8 +77,8 @@ export const ListFilesTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-list_files',
-                    tool: 'repository-list_files',
+                    message: 'workDir is required in context for repo_read-list_files',
+                    tool: 'repo_read-list_files',
                 };
             }
 

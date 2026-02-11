@@ -11,7 +11,7 @@ import * as path from 'node:path';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const ReadFileTool: Tool = {
-    name: 'repository-read_file',
+    name: 'repo_read-read_file',
     description: 'Read the contents of a file from the repository',
     input_schema: {
         type: 'object',
@@ -37,8 +37,8 @@ export const ReadFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-read_file',
-                    tool: 'repository-read_file',
+                    message: 'workDir is required in context for repo_read-read_file',
+                    tool: 'repo_read-read_file',
                 };
             }
 

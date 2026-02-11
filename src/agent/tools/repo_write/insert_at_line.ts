@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const InsertAtLineTool: Tool = {
-    name: 'repository-insert_at_line',
+    name: 'repo_write-insert_at_line',
     description:
         'Insert content at a specific line number in a file. Line numbers are 1-based. Optionally matches indentation of surrounding code.',
     input_schema: {
@@ -61,8 +61,8 @@ export const InsertAtLineTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-insert_at_line',
-                    tool: 'repository-insert_at_line',
+                    message: 'workDir is required in context for repo_write-insert_at_line',
+                    tool: 'repo_write-insert_at_line',
                 };
             }
 
@@ -180,7 +180,7 @@ export const InsertAtLineTool: Tool = {
                 lines_inserted: insertedLines.length,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-insert_at_line: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-insert_at_line: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to insert content: ${(error as Error).message}`,
@@ -206,8 +206,8 @@ export const InsertAtLineTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-insert_at_line',
-                    tool: 'repository-insert_at_line',
+                    message: 'workDir is required in context for repo_write-insert_at_line',
+                    tool: 'repo_write-insert_at_line',
                 };
             }
 

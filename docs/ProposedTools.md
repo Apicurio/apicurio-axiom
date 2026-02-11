@@ -5,8 +5,8 @@
 This document serves as the comprehensive specification and implementation roadmap for extending the
 Apicurio Axiom AI Agent toolkit with advanced repository analysis and modification capabilities.
 
-Currently, the toolkit provides 3 basic repository tools (`repository-read_file`, `repository-list_files`,
-`repository-search_code`) and 4 git operation tools. This proposal adds **35 new repository tools** that
+Currently, the toolkit provides 3 basic repository tools (`repo_read-read_file`, `repo_read-list_files`,
+`repo_read-search_code`) and 4 git operation tools. This proposal adds **35 new repository tools** that
 enable AI agents to perform sophisticated code analysis, intelligent modifications, and automated
 refactoring operations on locally cloned git repositories.
 
@@ -17,7 +17,7 @@ patterns for:
 - Input validation using JSON Schema
 - Structured error handling
 - Dry-run support for write operations
-- Consistent naming conventions (`repository-{operation}`)
+- Consistent naming conventions (`repo_read-{operation}` for read-only, `repo_write-{operation}` for write operations)
 
 ## Implementation Approach
 
@@ -46,45 +46,45 @@ The implementation leverages these primary libraries:
 | ID | Tool Name | Description | Status |
 |---|---|---|---|
 | **File System Analysis** | | | |
-| FSA-001 | `repository-get_file_metadata` | Get detailed metadata about a file or directory | Implemented |
-| FSA-002 | `repository-check_path_exists` | Quick existence check for files or directories | Implemented |
-| FSA-003 | `repository-get_directory_tree` | Get hierarchical tree structure of a directory | Implemented |
-| FSA-004 | `repository-find_files` | Find files matching glob patterns | Implemented |
-| FSA-005 | `repository-analyze_file_type` | Detect file type, language, and characteristics | Implemented |
-| FSA-006 | `repository-get_file_dependencies` | Analyze import/require statements in a file | Not Implemented |
-| FSA-007 | `repository-get_project_structure` | Analyze overall project structure and detect technologies | Implemented |
+| FSA-001 | `repo_read-get_file_metadata` | Get detailed metadata about a file or directory | Implemented |
+| FSA-002 | `repo_read-check_path_exists` | Quick existence check for files or directories | Implemented |
+| FSA-003 | `repo_read-get_directory_tree` | Get hierarchical tree structure of a directory | Implemented |
+| FSA-004 | `repo_read-find_files` | Find files matching glob patterns | Implemented |
+| FSA-005 | `repo_read-analyze_file_type` | Detect file type, language, and characteristics | Implemented |
+| FSA-006 | `repo_read-get_file_dependencies` | Analyze import/require statements in a file | Not Implemented |
+| FSA-007 | `repo_read-get_project_structure` | Analyze overall project structure and detect technologies | Implemented |
 | **Code Analysis** | | | |
-| CA-001 | `repository-parse_file_symbols` | Extract symbols (classes, functions, methods) using AST parsing | Not Implemented |
-| CA-002 | `repository-find_symbol_definition` | Find where a symbol is defined across the repository | Not Implemented |
-| CA-003 | `repository-find_symbol_references` | Find all references/usages of a symbol | Not Implemented |
-| CA-004 | `repository-analyze_code_complexity` | Calculate cyclomatic complexity and maintainability metrics | Not Implemented |
-| CA-005 | `repository-analyze_dependencies` | Analyze project dependencies and their versions | Not Implemented |
-| CA-006 | `repository-analyze_test_coverage` | Analyze test files and identify coverage gaps | Not Implemented |
-| CA-007 | `repository-detect_code_smells` | Identify common code smells and anti-patterns | Not Implemented |
-| CA-008 | `repository-get_documentation_coverage` | Analyze documentation completeness (Javadoc, JSDoc, etc.) | Not Implemented |
+| CA-001 | `repo_read-parse_file_symbols` | Extract symbols (classes, functions, methods) using AST parsing | Not Implemented |
+| CA-002 | `repo_read-find_symbol_definition` | Find where a symbol is defined across the repository | Not Implemented |
+| CA-003 | `repo_read-find_symbol_references` | Find all references/usages of a symbol | Not Implemented |
+| CA-004 | `repo_read-analyze_code_complexity` | Calculate cyclomatic complexity and maintainability metrics | Not Implemented |
+| CA-005 | `repo_read-analyze_dependencies` | Analyze project dependencies and their versions | Not Implemented |
+| CA-006 | `repo_read-analyze_test_coverage` | Analyze test files and identify coverage gaps | Not Implemented |
+| CA-007 | `repo_read-detect_code_smells` | Identify common code smells and anti-patterns | Not Implemented |
+| CA-008 | `repo_read-get_documentation_coverage` | Analyze documentation completeness (Javadoc, JSDoc, etc.) | Not Implemented |
 | **File Modification** | | | |
-| FM-001 | `repository-write_file` | Write content to a file (create or overwrite) | Implemented |
-| FM-002 | `repository-append_to_file` | Append content to end of file | Implemented |
-| FM-003 | `repository-insert_at_line` | Insert content at a specific line number | Implemented |
-| FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
-| FM-005 | `repository-replace_lines` | Replace specific line range with new content | Implemented |
-| FM-006 | `repository-delete_file` | Delete a file or directory | Implemented |
-| FM-007 | `repository-move_file` | Move or rename a file/directory | Implemented |
-| FM-008 | `repository-copy_file` | Copy a file/directory to another location | Implemented |
-| FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Implemented |
-| FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Implemented |
+| FM-001 | `repo_write-write_file` | Write content to a file (create or overwrite) | Implemented |
+| FM-002 | `repo_write-append_to_file` | Append content to end of file | Implemented |
+| FM-003 | `repo_write-insert_at_line` | Insert content at a specific line number | Implemented |
+| FM-004 | `repo_write-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
+| FM-005 | `repo_write-replace_lines` | Replace specific line range with new content | Implemented |
+| FM-006 | `repo_write-delete_file` | Delete a file or directory | Implemented |
+| FM-007 | `repo_write-move_file` | Move or rename a file/directory | Implemented |
+| FM-008 | `repo_write-copy_file` | Copy a file/directory to another location | Implemented |
+| FM-009 | `repo_write-create_directory` | Create a directory (with parents if needed) | Implemented |
+| FM-010 | `repo_write-apply_patch` | Apply a unified diff patch to files | Implemented |
 | **Code Transformation** | | | |
-| CT-001 | `repository-format_code` | Format code according to project style | Not Implemented |
-| CT-002 | `repository-add_import` | Add an import statement to a file (language-aware) | Not Implemented |
-| CT-003 | `repository-remove_import` | Remove an import statement from a file | Not Implemented |
-| CT-004 | `repository-rename_symbol` | Rename a symbol across the repository | Not Implemented |
-| CT-005 | `repository-extract_method` | Extract code into a new method/function | Not Implemented |
-| CT-006 | `repository-add_documentation` | Generate and add documentation comments | Not Implemented |
+| CT-001 | `repo_write-format_code` | Format code according to project style | Not Implemented |
+| CT-002 | `repo_write-add_import` | Add an import statement to a file (language-aware) | Not Implemented |
+| CT-003 | `repo_write-remove_import` | Remove an import statement from a file | Not Implemented |
+| CT-004 | `repo_write-rename_symbol` | Rename a symbol across the repository | Not Implemented |
+| CT-005 | `repo_write-extract_method` | Extract code into a new method/function | Not Implemented |
+| CT-006 | `repo_write-add_documentation` | Generate and add documentation comments | Not Implemented |
 | **Content Generation** | | | |
-| CG-001 | `repository-generate_test` | Generate test file for a source file | Not Implemented |
-| CG-002 | `repository-generate_class` | Generate a new class from template | Not Implemented |
-| CG-003 | `repository-generate_interface` | Generate interface from existing class | Not Implemented |
-| CG-004 | `repository-scaffold_component` | Generate boilerplate for common component types | Not Implemented |
+| CG-001 | `repo_write-generate_test` | Generate test file for a source file | Not Implemented |
+| CG-002 | `repo_write-generate_class` | Generate a new class from template | Not Implemented |
+| CG-003 | `repo_write-generate_interface` | Generate interface from existing class | Not Implemented |
+| CG-004 | `repo_write-scaffold_component` | Generate boilerplate for common component types | Not Implemented |
 
 ---
 
@@ -92,7 +92,7 @@ The implementation leverages these primary libraries:
 
 ## File System Analysis Tools
 
-### FSA-001: repository-get_file_metadata
+### FSA-001: repo_read-get_file_metadata
 
 **Purpose**: Get detailed metadata about a file or directory including size, timestamps, permissions,
 and file characteristics.
@@ -158,7 +158,7 @@ and file characteristics.
 
 ---
 
-### FSA-002: repository-check_path_exists
+### FSA-002: repo_read-check_path_exists
 
 **Purpose**: Lightweight check to determine if a path exists and what type it is. Faster alternative
 to `get_file_metadata` when full metadata is not needed.
@@ -210,7 +210,7 @@ to `get_file_metadata` when full metadata is not needed.
 
 ---
 
-### FSA-003: repository-get_directory_tree
+### FSA-003: repo_read-get_directory_tree
 
 **Purpose**: Generate a hierarchical tree structure of a directory, useful for visualization and
 understanding project layout.
@@ -290,7 +290,7 @@ interface TreeNode {
 
 ---
 
-### FSA-004: repository-find_files
+### FSA-004: repo_read-find_files
 
 **Purpose**: Find files matching glob patterns across the repository. More powerful and flexible than
 `list_files`.
@@ -366,7 +366,7 @@ interface TreeNode {
 
 ---
 
-### FSA-005: repository-analyze_file_type
+### FSA-005: repo_read-analyze_file_type
 
 **Purpose**: Detect file type, programming language, MIME type, and other characteristics to help
 agents understand file contents without parsing.
@@ -431,7 +431,7 @@ agents understand file contents without parsing.
 
 ---
 
-### FSA-006: repository-get_file_dependencies
+### FSA-006: repo_read-get_file_dependencies
 
 **Purpose**: Analyze import/require statements in a file to understand module dependencies and
 relationships between files.
@@ -487,7 +487,7 @@ relationships between files.
 
 ---
 
-### FSA-007: repository-get_project_structure
+### FSA-007: repo_read-get_project_structure
 
 **Purpose**: Analyze the overall project structure to detect build systems, package managers,
 frameworks, and provide a high-level understanding of the repository organization.
@@ -565,7 +565,7 @@ frameworks, and provide a high-level understanding of the repository organizatio
 
 ## Code Analysis Tools
 
-### CA-001: repository-parse_file_symbols
+### CA-001: repo_read-parse_file_symbols
 
 **Purpose**: Extract symbols (classes, functions, methods, interfaces, enums) from a file using AST
 parsing. This is fundamental for understanding code structure without reading entire files.
@@ -640,7 +640,7 @@ parsing. This is fundamental for understanding code structure without reading en
 
 ---
 
-### CA-002: repository-find_symbol_definition
+### CA-002: repo_read-find_symbol_definition
 
 **Purpose**: Find where a symbol (class, function, method, variable) is defined across the repository.
 Essential for code navigation and understanding.
@@ -701,7 +701,7 @@ Essential for code navigation and understanding.
 
 ---
 
-### CA-003: repository-find_symbol_references
+### CA-003: repo_read-find_symbol_references
 
 **Purpose**: Find all places where a symbol is referenced or used. Critical for refactoring and
 understanding code impact.
@@ -760,7 +760,7 @@ understanding code impact.
 
 ---
 
-### CA-004: repository-analyze_code_complexity
+### CA-004: repo_read-analyze_code_complexity
 
 **Purpose**: Calculate cyclomatic complexity, cognitive complexity, and maintainability index for
 code files. Helps identify complex code that needs refactoring.
@@ -818,7 +818,7 @@ code files. Helps identify complex code that needs refactoring.
 
 ---
 
-### CA-005: repository-analyze_dependencies
+### CA-005: repo_read-analyze_dependencies
 
 **Purpose**: Analyze project dependencies from build files (pom.xml, package.json), check versions,
 and optionally identify outdated packages.
@@ -879,7 +879,7 @@ and optionally identify outdated packages.
 
 ---
 
-### CA-006: repository-analyze_test_coverage
+### CA-006: repo_read-analyze_test_coverage
 
 **Purpose**: Analyze test files and identify potential coverage gaps by comparing source files to
 test files.
@@ -934,7 +934,7 @@ test files.
 
 ---
 
-### CA-007: repository-detect_code_smells
+### CA-007: repo_read-detect_code_smells
 
 **Purpose**: Identify common code smells and anti-patterns such as long methods, god classes,
 duplicate code, etc.
@@ -999,7 +999,7 @@ duplicate code, etc.
 
 ---
 
-### CA-008: repository-get_documentation_coverage
+### CA-008: repo_read-get_documentation_coverage
 
 **Purpose**: Analyze how well code is documented by checking for Javadoc, JSDoc, and other
 documentation comments.
@@ -1056,7 +1056,7 @@ documentation comments.
 
 ## File Modification Tools
 
-### FM-001: repository-write_file
+### FM-001: repo_write-write_file
 
 **Purpose**: Write content to a file, creating it if it doesn't exist or overwriting if it does.
 This is the most basic file modification operation.
@@ -1136,7 +1136,7 @@ This is the most basic file modification operation.
 
 ---
 
-### FM-002: repository-append_to_file
+### FM-002: repo_write-append_to_file
 
 **Purpose**: Append content to the end of an existing file. Useful for adding entries to logs,
 lists, or incremental file building.
@@ -1204,7 +1204,7 @@ lists, or incremental file building.
 
 ---
 
-### FM-003: repository-insert_at_line
+### FM-003: repo_write-insert_at_line
 
 **Purpose**: Insert content at a specific line number in a file. Useful for adding methods, imports,
 or other code at precise locations.
@@ -1277,7 +1277,7 @@ or other code at precise locations.
 
 ---
 
-### FM-004: repository-replace_in_file
+### FM-004: repo_write-replace_in_file
 
 **Purpose**: Search for text in a file and replace it with new text. Supports both literal and
 regex patterns.
@@ -1365,7 +1365,7 @@ regex patterns.
 
 ---
 
-### FM-005: repository-replace_lines
+### FM-005: repo_write-replace_lines
 
 **Purpose**: Replace a range of lines in a file with new content. More precise than text search
 when line numbers are known.
@@ -1442,7 +1442,7 @@ when line numbers are known.
 
 ---
 
-### FM-006: repository-delete_file
+### FM-006: repo_write-delete_file
 
 **Purpose**: Delete a file or directory from the repository.
 
@@ -1514,7 +1514,7 @@ when line numbers are known.
 
 ---
 
-### FM-007: repository-move_file
+### FM-007: repo_write-move_file
 
 **Purpose**: Move or rename a file or directory within the repository.
 
@@ -1590,7 +1590,7 @@ when line numbers are known.
 
 ---
 
-### FM-008: repository-copy_file
+### FM-008: repo_write-copy_file
 
 **Purpose**: Copy a file or directory to another location in the repository.
 
@@ -1664,7 +1664,7 @@ when line numbers are known.
 
 ---
 
-### FM-009: repository-create_directory
+### FM-009: repo_write-create_directory
 
 **Purpose**: Create a new directory in the repository.
 
@@ -1728,7 +1728,7 @@ when line numbers are known.
 
 ---
 
-### FM-010: repository-apply_patch
+### FM-010: repo_write-apply_patch
 
 **Purpose**: Apply a unified diff patch to one or more files. Useful for automated code changes
 from generated patches.
@@ -1807,7 +1807,7 @@ from generated patches.
 
 ## Code Transformation Tools
 
-### CT-001: repository-format_code
+### CT-001: repo_write-format_code
 
 **Purpose**: Format code according to Prettier style or project-specific configuration. Ensures
 consistent code style across the repository.
@@ -1865,7 +1865,7 @@ consistent code style across the repository.
 
 ---
 
-### CT-002: repository-add_import
+### CT-002: repo_write-add_import
 
 **Purpose**: Add an import/require statement to a file in a language-aware way, handling proper
 placement and avoiding duplicates.
@@ -1929,7 +1929,7 @@ placement and avoiding duplicates.
 
 ---
 
-### CT-003: repository-remove_import
+### CT-003: repo_write-remove_import
 
 **Purpose**: Remove an import/require statement from a file.
 
@@ -1978,7 +1978,7 @@ placement and avoiding duplicates.
 
 ---
 
-### CT-004: repository-rename_symbol
+### CT-004: repo_write-rename_symbol
 
 **Purpose**: Rename a symbol (class, function, variable) across the entire repository or within a
 specific scope. This is a complex refactoring operation.
@@ -2043,7 +2043,7 @@ specific scope. This is a complex refactoring operation.
 
 ---
 
-### CT-005: repository-extract_method
+### CT-005: repo_write-extract_method
 
 **Purpose**: Extract a block of code into a new method/function. Advanced refactoring operation.
 
@@ -2113,7 +2113,7 @@ specific scope. This is a complex refactoring operation.
 
 ---
 
-### CT-006: repository-add_documentation
+### CT-006: repo_write-add_documentation
 
 **Purpose**: Generate and add documentation comments (Javadoc, JSDoc) to a symbol. Can use AI
 to generate descriptions.
@@ -2178,7 +2178,7 @@ to generate descriptions.
 
 ## Content Generation Tools
 
-### CG-001: repository-generate_test
+### CG-001: repo_write-generate_test
 
 **Purpose**: Generate a test file for a source file, including test cases and boilerplate setup.
 
@@ -2246,7 +2246,7 @@ to generate descriptions.
 
 ---
 
-### CG-002: repository-generate_class
+### CG-002: repo_write-generate_class
 
 **Purpose**: Generate a new class file from a template with specified fields and methods.
 
@@ -2335,7 +2335,7 @@ to generate descriptions.
 
 ---
 
-### CG-003: repository-generate_interface
+### CG-003: repo_write-generate_interface
 
 **Purpose**: Generate an interface from an existing class, extracting public methods.
 
@@ -2394,7 +2394,7 @@ to generate descriptions.
 
 ---
 
-### CG-004: repository-scaffold_component
+### CG-004: repo_write-scaffold_component
 
 **Purpose**: Generate boilerplate code for common component types (REST controller, service,
 repository, entity, DTO, etc.) following framework conventions.

@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const GetFileMetadataTool: Tool = {
-    name: 'repository-get_file_metadata',
+    name: 'repo_read-get_file_metadata',
     description:
         'Get detailed metadata about a file or directory including size, timestamps, permissions, and file characteristics',
     input_schema: {
@@ -39,8 +39,8 @@ export const GetFileMetadataTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-get_file_metadata',
-                    tool: 'repository-get_file_metadata',
+                    message: 'workDir is required in context for repo_read-get_file_metadata',
+                    tool: 'repo_read-get_file_metadata',
                 };
             }
 

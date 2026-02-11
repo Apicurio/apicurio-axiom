@@ -99,7 +99,7 @@ const FRAMEWORK_PATTERNS = {
 };
 
 export const GetProjectStructureTool: Tool = {
-    name: 'repository-get_project_structure',
+    name: 'repo_read-get_project_structure',
     description:
         'Analyze the overall project structure to detect build systems, package managers, frameworks, and provide a high-level understanding of repository organization',
     input_schema: {
@@ -126,8 +126,8 @@ export const GetProjectStructureTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-get_project_structure',
-                    tool: 'repository-get_project_structure',
+                    message: 'workDir is required in context for repo_read-get_project_structure',
+                    tool: 'repo_read-get_project_structure',
                 };
             }
 
@@ -362,7 +362,7 @@ export const GetProjectStructureTool: Tool = {
                 },
             };
         } catch (error) {
-            context.logger.error(`Error in repository-get_project_structure: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_read-get_project_structure: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to analyze project structure: ${(error as Error).message}`,

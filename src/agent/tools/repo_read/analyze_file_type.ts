@@ -224,7 +224,7 @@ const FRAMEWORK_PATTERNS: FrameworkPattern[] = [
 ];
 
 export const AnalyzeFileTypeTool: Tool = {
-    name: 'repository-analyze_file_type',
+    name: 'repo_read-analyze_file_type',
     description:
         'Detect file type, programming language, MIME type, and other characteristics to help understand file contents without parsing',
     input_schema: {
@@ -251,8 +251,8 @@ export const AnalyzeFileTypeTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-analyze_file_type',
-                    tool: 'repository-analyze_file_type',
+                    message: 'workDir is required in context for repo_read-analyze_file_type',
+                    tool: 'repo_read-analyze_file_type',
                 };
             }
 
@@ -406,7 +406,7 @@ export const AnalyzeFileTypeTool: Tool = {
 
             return result;
         } catch (error) {
-            context.logger.error(`Error in repository-analyze_file_type: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_read-analyze_file_type: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to analyze file type: ${(error as Error).message}`,

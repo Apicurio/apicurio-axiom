@@ -12,7 +12,7 @@ import fs from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const FindFilesTool: Tool = {
-    name: 'repository-find_files',
+    name: 'repo_read-find_files',
     description:
         'Find files matching glob patterns across the repository. Supports complex patterns (e.g., "**/*.java", "src/**/Test*.ts"), exclusion filters, and result limiting.',
     input_schema: {
@@ -57,8 +57,8 @@ export const FindFilesTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-find_files',
-                    tool: 'repository-find_files',
+                    message: 'workDir is required in context for repo_read-find_files',
+                    tool: 'repo_read-find_files',
                 };
             }
 
@@ -148,7 +148,7 @@ export const FindFilesTool: Tool = {
                 };
             }
         } catch (error) {
-            context.logger.error(`Error in repository-find_files: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_read-find_files: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to find files: ${(error as Error).message}`,

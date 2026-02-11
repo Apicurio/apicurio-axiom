@@ -31,7 +31,7 @@ interface DirectoryTreeOutput {
 }
 
 export const GetDirectoryTreeTool: Tool = {
-    name: 'repository-get_directory_tree',
+    name: 'repo_read-get_directory_tree',
     description:
         'Generate a hierarchical tree structure of a directory. Supports depth limiting, hidden file filtering, and pattern matching.',
     input_schema: {
@@ -79,8 +79,8 @@ export const GetDirectoryTreeTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-get_directory_tree',
-                    tool: 'repository-get_directory_tree',
+                    message: 'workDir is required in context for repo_read-get_directory_tree',
+                    tool: 'repo_read-get_directory_tree',
                 };
             }
 
@@ -206,11 +206,11 @@ export const GetDirectoryTreeTool: Tool = {
 
             return result;
         } catch (error) {
-            context.logger.error(`Error in repository-get_directory_tree: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_read-get_directory_tree: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to build directory tree: ${(error as Error).message}`,
-                tool: 'repository-get_directory_tree',
+                tool: 'repo_read-get_directory_tree',
             };
         }
     },

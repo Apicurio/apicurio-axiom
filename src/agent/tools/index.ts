@@ -28,26 +28,28 @@ import { GetRepositoryLabelsTool } from './github/get_repository_labels.js';
 import { OpenPullRequestTool } from './github/open_pull_request.js';
 import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
 
-// Import all repository tools
-import { AnalyzeFileTypeTool } from './repository/analyze_file_type.js';
-import { AppendToFileTool } from './repository/append_to_file.js';
-import { ApplyPatchTool } from './repository/apply_patch.js';
-import { CheckPathExistsTool } from './repository/check_path_exists.js';
-import { CopyFileTool } from './repository/copy_file.js';
-import { CreateDirectoryTool } from './repository/create_directory.js';
-import { DeleteFileTool } from './repository/delete_file.js';
-import { FindFilesTool } from './repository/find_files.js';
-import { GetDirectoryTreeTool } from './repository/get_directory_tree.js';
-import { GetFileMetadataTool } from './repository/get_file_metadata.js';
-import { GetProjectStructureTool } from './repository/get_project_structure.js';
-import { InsertAtLineTool } from './repository/insert_at_line.js';
-import { ListFilesTool } from './repository/list_files.js';
-import { MoveFileTool } from './repository/move_file.js';
-import { ReadFileTool } from './repository/read_file.js';
-import { ReplaceInFileTool } from './repository/replace_in_file.js';
-import { ReplaceLinesTool } from './repository/replace_lines.js';
-import { SearchCodeTool } from './repository/search_code.js';
-import { WriteFileTool } from './repository/write_file.js';
+// Import all repo_read tools (read-only repository operations)
+import { AnalyzeFileTypeTool } from './repo_read/analyze_file_type.js';
+import { CheckPathExistsTool } from './repo_read/check_path_exists.js';
+import { FindFilesTool } from './repo_read/find_files.js';
+import { GetDirectoryTreeTool } from './repo_read/get_directory_tree.js';
+import { GetFileMetadataTool } from './repo_read/get_file_metadata.js';
+import { GetProjectStructureTool } from './repo_read/get_project_structure.js';
+import { ListFilesTool } from './repo_read/list_files.js';
+import { ReadFileTool } from './repo_read/read_file.js';
+import { SearchCodeTool } from './repo_read/search_code.js';
+
+// Import all repo_write tools (write/modify repository operations)
+import { AppendToFileTool } from './repo_write/append_to_file.js';
+import { ApplyPatchTool } from './repo_write/apply_patch.js';
+import { CopyFileTool } from './repo_write/copy_file.js';
+import { CreateDirectoryTool } from './repo_write/create_directory.js';
+import { DeleteFileTool } from './repo_write/delete_file.js';
+import { InsertAtLineTool } from './repo_write/insert_at_line.js';
+import { MoveFileTool } from './repo_write/move_file.js';
+import { ReplaceInFileTool } from './repo_write/replace_in_file.js';
+import { ReplaceLinesTool } from './repo_write/replace_lines.js';
+import { WriteFileTool } from './repo_write/write_file.js';
 
 /**
  * ToolIndex - Singleton registry of all available tools
@@ -100,25 +102,27 @@ export class ToolIndex {
         this.register(OpenPullRequestTool);
         this.register(SetIssueMilestoneTool);
 
-        // Register repository tools
+        // Register repo_read tools (read-only operations)
         this.register(AnalyzeFileTypeTool);
-        this.register(AppendToFileTool);
-        this.register(ApplyPatchTool);
         this.register(CheckPathExistsTool);
-        this.register(CopyFileTool);
-        this.register(CreateDirectoryTool);
-        this.register(DeleteFileTool);
         this.register(FindFilesTool);
         this.register(GetDirectoryTreeTool);
         this.register(GetFileMetadataTool);
         this.register(GetProjectStructureTool);
-        this.register(InsertAtLineTool);
         this.register(ListFilesTool);
-        this.register(MoveFileTool);
         this.register(ReadFileTool);
+        this.register(SearchCodeTool);
+
+        // Register repo_write tools (write/modify operations)
+        this.register(AppendToFileTool);
+        this.register(ApplyPatchTool);
+        this.register(CopyFileTool);
+        this.register(CreateDirectoryTool);
+        this.register(DeleteFileTool);
+        this.register(InsertAtLineTool);
+        this.register(MoveFileTool);
         this.register(ReplaceInFileTool);
         this.register(ReplaceLinesTool);
-        this.register(SearchCodeTool);
         this.register(WriteFileTool);
     }
 

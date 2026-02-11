@@ -12,7 +12,7 @@ import { parsePatch, applyPatch } from 'diff';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const ApplyPatchTool: Tool = {
-    name: 'repository-apply_patch',
+    name: 'repo_write-apply_patch',
     description:
         'Apply a unified diff patch to one or more files. Supports dry-run mode to test patches and reverse mode to unapply patches.',
     input_schema: {
@@ -56,8 +56,8 @@ export const ApplyPatchTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-apply_patch',
-                    tool: 'repository-apply_patch',
+                    message: 'workDir is required in context for repo_write-apply_patch',
+                    tool: 'repo_write-apply_patch',
                 };
             }
 
@@ -282,7 +282,7 @@ export const ApplyPatchTool: Tool = {
                 errors,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-apply_patch: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-apply_patch: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to apply patch: ${(error as Error).message}`,

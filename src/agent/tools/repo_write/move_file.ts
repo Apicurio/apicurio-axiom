@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const MoveFileTool: Tool = {
-    name: 'repository-move_file',
+    name: 'repo_write-move_file',
     description:
         'Move or rename a file or directory within the repository. Supports overwriting and automatic parent directory creation.',
     input_schema: {
@@ -61,8 +61,8 @@ export const MoveFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-move_file',
-                    tool: 'repository-move_file',
+                    message: 'workDir is required in context for repo_write-move_file',
+                    tool: 'repo_write-move_file',
                 };
             }
 
@@ -169,7 +169,7 @@ export const MoveFileTool: Tool = {
                 overwritten: destExists,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-move_file: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-move_file: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to move: ${(error as Error).message}`,
@@ -195,8 +195,8 @@ export const MoveFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-move_file',
-                    tool: 'repository-move_file',
+                    message: 'workDir is required in context for repo_write-move_file',
+                    tool: 'repo_write-move_file',
                 };
             }
 

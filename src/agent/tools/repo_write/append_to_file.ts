@@ -1,9 +1,9 @@
 /**
- * WriteFileTool - Write content to a file (create or overwrite)
+ * AppendToFileTool - Append content to the end of an existing file
  *
- * This tool allows the agent to write content to a file in the work directory,
- * creating it if it doesn't exist or overwriting if it does. It supports creating
- * parent directories, backing up existing files, and custom encoding.
+ * This tool allows the agent to append content to an existing file in the work directory.
+ * Useful for adding entries to logs, lists, or incremental file building. The file must
+ * already exist; this tool will not create a new file.
  */
 
 import * as fs from 'node:fs/promises';
@@ -11,10 +11,10 @@ import * as path from 'node:path';
 import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
-export const WriteFileTool: Tool = {
-    name: 'repository-write_file',
+export const AppendToFileTool: Tool = {
+    name: 'repo_write-append_to_file',
     description:
-        'Write content to a file, creating it if it doesn\'t exist or overwriting if it does. Supports creating parent directories and backing up existing files.',
+        'Append content to the end of an existing file. The file must already exist. Optionally adds a newline before the content.',
     input_schema: {
         type: 'object',
         properties: {
@@ -24,22 +24,12 @@ export const WriteFileTool: Tool = {
             },
             content: {
                 type: 'string',
-                description: 'Content to write to file',
+                description: 'Content to append',
             },
-            encoding: {
-                type: 'string',
-                description: 'File encoding (default: utf-8)',
-                default: 'utf-8',
-            },
-            create_directories: {
+            newline: {
                 type: 'boolean',
-                description: "Create parent directories if they don't exist (default: true)",
+                description: 'Add newline before content (default: true)',
                 default: true,
-            },
-            backup: {
-                type: 'boolean',
-                description: 'Create backup of existing file (default: false)',
-                default: false,
             },
         },
         required: ['path', 'content'],
@@ -56,9 +46,7 @@ export const WriteFileTool: Tool = {
         input: {
             path: string;
             content: string;
-            encoding?: string;
-            create_directories?: boolean;
-            backup?: boolean;
+            newline?: boolean;
         },
         context: ToolContext
     ): Promise<any> {
@@ -67,8 +55,8 @@ export const WriteFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-write_file',
-                    tool: 'repository-write_file',
+                    message: 'workDir is required in context for repo_write-append_to_file',
+                    tool: 'repo_write-append_to_file',
                 };
             }
 
@@ -101,52 +89,51 @@ export const WriteFileTool: Tool = {
                 };
             }
 
-            // Set defaults
-            const encoding = (input.encoding || 'utf-8') as BufferEncoding;
-            const createDirectories = input.create_directories !== false; // default true
-            const backup = input.backup === true; // default false
-
             // Check if file exists
             const exists = await fse.pathExists(fullPath);
-            let backupPath: string | undefined;
-
-            context.logger.info(`Writing file: ${input.path} (exists: ${exists})`);
-
-            // Create backup if requested and file exists
-            if (backup && exists) {
-                backupPath = `${fullPath}.bak`;
-                context.logger.info(`Creating backup: ${backupPath}`);
-                await fse.copy(fullPath, backupPath, { overwrite: true });
+            if (!exists) {
+                return {
+                    error: true,
+                    message: `File does not exist: ${input.path}`,
+                    tool: this.name,
+                };
             }
 
-            // Ensure parent directories exist if requested
-            if (createDirectories) {
-                const dirPath = path.dirname(fullPath);
-                await fse.ensureDir(dirPath);
-            }
+            // Get original file size
+            const statsBefore = await fs.stat(fullPath);
+            const sizeBefore = statsBefore.size;
 
-            // Write the file
-            await fs.writeFile(fullPath, input.content, encoding);
+            // Set default for newline
+            const addNewline = input.newline !== false; // default true
 
-            // Get file size
-            const stats = await fs.stat(fullPath);
+            // Prepare content to append
+            const contentToAppend = addNewline ? `\n${input.content}` : input.content;
+
+            context.logger.info(`Appending to file: ${input.path} (${contentToAppend.length} bytes)`);
+
+            // Append the content
+            await fs.appendFile(fullPath, contentToAppend, 'utf-8');
+
+            // Get new file size
+            const statsAfter = await fs.stat(fullPath);
+            const sizeAfter = statsAfter.size;
+            const bytesAppended = sizeAfter - sizeBefore;
 
             context.logger.info(
-                `File written successfully: ${input.path} (${stats.size} bytes, created: ${!exists})`
+                `Content appended successfully: ${input.path} (appended: ${bytesAppended} bytes, new size: ${sizeAfter} bytes)`
             );
 
             return {
                 success: true,
                 path: input.path,
-                bytes_written: stats.size,
-                backup_path: backupPath ? path.relative(context.workDir, backupPath) : undefined,
-                created: !exists,
+                bytes_appended: bytesAppended,
+                new_size: sizeAfter,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-write_file: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-append_to_file: ${(error as Error).message}`);
             return {
                 error: true,
-                message: `Failed to write file: ${(error as Error).message}`,
+                message: `Failed to append to file: ${(error as Error).message}`,
                 tool: this.name,
             };
         }
@@ -159,9 +146,7 @@ export const WriteFileTool: Tool = {
         input: {
             path: string;
             content: string;
-            encoding?: string;
-            create_directories?: boolean;
-            backup?: boolean;
+            newline?: boolean;
         },
         context: ToolContext
     ): Promise<any> {
@@ -170,8 +155,8 @@ export const WriteFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-write_file',
-                    tool: 'repository-write_file',
+                    message: 'workDir is required in context for repo_write-append_to_file',
+                    tool: 'repo_write-append_to_file',
                 };
             }
 
@@ -206,22 +191,32 @@ export const WriteFileTool: Tool = {
 
             // Check if file exists (read-only check)
             const exists = await fse.pathExists(fullPath);
+            if (!exists) {
+                return {
+                    dry_run: true,
+                    error: true,
+                    message: `File does not exist: ${input.path}`,
+                    tool: this.name,
+                };
+            }
 
-            // Simulate backup path if requested
-            const backup = input.backup === true;
-            const backupPath = backup && exists ? `${input.path}.bak` : undefined;
+            // Get current file size (read-only)
+            const stats = await fs.stat(fullPath);
+            const currentSize = stats.size;
 
-            // Calculate simulated bytes
-            const bytesWritten = Buffer.byteLength(input.content, 'utf-8');
+            // Calculate bytes that would be appended
+            const addNewline = input.newline !== false; // default true
+            const contentToAppend = addNewline ? `\n${input.content}` : input.content;
+            const bytesAppended = Buffer.byteLength(contentToAppend, 'utf-8');
+            const newSize = currentSize + bytesAppended;
 
             return {
                 dry_run: true,
-                message: `Would write ${bytesWritten} bytes to ${input.path}`,
+                message: `Would append ${bytesAppended} bytes to ${input.path}`,
                 success: true,
                 path: input.path,
-                bytes_written: bytesWritten,
-                backup_path: backupPath,
-                created: !exists,
+                bytes_appended: bytesAppended,
+                new_size: newSize,
             };
         } catch (error) {
             return {

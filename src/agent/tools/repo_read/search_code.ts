@@ -9,7 +9,7 @@ import type { Tool, ToolContext } from '../../../types/agent.js';
 import { execAsync } from '../utils.js';
 
 export const SearchCodeTool: Tool = {
-    name: 'repository-search_code',
+    name: 'repo_read-search_code',
     description:
         'Search for a text pattern in repository files using grep. Returns matching lines with file paths and line numbers.',
     input_schema: {
@@ -47,8 +47,8 @@ export const SearchCodeTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-search_code',
-                    tool: 'repository-search_code',
+                    message: 'workDir is required in context for repo_read-search_code',
+                    tool: 'repo_read-search_code',
                 };
             }
 

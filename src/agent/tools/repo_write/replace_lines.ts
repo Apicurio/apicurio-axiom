@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const ReplaceLinesTool: Tool = {
-    name: 'repository-replace_lines',
+    name: 'repo_write-replace_lines',
     description:
         'Replace a range of lines in a file with new content. Line numbers are 1-based and inclusive. More precise than search/replace when exact line numbers are known.',
     input_schema: {
@@ -61,8 +61,8 @@ export const ReplaceLinesTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-replace_lines',
-                    tool: 'repository-replace_lines',
+                    message: 'workDir is required in context for repo_write-replace_lines',
+                    tool: 'repo_write-replace_lines',
                 };
             }
 
@@ -185,7 +185,7 @@ export const ReplaceLinesTool: Tool = {
                 old_content: oldContent,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-replace_lines: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-replace_lines: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to replace lines: ${(error as Error).message}`,
@@ -211,8 +211,8 @@ export const ReplaceLinesTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-replace_lines',
-                    tool: 'repository-replace_lines',
+                    message: 'workDir is required in context for repo_write-replace_lines',
+                    tool: 'repo_write-replace_lines',
                 };
             }
 

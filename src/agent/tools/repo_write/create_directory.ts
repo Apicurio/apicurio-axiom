@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CreateDirectoryTool: Tool = {
-    name: 'repository-create_directory',
+    name: 'repo_write-create_directory',
     description:
         'Create a new directory in the repository. Supports creating parent directories automatically. Succeeds if directory already exists.',
     input_schema: {
@@ -50,8 +50,8 @@ export const CreateDirectoryTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-create_directory',
-                    tool: 'repository-create_directory',
+                    message: 'workDir is required in context for repo_write-create_directory',
+                    tool: 'repo_write-create_directory',
                 };
             }
 
@@ -139,7 +139,7 @@ export const CreateDirectoryTool: Tool = {
                 parents_created: parentsCreated,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-create_directory: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-create_directory: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to create directory: ${(error as Error).message}`,
@@ -163,8 +163,8 @@ export const CreateDirectoryTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-create_directory',
-                    tool: 'repository-create_directory',
+                    message: 'workDir is required in context for repo_write-create_directory',
+                    tool: 'repo_write-create_directory',
                 };
             }
 

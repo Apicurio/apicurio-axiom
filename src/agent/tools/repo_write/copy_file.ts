@@ -12,7 +12,7 @@ import * as fse from 'fs-extra';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 export const CopyFileTool: Tool = {
-    name: 'repository-copy_file',
+    name: 'repo_write-copy_file',
     description:
         'Copy a file or directory to another location in the repository. Supports recursive copying and overwrite options.',
     input_schema: {
@@ -61,8 +61,8 @@ export const CopyFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-copy_file',
-                    tool: 'repository-copy_file',
+                    message: 'workDir is required in context for repo_write-copy_file',
+                    tool: 'repo_write-copy_file',
                 };
             }
 
@@ -174,7 +174,7 @@ export const CopyFileTool: Tool = {
                 files_copied: filesCopied,
             };
         } catch (error) {
-            context.logger.error(`Error in repository-copy_file: ${(error as Error).message}`);
+            context.logger.error(`Error in repo_write-copy_file: ${(error as Error).message}`);
             return {
                 error: true,
                 message: `Failed to copy: ${(error as Error).message}`,
@@ -200,8 +200,8 @@ export const CopyFileTool: Tool = {
             if (!context.workDir) {
                 return {
                     error: true,
-                    message: 'workDir is required in context for repository-copy_file',
-                    tool: 'repository-copy_file',
+                    message: 'workDir is required in context for repo_write-copy_file',
+                    tool: 'repo_write-copy_file',
                 };
             }
 
