@@ -145,8 +145,10 @@ export function getWorkDirPath(baseWorkDir: string, eventType: string, eventNumb
  * Tool categories for organizing tool output
  */
 interface ToolCategories {
-    'Repository Tools': string[];
-    'Git Tools': string[];
+    'Repository Read Tools': string[];
+    'Repository Write Tools': string[];
+    'Git Read Tools': string[];
+    'Git Write Tools': string[];
     'GitHub Read Tools': string[];
     'GitHub Write Tools': string[];
     Other: string[];
@@ -167,21 +169,27 @@ export function listAvailableTools(): void {
 
     // Group tools by category
     const categories: ToolCategories = {
-        'Repository Tools': [],
-        'Git Tools': [],
+        'Repository Read Tools': [],
+        'Repository Write Tools': [],
+        'Git Read Tools': [],
+        'Git Write Tools': [],
         'GitHub Read Tools': [],
         'GitHub Write Tools': [],
         Other: [],
     };
 
     for (const toolName of toolNames) {
-        if (toolName.startsWith('repository-')) {
-            categories['Repository Tools'].push(toolName);
-        } else if (toolName.startsWith('git-')) {
-            categories['Git Tools'].push(toolName);
-        } else if (toolName.startsWith('github-get_') || toolName.startsWith('github-get-')) {
+        if (toolName.startsWith('repo_read-')) {
+            categories['Repository Read Tools'].push(toolName);
+        } else if (toolName.startsWith('repo_write-')) {
+            categories['Repository Write Tools'].push(toolName);
+        } else if (toolName.startsWith('git_read-')) {
+            categories['Git Read Tools'].push(toolName);
+        } else if (toolName.startsWith('git_write-')) {
+            categories['Git Write Tools'].push(toolName);
+        } else if (toolName.startsWith('github_read-')) {
             categories['GitHub Read Tools'].push(toolName);
-        } else if (toolName.startsWith('github-')) {
+        } else if (toolName.startsWith('github_write-')) {
             categories['GitHub Write Tools'].push(toolName);
         } else {
             categories.Other.push(toolName);
