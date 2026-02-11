@@ -436,9 +436,9 @@ actions:
     type: ai-agent
     prompt: label-issue
     tools:
-      - github-get_issue_details
-      - github-get_repository_labels
-      - github-add_labels
+      - github_read-get_issue_details
+      - github_read-get_repository_labels
+      - github_write-add_labels
 ```
 
 #### Features
@@ -465,36 +465,55 @@ actions:
 
 #### Available Tools
 
-Tools are organized by namespace using dashes for separation. You can use wildcard patterns to match multiple tools (e.g., `github-*`, `git-*`, `repository-*`).
+Tools are organized into read and write categories to clearly separate read-only operations from those that make changes. You can use wildcard patterns to match multiple tools (e.g., `github_read-*`, `git_write-*`, `repo_read-*`).
 
-**Repository Tools** (file system operations):
-- `repository-read_file` - Read file contents from repository
-- `repository-list_files` - List files in directory (with recursive option)
-- `repository-search_code` - Search for patterns in code using grep
+**Repository Read Tools** (read-only file system operations):
+- `repo_read-read_file` - Read file contents from repository
+- `repo_read-list_files` - List files in directory (with recursive option)
+- `repo_read-search_code` - Search for patterns in code using grep
+- `repo_read-get_file_metadata` - Get file/directory metadata
+- `repo_read-check_path_exists` - Check if path exists
+- `repo_read-get_directory_tree` - Get directory tree structure
+- `repo_read-find_files` - Find files by glob patterns
+- `repo_read-analyze_file_type` - Detect file type and language
+- `repo_read-get_project_structure` - Analyze project structure
 
-**Git Tools** (git operations):
-- `git-status` - Get git repository status
-- `git-diff` - Get git diff output
-- `git-log` - Get commit history with filtering
-- `git-create_branch` - Create new git branch
+**Repository Write Tools** (file system operations that make changes):
+- `repo_write-write_file` - Write/create files
+- `repo_write-append_to_file` - Append to files
+- `repo_write-insert_at_line` - Insert at specific line
+- `repo_write-replace_in_file` - Search and replace
+- `repo_write-replace_lines` - Replace line ranges
+- `repo_write-delete_file` - Delete files/directories
+- `repo_write-move_file` - Move/rename files
+- `repo_write-copy_file` - Copy files/directories
+- `repo_write-create_directory` - Create directories
+- `repo_write-apply_patch` - Apply diff patches
+
+**Git Read Tools** (read-only git operations):
+- `git_read-status` - Get git repository status
+- `git_read-diff` - Get git diff output
+- `git_read-log` - Get commit history with filtering
+
+**Git Write Tools** (git operations that make changes):
+- `git_write-create_branch` - Create new git branch
 
 **GitHub Read Tools** (read-only GitHub API operations):
-- `github-get_issue_details` - Get GitHub issue information
-- `github-get_repository_labels` - List available repository labels
-- `github-get_discussion_details` - Get GitHub discussion information (requires number)
-- `github-get_discussion` - Get current GitHub discussion information
-- `github-get_milestones` - List repository milestones
+- `github_read-get_issue_details` - Get GitHub issue information
+- `github_read-get_repository_labels` - List available repository labels
+- `github_read-get_discussion` - Get current GitHub discussion information
+- `github_read-get_milestones` - List repository milestones
 
 **GitHub Write Tools** (GitHub API operations that make changes):
-- `github-add_labels` - Add labels to issue or PR
-- `github-add_comment` - Post comment on issue or PR
-- `github-add_discussion_response` - Post response to discussion
-- `github-create_issue` - Create new GitHub issue
-- `github-create_pull_request` - Create pull request (assumes branch pushed)
-- `github-close_issue` - Close an issue
-- `github-assign_issue` - Assign users to issue
-- `github-set_issue_milestone` - Set issue milestone
-- `github-open_pull_request` - Complete PR workflow (commit + push + create PR)
+- `github_write-add_labels` - Add labels to issue or PR
+- `github_write-add_comment` - Post comment on issue or PR
+- `github_write-add_discussion_response` - Post response to discussion
+- `github_write-create_issue` - Create new GitHub issue
+- `github_write-create_pull_request` - Create pull request (assumes branch pushed)
+- `github_write-close_issue` - Close an issue
+- `github_write-assign_issue` - Assign users to issue
+- `github_write-set_issue_milestone` - Set issue milestone
+- `github_write-open_pull_request` - Complete PR workflow (commit + push + create PR)
 
 **Tool Pattern Matching:**
 
@@ -502,21 +521,25 @@ You can use wildcard patterns to grant access to multiple tools at once:
 
 ```yaml
 tools:
-  - github-*          # All GitHub tools (read and write)
-  - git-*             # All git tools
-  - repository-*      # All repository tools
+  - github_read-*     # All GitHub read-only tools
+  - github_write-*    # All GitHub write tools
+  - git_read-*        # All git read-only tools
+  - git_write-*       # All git write tools
+  - repo_read-*       # All repository read-only tools
+  - repo_write-*      # All repository write tools
   - "*"               # All available tools (use with caution)
-  - github-get_*      # All GitHub read tools starting with "get_"
-  - "*-add_*"         # All tools with "add_" in the name
+  - "*_read-*"        # All read-only tools across all categories
+  - "*_write-*"       # All write tools across all categories
 ```
 
 Patterns can be mixed with specific tool names:
 
 ```yaml
 tools:
-  - git-*                         # All git tools
-  - github-get_issue_details      # Specific GitHub tool
-  - repository-read_file          # Specific repository tool
+  - git_read-*                         # All git read tools
+  - github_read-get_issue_details      # Specific GitHub read tool
+  - repo_read-read_file                # Specific repository read tool
+  - github_write-add_comment           # Specific GitHub write tool
 ```
 
 #### Task Prompts
@@ -532,9 +555,9 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
        type: ai-agent
        prompt: label-issue
        tools:
-         - github-get_issue_details
-         - github-get_repository_labels
-         - github-add_labels
+         - github_read-get_issue_details
+         - github_read-get_repository_labels
+         - github_write-add_labels
    ```
 
 2. **`analyze-issue`** - In-depth issue analysis
@@ -544,10 +567,10 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
        type: ai-agent
        prompt: analyze-issue
        tools:
-         - github-get_issue_details
-         - repository-*
-         - github-add_comment
-         - github-add_labels
+         - github_read-get_issue_details
+         - repo_read-*
+         - github_write-add_comment
+         - github_write-add_labels
    ```
 
 3. **`test-comment`** - Simple test comment on issues
@@ -557,8 +580,8 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
        type: ai-agent
        prompt: test-comment
        tools:
-         - github-get_issue_details
-         - github-add_comment
+         - github_read-get_issue_details
+         - github_write-add_comment
    ```
 
 4. **`discussion`** - Participate in GitHub discussions
@@ -568,9 +591,9 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
        type: ai-agent
        prompt: discussion
        tools:
-         - github-get_discussion
-         - github-add_discussion_response
-         - repository-*  # Access to repository tools if needed
+         - github_read-get_discussion
+         - github_write-add_discussion_response
+         - repo_read-*  # Access to repository read tools if needed
    ```
 
 **Creating Custom Prompts:**
@@ -644,13 +667,13 @@ actions:
     type: ai-agent
     prompt: label-issue
     model: claude-sonnet-4-5@20250929  # Fast, cost-effective
-    tools: [github-get_issue_details, github-add_labels]
+    tools: [github_read-get_issue_details, github_write-add_labels]
 
   complex-analysis:
     type: ai-agent
     prompt: analyze-issue
     model: claude-opus-4-5@20251101    # More capable, higher cost
-    tools: [github-*, repository-*, git-log]
+    tools: [github_read-*, github_write-*, repo_read-*, git_read-log]
 ```
 
 #### Example Configurations
@@ -663,9 +686,9 @@ actions:
     type: ai-agent
     prompt: label-issue
     tools:
-      - github-get_issue_details
-      - github-get_repository_labels
-      - github-add_labels
+      - github_read-get_issue_details
+      - github_read-get_repository_labels
+      - github_write-add_labels
 
 events:
   issue.opened:
@@ -681,9 +704,10 @@ actions:
     type: ai-agent
     prompt: analyze-issue
     tools:
-      - github-*       # All GitHub tools
-      - repository-*   # All repository tools
-      - git-log        # Specific git tool
+      - github_read-*   # All GitHub read tools
+      - github_write-*  # All GitHub write tools
+      - repo_read-*     # All repository read tools
+      - git_read-log    # Specific git read tool
     model: claude-opus-4-5@20251101
 
 events:
@@ -705,12 +729,12 @@ actions:
     type: ai-agent
     prompt: label-issue
     tools:
-      - github-get_issue_details
-      - github-get_repository_labels
-      - repository-search_code
-      - git-log
-      - github-add_labels
-      - github-add_comment
+      - github_read-get_issue_details
+      - github_read-get_repository_labels
+      - repo_read-search_code
+      - git_read-log
+      - github_write-add_labels
+      - github_write-add_comment
 
 events:
   issue.labeled:
@@ -729,9 +753,9 @@ actions:
     type: ai-agent
     prompt: discussion
     tools:
-      - github-get_discussion
-      - github-add_discussion_response
-      - repository-*  # Allow repository exploration
+      - github_read-get_discussion
+      - github_write-add_discussion_response
+      - repo_read-*  # Allow repository read-only exploration
 
 events:
   discussion.created:
@@ -745,7 +769,7 @@ Agent execution logs include detailed information about each step, including whi
 
 ```
 Starting AI agent with prompt: label-issue
-Tools: github-get_issue_details, github-get_repository_labels, github-add_labels
+Tools: github_read-get_issue_details, github_read-get_repository_labels, github_write-add_labels
 Work directory: /path/to/work/dir
 
 Configured 3 tools
@@ -756,14 +780,14 @@ Goal: Analyze GitHub issue #123: "Bug in auth flow"
 Stop reason: tool_use
 Tokens: 1234 in, 456 out
 Tools called: 1
-  - Tool: github-get_issue_details
+  - Tool: github_read-get_issue_details
     Input: {}
 
 --- Step 2 ---
 Stop reason: tool_use
 Tokens: 890 in, 234 out
 Tools called: 1
-  - Tool: github-add_labels
+  - Tool: github_write-add_labels
     Input: {
       "labels": [
         "type/bug",
