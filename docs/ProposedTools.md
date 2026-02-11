@@ -69,7 +69,7 @@ The implementation leverages these primary libraries:
 | FM-004 | `repository-replace_in_file` | Search and replace text in a file (regex or literal) | Implemented |
 | FM-005 | `repository-replace_lines` | Replace specific line range with new content | Implemented |
 | FM-006 | `repository-delete_file` | Delete a file or directory | Implemented |
-| FM-007 | `repository-move_file` | Move or rename a file/directory | Not Implemented |
+| FM-007 | `repository-move_file` | Move or rename a file/directory | Implemented |
 | FM-008 | `repository-copy_file` | Copy a file/directory to another location | Not Implemented |
 | FM-009 | `repository-create_directory` | Create a directory (with parents if needed) | Not Implemented |
 | FM-010 | `repository-apply_patch` | Apply a unified diff patch to files | Not Implemented |
@@ -1572,6 +1572,22 @@ when line numbers are known.
 
 **Dependencies**: None
 
+**Implementation Notes**:
+- ✅ Implemented on 2026-02-11
+- Uses `fs-extra` for file operations with `move()` method
+- Supports moving both files and directories
+- Atomic move when on the same filesystem
+- Optional overwrite flag to replace existing destinations
+- Automatic parent directory creation via `create_directories` parameter (default: true)
+- Returns whether destination was overwritten for transparency
+- Path type detection: Returns 'file' or 'directory' to indicate what was moved
+- Same-path prevention: Validates source and destination are different paths
+- Path safety: Uses `path.resolve()` and validates both source and destination are within work directory to prevent directory traversal attacks
+- Error handling: Returns structured error objects with tool name for easier debugging
+- Logging: Logs move operations with source, destination, and overwrite status for audit trail
+- Dry-run support: `executeMock()` simulates moves and returns what would happen without actually moving files
+- All tests pass: rename file, move to different directory, auto-create directories, move directory with files, overwrite existing file, error cases (destination exists without overwrite, missing source, same source/destination, source directory traversal, destination directory traversal), and dry-run mode
+
 ---
 
 ### FM-008: repository-copy_file
@@ -2477,4 +2493,4 @@ This document should be updated as tools are implemented:
 **Document Version**: 1.0
 **Last Updated**: 2026-02-11
 **Total Tools Proposed**: 35
-**Tools Implemented**: 12
+**Tools Implemented**: 13

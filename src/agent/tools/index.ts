@@ -39,6 +39,7 @@ import { GetFileMetadataTool } from './repository/get_file_metadata.js';
 import { GetProjectStructureTool } from './repository/get_project_structure.js';
 import { InsertAtLineTool } from './repository/insert_at_line.js';
 import { ListFilesTool } from './repository/list_files.js';
+import { MoveFileTool } from './repository/move_file.js';
 import { ReadFileTool } from './repository/read_file.js';
 import { ReplaceInFileTool } from './repository/replace_in_file.js';
 import { ReplaceLinesTool } from './repository/replace_lines.js';
@@ -107,6 +108,7 @@ export class ToolIndex {
         this.register(GetProjectStructureTool);
         this.register(InsertAtLineTool);
         this.register(ListFilesTool);
+        this.register(MoveFileTool);
         this.register(ReadFileTool);
         this.register(ReplaceInFileTool);
         this.register(ReplaceLinesTool);
