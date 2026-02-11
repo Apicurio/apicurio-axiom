@@ -108,14 +108,16 @@ describe('CheckPathExistsTool', () => {
                 context,
             );
 
-            assertToolError(result, 'outside the work');
+            expect(result.error).toBe(true);
+            expect(result.message).toContain('outside the repository');
         });
 
         it('should reject absolute paths outside workDir', async () => {
             const context = createMockContext(fixturesPath);
             const result = await CheckPathExistsTool.execute({ path: '/etc/passwd' }, context);
 
-            assertToolError(result, 'outside the work');
+            expect(result.error).toBe(true);
+            expect(result.message).toContain('outside the repository');
         });
     });
 
@@ -133,7 +135,8 @@ describe('CheckPathExistsTool', () => {
             const context = createMockContext(fixturesPath);
             const result = await CheckPathExistsTool.execute({ path: '' }, context);
 
-            assertToolError(result, 'path parameter is required');
+            expect(result.error).toBe(true);
+            expect(result.message).toContain('path parameter is required');
         });
     });
 

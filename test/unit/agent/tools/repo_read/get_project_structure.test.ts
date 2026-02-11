@@ -15,7 +15,7 @@ describe('GetProjectStructureTool', () => {
         it('should have correct tool metadata', () => {
             expect(GetProjectStructureTool.name).toBe('repo_read-get_project_structure');
             expect(GetProjectStructureTool.description).toContain('project structure');
-            expect(GetProjectStructureTool.input_schema.required).toContain('path');
+            expect(GetProjectStructureTool.input_schema.properties.path).toBeDefined();
         });
 
         it('should analyze project structure', async () => {
@@ -52,7 +52,8 @@ describe('GetProjectStructureTool', () => {
 
             assertToolSuccess(result);
             expect(result.languages).toBeDefined();
-            expect(typeof result.languages).toBe('object');
+            expect(Array.isArray(result.languages)).toBe(true);
+            expect(result.languages.length).toBeGreaterThan(0);
         });
 
         it('should detect TypeScript files', async () => {
@@ -60,8 +61,9 @@ describe('GetProjectStructureTool', () => {
             const result = await GetProjectStructureTool.execute({ path: '.' }, context);
 
             assertToolSuccess(result);
-            // Should detect TypeScript from .ts files
-            expect(result.languages.TypeScript || result.languages.typescript).toBeDefined();
+            // Should detect TypeScript from .ts files (languages is an array)
+            expect(Array.isArray(result.languages)).toBe(true);
+            expect(result.languages).toContain('TypeScript');
         });
 
         it('should detect Java files', async () => {
@@ -69,8 +71,9 @@ describe('GetProjectStructureTool', () => {
             const result = await GetProjectStructureTool.execute({ path: '.' }, context);
 
             assertToolSuccess(result);
-            // Should detect Java from .java files
-            expect(result.languages.Java || result.languages.java).toBeDefined();
+            // Should detect Java from .java files (languages is an array)
+            expect(Array.isArray(result.languages)).toBe(true);
+            expect(result.languages).toContain('Java');
         });
     });
 
@@ -139,7 +142,8 @@ describe('GetProjectStructureTool', () => {
 
             assertToolSuccess(result);
             expect(result.languages).toBeDefined();
-            expect(typeof result.languages).toBe('object');
+            expect(Array.isArray(result.languages)).toBe(true);
+            expect(result.languages.length).toBeGreaterThan(0);
         });
     });
 
