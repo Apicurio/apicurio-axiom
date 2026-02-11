@@ -30,6 +30,7 @@ import { SetIssueMilestoneTool } from './github/set_issue_milestone.js';
 
 // Import all repository tools
 import { AnalyzeFileTypeTool } from './repository/analyze_file_type.js';
+import { AppendToFileTool } from './repository/append_to_file.js';
 import { CheckPathExistsTool } from './repository/check_path_exists.js';
 import { FindFilesTool } from './repository/find_files.js';
 import { GetDirectoryTreeTool } from './repository/get_directory_tree.js';
@@ -93,6 +94,7 @@ export class ToolIndex {
 
         // Register repository tools
         this.register(AnalyzeFileTypeTool);
+        this.register(AppendToFileTool);
         this.register(CheckPathExistsTool);
         this.register(FindFilesTool);
         this.register(GetDirectoryTreeTool);
