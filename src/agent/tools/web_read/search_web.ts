@@ -6,7 +6,7 @@
  * information, documentation, and resources on the web.
  */
 
-import { search, SafeSearchType } from 'duck-duck-scrape';
+import { SafeSearchType, search } from 'duck-duck-scrape';
 import type { Tool, ToolContext } from '../../../types/agent.js';
 
 /**
@@ -141,15 +141,13 @@ export const SearchWebTool: Tool = {
             });
 
             // Process and format results
-            const results = searchResults.results
-                .slice(0, maxResults)
-                .map((result, index) => ({
-                    title: result.title,
-                    url: result.url,
-                    snippet: result.description || '',
-                    rank: index + 1,
-                    domain: extractDomain(result.url),
-                }));
+            const results = searchResults.results.slice(0, maxResults).map((result, index) => ({
+                title: result.title,
+                url: result.url,
+                snippet: result.description || '',
+                rank: index + 1,
+                domain: extractDomain(result.url),
+            }));
 
             const searchTime = Date.now() - startTime;
 

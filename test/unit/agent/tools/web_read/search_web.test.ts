@@ -501,10 +501,11 @@ describe.sequential('SearchWebTool', () => {
             // Results should contain relevant content
             const titles = result.results.map((r: any) => r.title.toLowerCase()).join(' ');
             const snippets = result.results.map((r: any) => r.snippet.toLowerCase()).join(' ');
-            const combined = titles + ' ' + snippets;
+            const combined = `${titles} ${snippets}`;
 
             // At least one of these terms should appear
-            const hasRelevantContent = combined.includes('node') || combined.includes('async') || combined.includes('javascript');
+            const hasRelevantContent =
+                combined.includes('node') || combined.includes('async') || combined.includes('javascript');
             expect(hasRelevantContent).toBe(true);
         }, 30000);
 
