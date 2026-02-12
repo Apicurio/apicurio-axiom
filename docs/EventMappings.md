@@ -83,6 +83,9 @@ The following table lists all available event types supported by the bot:
 | `discussion.unpinned` | A discussion was unpinned |
 | `discussion.transferred` | A discussion was transferred to another repository |
 | `discussion.category_changed` | A discussion's category was changed |
+| `discussion_comment.created` | A comment was added to a discussion |
+| `discussion_comment.edited` | A discussion comment was edited |
+| `discussion_comment.deleted` | A discussion comment was deleted |
 | `push` | Commits were pushed to a repository |
 | `release.published` | A release was published |
 | `release.created` | A release was created |
@@ -101,6 +104,7 @@ Event types support wildcard patterns for matching multiple events:
 - **`issue.*`** - Matches all issue events (opened, closed, labeled, etc.)
 - **`pull_request.*`** - Matches all pull request events
 - **`discussion.*`** - Matches all discussion events (created, edited, answered, etc.)
+- **`discussion_comment.*`** - Matches all discussion comment events
 - **`issue_comment.*`** - Matches all issue comment events
 - **`pull_request_review.*`** - Matches all pull request review events
 - **`release.*`** - Matches all release events
@@ -447,11 +451,18 @@ eventMappings:
 
 ```yaml
 eventMappings:
-  # Participate in all new discussions
+  # Participate in discussions when created, edited, or commented on
   - event: discussion.created
     actions:
       - ai-discuss
-      - log-discussion
+
+  - event: discussion.edited
+    actions:
+      - ai-discuss
+
+  - event: discussion_comment.created
+    actions:
+      - ai-discuss
 
   # Monitor discussions in a specific category
   - event: discussion.created
