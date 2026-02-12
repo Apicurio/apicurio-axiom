@@ -60,11 +60,43 @@ export const GetIssueDetailsTool: Tool = {
                 issue_number: input.issue_number,
             });
 
+            // Get timeline events to find linked pull requests
+            const { data: timeline } = await context.octokit.issues.listEventsForTimeline({
+                owner: context.owner,
+                repo: context.repo,
+                issue_number: input.issue_number,
+            });
+
+            // Extract linked pull requests from timeline events
+            const linkedPullRequests = timeline
+                .filter((event: any) => {
+                    // Look for events that reference pull requests
+                    return event.event === 'cross-referenced' && event.source?.issue?.pull_request !== undefined;
+                })
+                .map((event: any) => ({
+                    number: event.source.issue.number,
+                    title: event.source.issue.title,
+                    state: event.source.issue.state,
+                    merged: event.source.issue.pull_request?.merged_at !== null,
+                    url: event.source.issue.html_url,
+                }));
+
+            // Also check if the issue has a closing pull request reference
+            const closedByPr = issue.closed_by
+                ? {
+                      login: issue.closed_by.login,
+                      type: issue.closed_by.type,
+                  }
+                : null;
+
             return {
                 number: issue.number,
                 title: issue.title,
                 body: issue.body || '',
                 state: issue.state,
+                state_reason: (issue as any).state_reason || null,
+                closed_at: issue.closed_at || null,
+                closed_by: closedByPr,
                 labels: issue.labels.map((label: any) => {
                     if (typeof label === 'string') {
                         return label;
@@ -89,6 +121,7 @@ export const GetIssueDetailsTool: Tool = {
                           state: issue.milestone.state,
                       }
                     : null,
+                linked_pull_requests: linkedPullRequests,
                 url: issue.html_url,
             };
         } catch (error) {
