@@ -56,6 +56,7 @@ import { ReplaceLinesTool } from './repo_write/replace_lines.js';
 import { WriteFileTool } from './repo_write/write_file.js';
 
 // Import all web_read tools (read-only web operations)
+import { DownloadFileTool } from './web_read/download_file.js';
 import { FetchUrlTool } from './web_read/fetch_url.js';
 
 /**
@@ -137,6 +138,7 @@ export class ToolIndex {
         this.register(WriteFileTool);
 
         // Register web_read tools (read-only web operations)
+        this.register(DownloadFileTool);
         this.register(FetchUrlTool);
     }
 

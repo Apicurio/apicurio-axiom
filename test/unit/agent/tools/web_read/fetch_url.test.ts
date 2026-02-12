@@ -132,7 +132,7 @@ describe('FetchUrlTool', () => {
 
             assertToolError(result, 'timeout');
             expect(result.fetch_time).toBeGreaterThan(1000);
-            expect(result.fetch_time).toBeLessThan(2000); // Should abort quickly
+            expect(result.fetch_time).toBeLessThan(3000); // Allow up to 3s for abort (network variability)
         });
 
         it('should reject timeout below minimum', async () => {

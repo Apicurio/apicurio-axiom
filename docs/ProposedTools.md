@@ -112,7 +112,7 @@ The web research tool implementation leverages these primary libraries:
 | CG-004 | `repo_write-scaffold_component` | Generate boilerplate for common component types | Not Implemented |
 | **Web Content Retrieval** | | | |
 | WCR-001 | `web_read-fetch_url` | Fetch raw content from a URL with headers and metadata | Implemented |
-| WCR-002 | `web_read-download_file` | Download file from URL to local repository | Not Implemented |
+| WCR-002 | `web_read-download_file` | Download file from URL to local repository | Implemented |
 | WCR-003 | `web_read-fetch_multiple_urls` | Fetch content from multiple URLs concurrently | Not Implemented |
 | WCR-004 | `web_read-check_url_status` | Check URL accessibility and get HTTP status | Not Implemented |
 | **Web Search** | | | |
