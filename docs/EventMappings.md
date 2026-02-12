@@ -166,7 +166,7 @@ filters:
     - path: payload.label.name
       equals: bot/enabled
   actions:
-    - analyze-issue
+    - auto-label-issue
 ```
 
 **Check who triggered the event:**
@@ -262,7 +262,7 @@ eventMappings:
       - path: payload.label.name
         equals: bot/enabled
     actions:
-      - analyze-issue
+      - auto-label-issue
 ```
 
 **Example 2: Check if issue has any label matching criteria (path-based)**

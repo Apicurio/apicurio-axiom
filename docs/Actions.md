@@ -26,7 +26,7 @@ actions:
 - **type** (required): The action type - `shell`, `javascript`, or `ai-agent`.
 - **command** (required for shell): The shell command or script to execute.
 - **code** (required for javascript): Path to the JavaScript module to execute.
-- **prompt** (required for ai-agent): Name of the prompt to use (corresponds to file in `src/agent/prompts/`).
+- **prompt** (required for ai-agent): Name of the prompt to use (corresponds to `.hbs` file in `./prompts/` directory).
 - **tools** (required for ai-agent): Array of tool names the agent can use.
 - **model** (optional for ai-agent): Override the default Claude model.
 
@@ -454,7 +454,7 @@ actions:
 #### How It Works
 
 1. **Event triggers** the ai-agent action
-2. **Task prompt** is loaded from `src/agent/prompts/{task}.ts`
+2. **Task prompt** is loaded from `./prompts/{task}.hbs` and rendered with event data
 3. **Tool registry** is built with the specified tools
 4. **Agent runtime** executes the agent loop:
    - Sends message to Claude (via Vertex AI)
@@ -544,7 +544,7 @@ tools:
 
 #### Task Prompts
 
-Task prompts are TypeScript modules in `src/agent/prompts/` that export a system prompt:
+Task prompts are Handlebars templates (`.hbs` files) stored in the `./prompts/` directory. Each prompt is automatically combined with the base prompt (`base.hbs`) and rendered with event data before being sent to the AI agent.
 
 **Available Prompts:**
 
@@ -560,16 +560,15 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
          - github_write-add_labels
    ```
 
-2. **`analyze-issue`** - In-depth issue analysis
+2. **`apply-resolution-label`** - Apply resolution labels to closed issues
    ```yaml
    actions:
-     analyze:
+     auto-resolve:
        type: ai-agent
-       prompt: analyze-issue
+       prompt: apply-resolution-label
        tools:
+         - github_read-get_repository_labels
          - github_read-get_issue_details
-         - repo_read-*
-         - github_write-add_comment
          - github_write-add_labels
    ```
 
@@ -596,34 +595,62 @@ Task prompts are TypeScript modules in `src/agent/prompts/` that export a system
          - repo_read-*  # Access to repository read tools if needed
    ```
 
+**Configuring Prompts Directory:**
+
+You can configure the prompts directory location in `config.yaml`:
+
+```yaml
+prompts:
+  basePath: ./prompts  # Default location
+```
+
 **Creating Custom Prompts:**
 
-```typescript
-// src/agent/prompts/my-custom-task.ts
+Create a new Handlebars template file in the `./prompts/` directory:
 
-import { BASE_SYSTEM_PROMPT } from './base.js';
-
-export const MY_CUSTOM_PROMPT = `${BASE_SYSTEM_PROMPT}
+```handlebars
+{{!-- prompts/my-custom-task.hbs --}}
 
 # Task: Custom Task Description
 
-Your goal is to...
+Your goal is to analyze and respond to {{event.type}} events.
+
+## Event Context
+
+- **Repository**: {{event.repository}}
+- **Issue**: #{{event.issue.number}} - "{{event.issue.title}}"
+- **Author**: @{{event.issue.author}}
+- **Event Type**: {{event.type}}
 
 ## Process
 
-1. First step...
-2. Second step...
-3. Final step...
+1. **First step**
+   - Use the `github_read-get_issue_details` tool with parameter `issue_number: {{event.issue.number}}`
+   - Analyze the issue content
+
+2. **Second step**
+   - Perform your analysis
+   - Make decisions based on the data
+
+3. **Final step**
+   - Use appropriate write tools to take action
+   - Provide a summary of what was done
 
 ## Guidelines
 
-- Be specific
-- Provide clear instructions
-- Explain expected behavior
-`;
-
-export default MY_CUSTOM_PROMPT;
+- Be specific in your analysis
+- Provide clear reasoning
+- Follow repository conventions
 ```
+
+The prompt will automatically have access to the `event` object with the following structure:
+- `event.repository` - Repository name (owner/repo)
+- `event.type` - Event type (e.g., "issue.opened")
+- `event.issue.*` - Issue-specific fields (for issue events)
+- `event.pullRequest.*` - PR-specific fields (for PR events)
+- `event.discussion.*` - Discussion-specific fields (for discussion events)
+
+See `prompts/base.hbs` for the base prompt that is prepended to all custom prompts.
 
 #### Dry-Run Mode
 
@@ -669,9 +696,9 @@ actions:
     model: claude-sonnet-4-5@20250929  # Fast, cost-effective
     tools: [github_read-get_issue_details, github_write-add_labels]
 
-  complex-analysis:
+  discussion-participant:
     type: ai-agent
-    prompt: analyze-issue
+    prompt: discussion
     model: claude-opus-4-5@20251101    # More capable, higher cost
     tools: [github_read-*, github_write-*, repo_read-*, git_read-log]
 ```
@@ -696,13 +723,13 @@ events:
       - auto-label-issues
 ```
 
-**Example 2: Comprehensive Issue Analysis**
+**Example 2: Multi-tool Issue Processing**
 
 ```yaml
 actions:
-  analyze-new-issues:
+  process-new-issues:
     type: ai-agent
-    prompt: analyze-issue
+    prompt: label-issue
     tools:
       - github_read-*   # All GitHub read tools
       - github_write-*  # All GitHub write tools
@@ -713,12 +740,7 @@ actions:
 events:
   issue.opened:
     actions:
-      - analyze-new-issues
-    filters:
-      - path: payload.issue.labels
-        any:
-          name: automated
-        # Exclude issues already labeled as automated
+      - process-new-issues
 ```
 
 **Example 3: Bug Triage Workflow**

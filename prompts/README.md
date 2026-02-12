@@ -28,10 +28,10 @@ Prompts use Handlebars template syntax with access to the `event` object:
 
 ## Available Prompts
 
-- **analyze-issue** - In-depth issue analysis
 - **label-issue** - Automatic issue labeling
 - **discussion** - GitHub discussion responses
 - **test-comment** - Test comment creation
+- **apply-resolution-label** - Apply resolution labels to closed issues
 
 ## Configuration
 
