@@ -42,7 +42,7 @@ export class EventProcessor {
             return;
         }
 
-        this.logger.info(`Event matches ${matchingMappings.length} mapping(s)`);
+        this.logger.info(`[${event.id}] Event type ${event.type} matches ${matchingMappings.length} mapping(s)`);
 
         for (const mapping of matchingMappings) {
             await this.executeMapping(event, mapping);
@@ -315,7 +315,7 @@ export class EventProcessor {
             return;
         }
 
-        this.logger.info(`Executing ${mapping.actions.length} action(s) for event ${event.type}`);
+        this.logger.info(`[${event.id}] Executing ${mapping.actions.length} action(s) for ${event.type} event`);
 
         for (const actionName of mapping.actions) {
             try {

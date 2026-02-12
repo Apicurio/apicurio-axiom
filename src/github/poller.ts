@@ -206,7 +206,7 @@ export class GitHubPoller {
             }
         }
 
-        getLogger().info('Processing event', {
+        getLogger().debug('Processing event', {
             eventType: event.type,
             eventId: event.id,
             repository: repo,
