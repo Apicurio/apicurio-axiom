@@ -7,7 +7,7 @@
     },
     "files": {
         "ignoreUnknown": false,
-        "includes": ["src/**", "actions/**", "package.json", "tsconfig.json"]
+        "includes": ["src/**", "actions/**/*.ts", "test/**", "package.json", "tsconfig.json"]
     },
     "formatter": {
         "enabled": true,

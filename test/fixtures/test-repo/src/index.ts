@@ -2,7 +2,7 @@
  * Main entry point for the test application
  */
 
-import { helper, calculateSum } from './utils/helper.js';
+import { calculateSum, helper } from './utils/helper.js';
 
 /**
  * Main function that demonstrates the application

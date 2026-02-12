@@ -2,11 +2,11 @@
  * Tests for AnalyzeFileTypeTool (FSA-005)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { AnalyzeFileTypeTool } from '../../../../../src/agent/tools/repo_read/analyze_file_type.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('AnalyzeFileTypeTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -104,19 +104,13 @@ describe('AnalyzeFileTypeTool', () => {
             const tsResult = await AnalyzeFileTypeTool.execute({ path: 'src/index.ts' }, context);
             expect(tsResult.language).toBe('typescript');
 
-            const javaResult = await AnalyzeFileTypeTool.execute(
-                { path: 'src/Sample.java' },
-                context,
-            );
+            const javaResult = await AnalyzeFileTypeTool.execute({ path: 'src/Sample.java' }, context);
             expect(javaResult.language).toBe('java');
         });
 
         it('should detect JSON files', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await AnalyzeFileTypeTool.execute(
-                { path: 'lib/config.json' },
-                context,
-            );
+            const result = await AnalyzeFileTypeTool.execute({ path: 'lib/config.json' }, context);
 
             assertToolSuccess(result);
             expect(result.language).toBe('json');
@@ -199,10 +193,7 @@ describe('AnalyzeFileTypeTool', () => {
 
         it('should return error for non-existent file', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await AnalyzeFileTypeTool.execute(
-                { path: 'nonexistent-file.txt' },
-                context,
-            );
+            const result = await AnalyzeFileTypeTool.execute({ path: 'nonexistent-file.txt' }, context);
 
             assertToolError(result);
         });
@@ -218,10 +209,7 @@ describe('AnalyzeFileTypeTool', () => {
     describe('Security', () => {
         it('should reject path traversal attempts', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await AnalyzeFileTypeTool.execute(
-                { path: '../../../etc/passwd' },
-                context,
-            );
+            const result = await AnalyzeFileTypeTool.execute({ path: '../../../etc/passwd' }, context);
 
             assertToolError(result, 'outside work directory');
         });

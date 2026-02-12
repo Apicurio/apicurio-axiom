@@ -2,13 +2,13 @@
  * Tests for AppendToFileTool (FM-002)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppendToFileTool } from '../../../../../src/agent/tools/repo_write/append_to_file.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('AppendToFileTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('AppendToFileTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -46,10 +46,7 @@ describe.sequential('AppendToFileTool', () => {
             // Create initial file
             await fs.writeFile(filePath, 'Line 1');
 
-            const result = await AppendToFileTool.execute(
-                { path: 'test.txt', content: 'Line 2' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'test.txt', content: 'Line 2' }, context);
 
             assertToolSuccess(result);
             expect(result.path).toBe('test.txt');
@@ -70,10 +67,7 @@ describe.sequential('AppendToFileTool', () => {
 
             // Append twice
             await AppendToFileTool.execute({ path: 'log.txt', content: 'Entry 2' }, context);
-            const result = await AppendToFileTool.execute(
-                { path: 'log.txt', content: 'Entry 3' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'log.txt', content: 'Entry 3' }, context);
 
             assertToolSuccess(result);
 
@@ -103,10 +97,7 @@ describe.sequential('AppendToFileTool', () => {
             await fs.writeFile(filePath, 'Start');
             const appendText = 'Added';
 
-            const result = await AppendToFileTool.execute(
-                { path: 'test.txt', content: appendText },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'test.txt', content: appendText }, context);
 
             assertToolSuccess(result);
             // bytes_appended = newline (1) + content length
@@ -134,10 +125,7 @@ describe.sequential('AppendToFileTool', () => {
 
             await fs.writeFile(filePath, 'First');
 
-            await AppendToFileTool.execute(
-                { path: 'test.txt', content: 'Second', newline: true },
-                context,
-            );
+            await AppendToFileTool.execute({ path: 'test.txt', content: 'Second', newline: true }, context);
 
             const content = await fs.readFile(filePath, 'utf-8');
             expect(content).toBe('First\nSecond');
@@ -178,10 +166,7 @@ describe.sequential('AppendToFileTool', () => {
         it('should return error when file does not exist', async () => {
             const context = createMockContext(tempDir);
 
-            const result = await AppendToFileTool.execute(
-                { path: 'nonexistent.txt', content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'nonexistent.txt', content: 'test' }, context);
 
             assertToolError(result, 'File does not exist');
         });
@@ -194,10 +179,7 @@ describe.sequential('AppendToFileTool', () => {
             const filePath = path.join(subdir, 'file.txt');
             await fs.writeFile(filePath, 'Content');
 
-            const result = await AppendToFileTool.execute(
-                { path: 'sub/file.txt', content: 'More' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'sub/file.txt', content: 'More' }, context);
 
             assertToolSuccess(result);
 
@@ -210,10 +192,7 @@ describe.sequential('AppendToFileTool', () => {
             const dirPath = path.join(tempDir, 'subdir');
             await fse.ensureDir(dirPath);
 
-            const result = await AppendToFileTool.execute(
-                { path: 'subdir', content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'subdir', content: 'test' }, context);
 
             // Will fail because it's a directory, not a file
             expect(result.error).toBe(true);
@@ -267,10 +246,7 @@ describe.sequential('AppendToFileTool', () => {
             await fs.writeFile(filePath, '{"items": [1');
 
             const jsonFragment = ', 2, 3]}';
-            await AppendToFileTool.execute(
-                { path: 'data.json', content: jsonFragment, newline: false },
-                context,
-            );
+            await AppendToFileTool.execute({ path: 'data.json', content: jsonFragment, newline: false }, context);
 
             const content = await fs.readFile(filePath, 'utf-8');
             const parsed = JSON.parse(content);
@@ -283,10 +259,7 @@ describe.sequential('AppendToFileTool', () => {
             const context = createMockContext('');
             context.workDir = undefined as any;
 
-            const result = await AppendToFileTool.execute(
-                { path: 'test.txt', content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'test.txt', content: 'test' }, context);
 
             assertToolError(result, 'workDir is required');
         });
@@ -300,30 +273,21 @@ describe.sequential('AppendToFileTool', () => {
 
         it('should validate path is a string', async () => {
             const context = createMockContext(tempDir);
-            const result = await AppendToFileTool.execute(
-                { path: 123 as any, content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 123 as any, content: 'test' }, context);
 
             assertToolError(result, 'must be a string');
         });
 
         it('should require content parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await AppendToFileTool.execute(
-                { path: 'test.txt', content: undefined as any },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'test.txt', content: undefined as any }, context);
 
             assertToolError(result, 'content parameter is required');
         });
 
         it('should handle null content', async () => {
             const context = createMockContext(tempDir);
-            const result = await AppendToFileTool.execute(
-                { path: 'test.txt', content: null as any },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'test.txt', content: null as any }, context);
 
             assertToolError(result, 'content parameter is required');
         });
@@ -357,10 +321,7 @@ describe.sequential('AppendToFileTool', () => {
             // Create the file first
             await fs.writeFile(absolutePath, 'Original');
 
-            const result = await AppendToFileTool.execute(
-                { path: absolutePath, content: 'Appended' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: absolutePath, content: 'Appended' }, context);
 
             assertToolSuccess(result);
 
@@ -376,10 +337,7 @@ describe.sequential('AppendToFileTool', () => {
 
             await fs.writeFile(filePath, 'Start');
 
-            const result = await AppendToFileTool.execute(
-                { path: './test.txt', content: 'End' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: './test.txt', content: 'End' }, context);
 
             assertToolSuccess(result);
 
@@ -395,10 +353,7 @@ describe.sequential('AppendToFileTool', () => {
             const filePath = path.join(nestedPath, 'deep.txt');
             await fs.writeFile(filePath, 'Deep');
 
-            const result = await AppendToFileTool.execute(
-                { path: 'a/b/c/deep.txt', content: 'Content' },
-                context,
-            );
+            const result = await AppendToFileTool.execute({ path: 'a/b/c/deep.txt', content: 'Content' }, context);
 
             assertToolSuccess(result);
 
@@ -468,10 +423,7 @@ describe.sequential('AppendToFileTool', () => {
         it('should return error in mock mode when file does not exist', async () => {
             const context = createMockContext(tempDir);
 
-            const result = await AppendToFileTool.executeMock(
-                { path: 'nonexistent.txt', content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.executeMock({ path: 'nonexistent.txt', content: 'test' }, context);
 
             expect(result.dry_run).toBe(true);
             expect(result.error).toBe(true);
@@ -492,10 +444,7 @@ describe.sequential('AppendToFileTool', () => {
 
         it('should validate input in mock mode', async () => {
             const context = createMockContext(tempDir);
-            const result = await AppendToFileTool.executeMock(
-                { path: '', content: 'test' },
-                context,
-            );
+            const result = await AppendToFileTool.executeMock({ path: '', content: 'test' }, context);
 
             // Validation errors don't include dry_run field
             expect(result.error).toBe(true);

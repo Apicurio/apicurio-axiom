@@ -2,13 +2,13 @@
  * Tests for ReplaceLinesTool (FM-005)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ReplaceLinesTool } from '../../../../../src/agent/tools/repo_write/replace_lines.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('ReplaceLinesTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('ReplaceLinesTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -705,7 +705,7 @@ This is old content.
                     path: 'class.ts',
                     start_line: 2,
                     end_line: 4,
-                    new_content: '    newMethod() {\n        return \'new\';\n    }',
+                    new_content: "    newMethod() {\n        return 'new';\n    }",
                 },
                 context,
             );

@@ -2,11 +2,11 @@
  * Tests for CheckPathExistsTool (FSA-002)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { CheckPathExistsTool } from '../../../../../src/agent/tools/repo_read/check_path_exists.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('CheckPathExistsTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -38,10 +38,7 @@ describe('CheckPathExistsTool', () => {
 
         it('should return false for non-existent path', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await CheckPathExistsTool.execute(
-                { path: 'nonexistent-file-12345.txt' },
-                context,
-            );
+            const result = await CheckPathExistsTool.execute({ path: 'nonexistent-file-12345.txt' }, context);
 
             assertToolSuccess(result);
             expect(result.exists).toBe(false);
@@ -70,10 +67,7 @@ describe('CheckPathExistsTool', () => {
 
         it('should handle nested paths', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await CheckPathExistsTool.execute(
-                { path: 'src/utils/helper.ts' },
-                context,
-            );
+            const result = await CheckPathExistsTool.execute({ path: 'src/utils/helper.ts' }, context);
 
             assertToolSuccess(result);
             expect(result.exists).toBe(true);
@@ -103,10 +97,7 @@ describe('CheckPathExistsTool', () => {
     describe('Security', () => {
         it('should reject path traversal attempts', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await CheckPathExistsTool.execute(
-                { path: '../../../etc/passwd' },
-                context,
-            );
+            const result = await CheckPathExistsTool.execute({ path: '../../../etc/passwd' }, context);
 
             expect(result.error).toBe(true);
             expect(result.message).toContain('outside the repository');

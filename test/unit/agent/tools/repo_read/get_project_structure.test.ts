@@ -2,11 +2,11 @@
  * Tests for GetProjectStructureTool (FSA-007)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { GetProjectStructureTool } from '../../../../../src/agent/tools/repo_read/get_project_structure.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('GetProjectStructureTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -206,10 +206,7 @@ describe('GetProjectStructureTool', () => {
 
         it('should return error for non-existent path', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetProjectStructureTool.execute(
-                { path: 'nonexistent-dir-12345' },
-                context,
-            );
+            const result = await GetProjectStructureTool.execute({ path: 'nonexistent-dir-12345' }, context);
 
             assertToolError(result);
         });

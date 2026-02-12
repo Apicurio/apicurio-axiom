@@ -2,13 +2,13 @@
  * Tests for MoveFileTool (FM-007)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MoveFileTool } from '../../../../../src/agent/tools/repo_write/move_file.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('MoveFileTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('MoveFileTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -46,10 +46,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'source.txt', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'source.txt', destination: 'dest.txt' }, context);
 
             assertToolSuccess(result);
             expect(result.source).toBe('source.txt');
@@ -75,10 +72,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'data');
 
-            const result = await MoveFileTool.execute(
-                { source: 'old-name.txt', destination: 'new-name.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'old-name.txt', destination: 'new-name.txt' }, context);
 
             assertToolSuccess(result);
 
@@ -98,10 +92,7 @@ describe.sequential('MoveFileTool', () => {
             await fs.writeFile(path.join(sourceDir, 'file1.txt'), 'content1');
             await fs.writeFile(path.join(sourceDir, 'file2.txt'), 'content2');
 
-            const result = await MoveFileTool.execute(
-                { source: 'sourcedir', destination: 'destdir' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'sourcedir', destination: 'destdir' }, context);
 
             assertToolSuccess(result);
             expect(result.type).toBe('directory');
@@ -126,10 +117,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'file.txt', destination: 'subdir/file.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'file.txt', destination: 'subdir/file.txt' }, context);
 
             assertToolSuccess(result);
 
@@ -221,10 +209,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'source.txt', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'source.txt', destination: 'dest.txt' }, context);
 
             assertToolSuccess(result);
             expect(result.overwritten).toBe(false);
@@ -239,10 +224,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'file.txt', destination: 'a/b/c/file.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'file.txt', destination: 'a/b/c/file.txt' }, context);
 
             assertToolSuccess(result);
 
@@ -274,50 +256,35 @@ describe.sequential('MoveFileTool', () => {
             const context = createMockContext('');
             context.workDir = undefined as any;
 
-            const result = await MoveFileTool.execute(
-                { source: 'source.txt', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'source.txt', destination: 'dest.txt' }, context);
 
             assertToolError(result, 'workDir is required');
         });
 
         it('should require source parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await MoveFileTool.execute(
-                { source: '', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: '', destination: 'dest.txt' }, context);
 
             assertToolError(result, 'source parameter is required');
         });
 
         it('should validate source is a string', async () => {
             const context = createMockContext(tempDir);
-            const result = await MoveFileTool.execute(
-                { source: 123 as any, destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 123 as any, destination: 'dest.txt' }, context);
 
             assertToolError(result, 'must be a string');
         });
 
         it('should require destination parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await MoveFileTool.execute(
-                { source: 'source.txt', destination: '' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'source.txt', destination: '' }, context);
 
             assertToolError(result, 'destination parameter is required');
         });
 
         it('should validate destination is a string', async () => {
             const context = createMockContext(tempDir);
-            const result = await MoveFileTool.execute(
-                { source: 'source.txt', destination: 123 as any },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'source.txt', destination: 123 as any }, context);
 
             assertToolError(result, 'must be a string');
         });
@@ -325,10 +292,7 @@ describe.sequential('MoveFileTool', () => {
         it('should return error when source does not exist', async () => {
             const context = createMockContext(tempDir);
 
-            const result = await MoveFileTool.execute(
-                { source: 'nonexistent.txt', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'nonexistent.txt', destination: 'dest.txt' }, context);
 
             assertToolError(result, 'Source does not exist');
         });
@@ -339,10 +303,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(filePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'file.txt', destination: 'file.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'file.txt', destination: 'file.txt' }, context);
 
             assertToolError(result, 'Source and destination paths are the same');
         });
@@ -353,10 +314,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(filePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: 'file.txt', destination: './file.txt' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: 'file.txt', destination: './file.txt' }, context);
 
             assertToolError(result, 'Source and destination paths are the same');
         });
@@ -393,10 +351,7 @@ describe.sequential('MoveFileTool', () => {
 
         it('should reject absolute source paths outside workDir', async () => {
             const context = createMockContext(tempDir);
-            const result = await MoveFileTool.execute(
-                { source: '/etc/passwd', destination: 'passwd' },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: '/etc/passwd', destination: 'passwd' }, context);
 
             assertToolError(result, 'source path is outside work directory');
         });
@@ -422,10 +377,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.execute(
-                { source: sourcePath, destination: destPath },
-                context,
-            );
+            const result = await MoveFileTool.execute({ source: sourcePath, destination: destPath }, context);
 
             assertToolSuccess(result);
 
@@ -444,10 +396,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(sourcePath, 'content');
 
-            const result = await MoveFileTool.executeMock(
-                { source: 'source.txt', destination: 'dest.txt' },
-                context,
-            );
+            const result = await MoveFileTool.executeMock({ source: 'source.txt', destination: 'dest.txt' }, context);
 
             expect(result.dry_run).toBe(true);
             expect(result.success).toBe(true);
@@ -526,10 +475,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(filePath, 'content');
 
-            const result = await MoveFileTool.executeMock(
-                { source: 'file.txt', destination: 'file.txt' },
-                context,
-            );
+            const result = await MoveFileTool.executeMock({ source: 'file.txt', destination: 'file.txt' }, context);
 
             expect(result.dry_run).toBe(true);
             expect(result.error).toBe(true);
@@ -555,10 +501,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(path.join(tempDir, 'config.dev.json'), '{"env": "dev"}');
 
-            await MoveFileTool.execute(
-                { source: 'config.dev.json', destination: 'config.prod.json' },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'config.dev.json', destination: 'config.prod.json' }, context);
 
             const oldExists = await fse.pathExists(path.join(tempDir, 'config.dev.json'));
             expect(oldExists).toBe(false);
@@ -572,10 +515,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(path.join(tempDir, 'Component.tsx'), 'component');
 
-            await MoveFileTool.execute(
-                { source: 'Component.tsx', destination: 'components/Component.tsx' },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'Component.tsx', destination: 'components/Component.tsx' }, context);
 
             const newPath = path.join(tempDir, 'components', 'Component.tsx');
             const exists = await fse.pathExists(newPath);
@@ -587,10 +527,7 @@ describe.sequential('MoveFileTool', () => {
 
             await fs.writeFile(path.join(tempDir, 'utils.test.ts'), 'tests');
 
-            await MoveFileTool.execute(
-                { source: 'utils.test.ts', destination: 'test/utils.test.ts' },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'utils.test.ts', destination: 'test/utils.test.ts' }, context);
 
             const newPath = path.join(tempDir, 'test', 'utils.test.ts');
             const exists = await fse.pathExists(newPath);
@@ -604,10 +541,7 @@ describe.sequential('MoveFileTool', () => {
             await fse.ensureDir(oldDir);
             await fs.writeFile(path.join(oldDir, 'index.ts'), 'exports');
 
-            await MoveFileTool.execute(
-                { source: 'old-module', destination: 'new-module' },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'old-module', destination: 'new-module' }, context);
 
             const oldExists = await fse.pathExists(oldDir);
             expect(oldExists).toBe(false);
@@ -625,10 +559,7 @@ describe.sequential('MoveFileTool', () => {
             await fs.writeFile(path.join(buildDir, 'bundle.js'), 'code');
             await fs.writeFile(path.join(buildDir, 'bundle.js.map'), 'map');
 
-            await MoveFileTool.execute(
-                { source: 'build', destination: 'dist' },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'build', destination: 'dist' }, context);
 
             const distPath = path.join(tempDir, 'dist');
             const jsExists = await fse.pathExists(path.join(distPath, 'bundle.js'));
@@ -644,10 +575,7 @@ describe.sequential('MoveFileTool', () => {
             await fse.ensureDir(path.join(tempDir, 'data'));
             await fs.writeFile(path.join(tempDir, 'data', 'old.txt'), 'old version');
 
-            await MoveFileTool.execute(
-                { source: 'old.txt', destination: 'data/old.txt', overwrite: true },
-                context,
-            );
+            await MoveFileTool.execute({ source: 'old.txt', destination: 'data/old.txt', overwrite: true }, context);
 
             const content = await fs.readFile(path.join(tempDir, 'data', 'old.txt'), 'utf-8');
             expect(content).toBe('new version');

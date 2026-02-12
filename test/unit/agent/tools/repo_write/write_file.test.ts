@@ -2,13 +2,13 @@
  * Tests for WriteFileTool (FM-001)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { WriteFileTool } from '../../../../../src/agent/tools/repo_write/write_file.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('WriteFileTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('WriteFileTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -41,10 +41,7 @@ describe.sequential('WriteFileTool', () => {
 
         it('should write a new file', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: 'test.txt', content: 'Hello, World!' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'test.txt', content: 'Hello, World!' }, context);
 
             assertToolSuccess(result);
             expect(result.path).toBe('test.txt');
@@ -64,10 +61,7 @@ describe.sequential('WriteFileTool', () => {
             await fs.writeFile(filePath, 'Original content');
 
             // Overwrite it
-            const result = await WriteFileTool.execute(
-                { path: 'existing.txt', content: 'New content' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'existing.txt', content: 'New content' }, context);
 
             assertToolSuccess(result);
             expect(result.created).toBe(false);
@@ -336,10 +330,7 @@ describe.sequential('WriteFileTool', () => {
     describe('Path Handling', () => {
         it('should handle relative paths', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: './test.txt', content: 'test' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: './test.txt', content: 'test' }, context);
 
             assertToolSuccess(result);
 
@@ -349,10 +340,7 @@ describe.sequential('WriteFileTool', () => {
 
         it('should handle paths with subdirectories', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: 'sub/dir/file.txt', content: 'test' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'sub/dir/file.txt', content: 'test' }, context);
 
             assertToolSuccess(result);
 
@@ -381,30 +369,21 @@ describe.sequential('WriteFileTool', () => {
 
         it('should validate path is a string', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: 123 as any, content: 'test' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 123 as any, content: 'test' }, context);
 
             assertToolError(result, 'must be a string');
         });
 
         it('should require content parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: 'test.txt', content: undefined as any },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'test.txt', content: undefined as any }, context);
 
             assertToolError(result, 'content parameter is required');
         });
 
         it('should handle null content', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: 'test.txt', content: null as any },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'test.txt', content: null as any }, context);
 
             assertToolError(result, 'content parameter is required');
         });
@@ -413,26 +392,20 @@ describe.sequential('WriteFileTool', () => {
     describe('Security', () => {
         it('should reject path traversal attempts', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: '../../../etc/passwd', content: 'malicious' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: '../../../etc/passwd', content: 'malicious' }, context);
 
             assertToolError(result, 'outside work directory');
 
             // Verify file was not created
             const maliciousPath = path.resolve(tempDir, '../../../etc/passwd');
-            const exists = await fse.pathExists(maliciousPath);
+            await fse.pathExists(maliciousPath);
             // Don't verify - just ensure our code rejected it
             expect(result.error).toBe(true);
         });
 
         it('should reject absolute paths outside workDir', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.execute(
-                { path: '/tmp/malicious.txt', content: 'malicious' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: '/tmp/malicious.txt', content: 'malicious' }, context);
 
             assertToolError(result, 'outside work directory');
         });
@@ -441,10 +414,7 @@ describe.sequential('WriteFileTool', () => {
             const context = createMockContext(tempDir);
             const absolutePath = path.join(tempDir, 'allowed.txt');
 
-            const result = await WriteFileTool.execute(
-                { path: absolutePath, content: 'allowed' },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: absolutePath, content: 'allowed' }, context);
 
             assertToolSuccess(result);
 
@@ -513,10 +483,7 @@ describe.sequential('WriteFileTool', () => {
 
         it('should validate input in mock mode', async () => {
             const context = createMockContext(tempDir);
-            const result = await WriteFileTool.executeMock(
-                { path: '', content: 'test' },
-                context,
-            );
+            const result = await WriteFileTool.executeMock({ path: '', content: 'test' }, context);
 
             // Validation errors don't include dry_run field
             expect(result.error).toBe(true);
@@ -529,10 +496,7 @@ describe.sequential('WriteFileTool', () => {
             const context = createMockContext(tempDir);
             const config = JSON.stringify({ name: 'test', version: '1.0.0' }, null, 2);
 
-            const result = await WriteFileTool.execute(
-                { path: 'config.json', content: config },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'config.json', content: config }, context);
 
             assertToolSuccess(result);
 
@@ -549,10 +513,7 @@ describe.sequential('WriteFileTool', () => {
 }
 `;
 
-            const result = await WriteFileTool.execute(
-                { path: 'src/hello.ts', content: code },
-                context,
-            );
+            const result = await WriteFileTool.execute({ path: 'src/hello.ts', content: code }, context);
 
             assertToolSuccess(result);
 

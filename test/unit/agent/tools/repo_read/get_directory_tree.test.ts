@@ -2,11 +2,11 @@
  * Tests for GetDirectoryTreeTool (FSA-003)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { GetDirectoryTreeTool } from '../../../../../src/agent/tools/repo_read/get_directory_tree.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('GetDirectoryTreeTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -160,10 +160,7 @@ describe('GetDirectoryTreeTool', () => {
 
         it('should return error for non-existent directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetDirectoryTreeTool.execute(
-                { path: 'nonexistent-dir-12345' },
-                context,
-            );
+            const result = await GetDirectoryTreeTool.execute({ path: 'nonexistent-dir-12345' }, context);
 
             expect(result.error).toBe(true);
             expect(result.message).toBeDefined();

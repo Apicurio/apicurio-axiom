@@ -2,8 +2,8 @@
  * Test helpers for creating mock ToolContext objects
  */
 
-import type { ToolContext } from '../../src/types/agent.js';
 import { vi } from 'vitest';
+import type { ToolContext } from '../../src/types/agent.js';
 
 /**
  * Create a mock ToolContext for testing

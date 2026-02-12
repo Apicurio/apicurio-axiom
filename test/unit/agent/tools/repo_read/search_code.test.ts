@@ -2,12 +2,12 @@
  * Tests for SearchCodeTool
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SearchCodeTool } from '../../../../../src/agent/tools/repo_read/search_code.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
-import { createTempRepo, cleanupTempRepo } from '../../../../helpers/temp-repo.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
+import { cleanupTempRepo, createTempRepo } from '../../../../helpers/temp-repo.js';
 
 describe('SearchCodeTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -73,10 +73,7 @@ describe('SearchCodeTool', () => {
 
         it('should return empty results when no matches found', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'NONEXISTENT_PATTERN_12345' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'NONEXISTENT_PATTERN_12345' }, context);
 
             assertToolSuccess(result);
             expect(result.matches).toEqual([]);
@@ -87,10 +84,7 @@ describe('SearchCodeTool', () => {
     describe('File Pattern Filtering', () => {
         it('should filter by file pattern', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'function', file_pattern: '**/*.ts' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'function', file_pattern: '**/*.ts' }, context);
 
             assertToolSuccess(result);
             expect(result.matches.length).toBeGreaterThan(0);
@@ -103,10 +97,7 @@ describe('SearchCodeTool', () => {
 
         it('should support glob patterns', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'helper', file_pattern: 'src/**/*.ts' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'helper', file_pattern: 'src/**/*.ts' }, context);
 
             assertToolSuccess(result);
             expect(result.matches.length).toBeGreaterThan(0);
@@ -148,10 +139,7 @@ describe('SearchCodeTool', () => {
 
         it('should include context lines when requested', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'helper', context_lines: 2 },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'helper', context_lines: 2 }, context);
 
             assertToolSuccess(result);
             const match = result.matches[0];
@@ -188,15 +176,15 @@ describe('SearchCodeTool', () => {
         beforeEach(async () => {
             // Create a temp repo with node_modules for exclusion testing
             tempDir = await createTempRepo({
-                'src': {
+                src: {
                     'index.ts': 'function test() { console.log("source"); }',
                 },
-                'node_modules': {
-                    'package': {
+                node_modules: {
+                    package: {
                         'index.js': 'function test() { console.log("dependency"); }',
                     },
                 },
-                'dist': {
+                dist: {
                     'build.js': 'function test() { console.log("build"); }',
                 },
             });
@@ -232,10 +220,7 @@ describe('SearchCodeTool', () => {
 
         it('should support custom exclusion patterns', async () => {
             const context = createMockContext(tempDir);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'function test', exclude: ['src/**'] },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'function test', exclude: ['src/**'] }, context);
 
             assertToolSuccess(result);
 
@@ -348,30 +333,21 @@ describe('SearchCodeTool', () => {
 
         it('should reject paths outside work directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'test', path: '../../../etc' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'test', path: '../../../etc' }, context);
 
             assertToolError(result, 'outside work directory');
         });
 
         it('should return error for non-existent directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'test', path: 'nonexistent-dir-12345' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'test', path: 'nonexistent-dir-12345' }, context);
 
             assertToolError(result, 'Directory not found');
         });
 
         it('should return error when path is a file not a directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await SearchCodeTool.execute(
-                { pattern: 'test', path: 'README.md' },
-                context,
-            );
+            const result = await SearchCodeTool.execute({ pattern: 'test', path: 'README.md' }, context);
 
             assertToolError(result, 'Path is not a directory');
         });
@@ -432,9 +408,7 @@ describe('SearchCodeTool', () => {
             await SearchCodeTool.execute({ pattern: 'function' }, context);
 
             expect(context.logger.info).toHaveBeenCalled();
-            expect(context.logger.info).toHaveBeenCalledWith(
-                expect.stringContaining('Searching for pattern'),
-            );
+            expect(context.logger.info).toHaveBeenCalledWith(expect.stringContaining('Searching for pattern'));
         });
 
         it('should log completion with result count', async () => {

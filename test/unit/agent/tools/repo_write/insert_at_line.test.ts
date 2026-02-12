@@ -2,13 +2,13 @@
  * Tests for InsertAtLineTool (FM-003)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { InsertAtLineTool } from '../../../../../src/agent/tools/repo_write/insert_at_line.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('InsertAtLineTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('InsertAtLineTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -46,10 +46,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Line 1\nLine 2\nLine 3');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 2, content: 'Inserted' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 2, content: 'Inserted' }, context);
 
             assertToolSuccess(result);
             expect(result.path).toBe('test.txt');
@@ -65,10 +62,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Original Line');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 1, content: 'First' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 1, content: 'First' }, context);
 
             assertToolSuccess(result);
 
@@ -83,10 +77,7 @@ describe.sequential('InsertAtLineTool', () => {
             await fs.writeFile(filePath, 'Line 1\nLine 2');
 
             // File has 2 lines, so line 3 is after the last line
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 3, content: 'Last' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 3, content: 'Last' }, context);
 
             assertToolSuccess(result);
 
@@ -101,10 +92,7 @@ describe.sequential('InsertAtLineTool', () => {
             await fs.writeFile(filePath, 'Line 1\nLine 4');
 
             const multiLine = 'Line 2\nLine 3';
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 2, content: multiLine },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 2, content: multiLine }, context);
 
             assertToolSuccess(result);
             expect(result.lines_inserted).toBe(2);
@@ -119,10 +107,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Line 1\nLine 2');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 2, content: '' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 2, content: '' }, context);
 
             assertToolSuccess(result);
             expect(result.lines_inserted).toBe(1); // Even empty string counts as 1 line
@@ -153,10 +138,7 @@ describe.sequential('InsertAtLineTool', () => {
             await fs.writeFile(filePath, 'Line 1\nLine 2\nLine 3');
 
             // File has 3 lines, insert at line 4
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 4, content: 'Line 4' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 4, content: 'Line 4' }, context);
 
             assertToolSuccess(result);
 
@@ -170,10 +152,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Content');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 0, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 0, content: 'test' }, context);
 
             assertToolError(result, 'must be a number >= 1');
         });
@@ -184,10 +163,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Content');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: -5, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: -5, content: 'test' }, context);
 
             assertToolError(result, 'must be a number >= 1');
         });
@@ -199,10 +175,7 @@ describe.sequential('InsertAtLineTool', () => {
             await fs.writeFile(filePath, 'Line 1\nLine 2');
 
             // File has 2 lines, max valid is 3 (after last line)
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 10, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 10, content: 'test' }, context);
 
             assertToolError(result, 'Invalid line number');
             expect(result.message).toContain('valid range: 1-3');
@@ -216,10 +189,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Line 1\n    Indented\nLine 3');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 2, content: 'New' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 2, content: 'New' }, context);
 
             assertToolSuccess(result);
 
@@ -358,10 +328,7 @@ describe.sequential('InsertAtLineTool', () => {
             const filePath = path.join(subdir, 'file.txt');
             await fs.writeFile(filePath, 'Original');
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'sub/file.txt', line: 1, content: 'New' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'sub/file.txt', line: 1, content: 'New' }, context);
 
             assertToolSuccess(result);
 
@@ -375,30 +342,21 @@ describe.sequential('InsertAtLineTool', () => {
             const context = createMockContext('');
             context.workDir = undefined as any;
 
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 1, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 1, content: 'test' }, context);
 
             assertToolError(result, 'workDir is required');
         });
 
         it('should require path parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await InsertAtLineTool.execute(
-                { path: '', line: 1, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: '', line: 1, content: 'test' }, context);
 
             assertToolError(result, 'path parameter is required');
         });
 
         it('should validate path is a string', async () => {
             const context = createMockContext(tempDir);
-            const result = await InsertAtLineTool.execute(
-                { path: 123 as any, line: 1, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 123 as any, line: 1, content: 'test' }, context);
 
             assertToolError(result, 'must be a string');
         });
@@ -435,10 +393,7 @@ describe.sequential('InsertAtLineTool', () => {
 
         it('should handle null content', async () => {
             const context = createMockContext(tempDir);
-            const result = await InsertAtLineTool.execute(
-                { path: 'test.txt', line: 1, content: null as any },
-                context,
-            );
+            const result = await InsertAtLineTool.execute({ path: 'test.txt', line: 1, content: null as any }, context);
 
             assertToolError(result, 'content parameter is required');
         });
@@ -527,10 +482,7 @@ describe.sequential('InsertAtLineTool', () => {
 
             await fs.writeFile(filePath, 'Line 1\nLine 2');
 
-            const result = await InsertAtLineTool.executeMock(
-                { path: 'test.txt', line: 10, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.executeMock({ path: 'test.txt', line: 10, content: 'test' }, context);
 
             expect(result.dry_run).toBe(true);
             expect(result.error).toBe(true);
@@ -564,10 +516,7 @@ describe.sequential('InsertAtLineTool', () => {
 
         it('should validate input in mock mode', async () => {
             const context = createMockContext(tempDir);
-            const result = await InsertAtLineTool.executeMock(
-                { path: '', line: 1, content: 'test' },
-                context,
-            );
+            const result = await InsertAtLineTool.executeMock({ path: '', line: 1, content: 'test' }, context);
 
             expect(result.dry_run).toBe(true);
             expect(result.error).toBe(true);
@@ -606,10 +555,7 @@ describe.sequential('InsertAtLineTool', () => {
             await fs.writeFile(filePath, classCode);
 
             const newMethod = `newMethod() {\n        return false;\n    }`;
-            await InsertAtLineTool.execute(
-                { path: 'class.ts', line: 6, content: newMethod, indent: true },
-                context,
-            );
+            await InsertAtLineTool.execute({ path: 'class.ts', line: 6, content: newMethod, indent: true }, context);
 
             const content = await fs.readFile(filePath, 'utf-8');
             expect(content).toContain('newMethod()');
@@ -682,10 +628,7 @@ describe.sequential('InsertAtLineTool', () => {
             const errorHandling = `    if (!response.ok) {
         throw new Error('Request failed');
     }`;
-            await InsertAtLineTool.execute(
-                { path: 'api.ts', line: 3, content: errorHandling, indent: true },
-                context,
-            );
+            await InsertAtLineTool.execute({ path: 'api.ts', line: 3, content: errorHandling, indent: true }, context);
 
             const content = await fs.readFile(filePath, 'utf-8');
             expect(content).toContain('if (!response.ok)');

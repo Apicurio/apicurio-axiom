@@ -2,11 +2,11 @@
  * Tests for GetFileMetadataTool (FSA-001)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { GetFileMetadataTool } from '../../../../../src/agent/tools/repo_read/get_file_metadata.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('GetFileMetadataTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -121,10 +121,7 @@ describe('GetFileMetadataTool', () => {
     describe('Non-Existent Paths', () => {
         it('should return exists: false for non-existent file', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetFileMetadataTool.execute(
-                { path: 'nonexistent-file-12345.txt' },
-                context,
-            );
+            const result = await GetFileMetadataTool.execute({ path: 'nonexistent-file-12345.txt' }, context);
 
             assertToolSuccess(result);
             expect(result.exists).toBe(false);
@@ -133,10 +130,7 @@ describe('GetFileMetadataTool', () => {
 
         it('should return exists: false for non-existent directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetFileMetadataTool.execute(
-                { path: 'nonexistent-directory-12345' },
-                context,
-            );
+            const result = await GetFileMetadataTool.execute({ path: 'nonexistent-directory-12345' }, context);
 
             assertToolSuccess(result);
             expect(result.exists).toBe(false);
@@ -155,10 +149,7 @@ describe('GetFileMetadataTool', () => {
 
         it('should handle nested paths', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetFileMetadataTool.execute(
-                { path: 'src/utils/helper.ts' },
-                context,
-            );
+            const result = await GetFileMetadataTool.execute({ path: 'src/utils/helper.ts' }, context);
 
             assertToolSuccess(result);
             expect(result.exists).toBe(true);
@@ -169,10 +160,7 @@ describe('GetFileMetadataTool', () => {
     describe('Security', () => {
         it('should reject path traversal attempts', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await GetFileMetadataTool.execute(
-                { path: '../../../etc/passwd' },
-                context,
-            );
+            const result = await GetFileMetadataTool.execute({ path: '../../../etc/passwd' }, context);
 
             assertToolError(result, 'outside work directory');
         });

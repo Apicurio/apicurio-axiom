@@ -2,11 +2,11 @@
  * Tests for FindFilesTool (FSA-004)
  */
 
-import { describe, it, expect } from 'vitest';
 import * as path from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { FindFilesTool } from '../../../../../src/agent/tools/repo_read/find_files.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('FindFilesTool', () => {
     const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
@@ -120,10 +120,7 @@ describe('FindFilesTool', () => {
 
         it('should search nested directory', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '*.ts', path: 'src/utils' },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '*.ts', path: 'src/utils' }, context);
 
             assertToolSuccess(result);
             result.files.forEach((file) => {
@@ -135,10 +132,7 @@ describe('FindFilesTool', () => {
     describe('Exclusion Patterns', () => {
         it('should exclude files matching exclude patterns', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '**/*', exclude: ['**/*.ts'] },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '**/*', exclude: ['**/*.ts'] }, context);
 
             assertToolSuccess(result);
             result.files.forEach((file) => {
@@ -148,10 +142,7 @@ describe('FindFilesTool', () => {
 
         it('should support multiple exclude patterns', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '**/*', exclude: ['**/*.ts', '**/*.java'] },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '**/*', exclude: ['**/*.ts', '**/*.java'] }, context);
 
             assertToolSuccess(result);
             result.files.forEach((file) => {
@@ -173,10 +164,7 @@ describe('FindFilesTool', () => {
     describe('Result Limiting', () => {
         it('should limit results to max_results', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '**/*', max_results: 5 },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '**/*', max_results: 5 }, context);
 
             assertToolSuccess(result);
             expect(result.files.length).toBeLessThanOrEqual(5);
@@ -184,10 +172,7 @@ describe('FindFilesTool', () => {
 
         it('should indicate when results are truncated', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '**/*', max_results: 2 },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '**/*', max_results: 2 }, context);
 
             assertToolSuccess(result);
             if (result.count > 2) {
@@ -208,10 +193,7 @@ describe('FindFilesTool', () => {
     describe('Empty Results', () => {
         it('should return empty array when no matches found', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '**/*.nonexistent' },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '**/*.nonexistent' }, context);
 
             assertToolSuccess(result);
             expect(result.files).toEqual([]);
@@ -246,10 +228,7 @@ describe('FindFilesTool', () => {
 
         it('should return error for non-existent start path', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '*.ts', path: 'nonexistent-dir' },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '*.ts', path: 'nonexistent-dir' }, context);
 
             assertToolError(result, 'does not exist');
         });
@@ -258,10 +237,7 @@ describe('FindFilesTool', () => {
     describe('Security', () => {
         it('should reject path traversal in start path', async () => {
             const context = createMockContext(fixturesPath);
-            const result = await FindFilesTool.execute(
-                { pattern: '*.txt', path: '../../../etc' },
-                context,
-            );
+            const result = await FindFilesTool.execute({ pattern: '*.txt', path: '../../../etc' }, context);
 
             assertToolError(result, 'outside the repository');
         });

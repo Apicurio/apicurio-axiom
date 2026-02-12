@@ -2,13 +2,13 @@
  * Tests for ReplaceInFileTool (FM-004)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { ReplaceInFileTool } from '../../../../../src/agent/tools/repo_write/replace_in_file.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('ReplaceInFileTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('ReplaceInFileTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -401,10 +401,7 @@ describe.sequential('ReplaceInFileTool', () => {
 
         it('should require path parameter', async () => {
             const context = createMockContext(tempDir);
-            const result = await ReplaceInFileTool.execute(
-                { path: '', search: 'foo', replace: 'bar' },
-                context,
-            );
+            const result = await ReplaceInFileTool.execute({ path: '', search: 'foo', replace: 'bar' }, context);
 
             assertToolError(result, 'path parameter is required');
         });
@@ -646,7 +643,10 @@ describe.sequential('ReplaceInFileTool', () => {
             const context = createMockContext(tempDir);
             const filePath = path.join(tempDir, 'module.ts');
 
-            await fs.writeFile(filePath, "import { util } from './old/path';\nimport { helper } from './old/path/helper';");
+            await fs.writeFile(
+                filePath,
+                "import { util } from './old/path';\nimport { helper } from './old/path/helper';",
+            );
 
             await ReplaceInFileTool.execute(
                 { path: 'module.ts', search: './old/path', replace: './new/path', all_occurrences: true },
@@ -669,10 +669,7 @@ describe.sequential('ReplaceInFileTool', () => {
                 context,
             );
 
-            await ReplaceInFileTool.execute(
-                { path: 'README.md', search: 'teh', replace: 'the' },
-                context,
-            );
+            await ReplaceInFileTool.execute({ path: 'README.md', search: 'teh', replace: 'the' }, context);
 
             const content = await fs.readFile(filePath, 'utf-8');
             expect(content).toBe('# Documentation\n\nThis is the documentation.');
@@ -697,10 +694,18 @@ describe.sequential('ReplaceInFileTool', () => {
             const context = createMockContext(tempDir);
             const filePath = path.join(tempDir, 'api.ts');
 
-            await fs.writeFile(filePath, 'const url1 = "http://api.example.com/v1/users";\nconst url2 = "http://api.example.com/v1/posts";');
+            await fs.writeFile(
+                filePath,
+                'const url1 = "http://api.example.com/v1/users";\nconst url2 = "http://api.example.com/v1/posts";',
+            );
 
             await ReplaceInFileTool.execute(
-                { path: 'api.ts', search: 'http://api\\.example\\.com/v1', replace: 'https://api.example.com/v2', regex: true },
+                {
+                    path: 'api.ts',
+                    search: 'http://api\\.example\\.com/v1',
+                    replace: 'https://api.example.com/v2',
+                    regex: true,
+                },
                 context,
             );
 

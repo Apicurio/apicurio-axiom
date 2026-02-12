@@ -2,13 +2,13 @@
  * Tests for DeleteFileTool (FM-006)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DeleteFileTool } from '../../../../../src/agent/tools/repo_write/delete_file.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('DeleteFileTool', () => {
     let tempDir: string;
@@ -25,7 +25,7 @@ describe.sequential('DeleteFileTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -179,7 +179,7 @@ describe.sequential('DeleteFileTool', () => {
             expect(exists).toBe(false);
 
             // Verify backup exists
-            const backupPath = path.join(tempDir, result.backup_path!);
+            const backupPath = path.join(tempDir, result.backup_path);
             const backupExists = await fse.pathExists(backupPath);
             expect(backupExists).toBe(true);
 
@@ -196,10 +196,7 @@ describe.sequential('DeleteFileTool', () => {
             await fs.writeFile(path.join(dirPath, 'file1.txt'), 'content1');
             await fs.writeFile(path.join(dirPath, 'file2.txt'), 'content2');
 
-            const result = await DeleteFileTool.execute(
-                { path: 'testdir', recursive: true, backup: true },
-                context,
-            );
+            const result = await DeleteFileTool.execute({ path: 'testdir', recursive: true, backup: true }, context);
 
             assertToolSuccess(result);
             expect(result.backup_path).toBeDefined();
@@ -210,7 +207,7 @@ describe.sequential('DeleteFileTool', () => {
             expect(exists).toBe(false);
 
             // Verify backup directory exists
-            const backupPath = path.join(tempDir, result.backup_path!);
+            const backupPath = path.join(tempDir, result.backup_path);
             const backupExists = await fse.pathExists(backupPath);
             expect(backupExists).toBe(true);
 
@@ -515,7 +512,7 @@ describe.sequential('DeleteFileTool', () => {
             expect(exists).toBe(false);
 
             // Backup created
-            const backupPath = path.join(tempDir, result.backup_path!);
+            const backupPath = path.join(tempDir, result.backup_path);
             const backupExists = await fse.pathExists(backupPath);
             expect(backupExists).toBe(true);
         });
