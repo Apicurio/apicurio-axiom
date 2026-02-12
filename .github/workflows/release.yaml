@@ -58,6 +58,7 @@ jobs:
           npm install
           npm run lint
           npm run build
+          npm run test
 
       - name: Build Docker Image
         working-directory: docker/build

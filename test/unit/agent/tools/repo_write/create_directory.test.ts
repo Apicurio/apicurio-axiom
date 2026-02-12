@@ -2,12 +2,12 @@
  * Tests for CreateDirectoryTool (FM-009)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'node:path';
 import * as fse from 'fs-extra';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { CreateDirectoryTool } from '../../../../../src/agent/tools/repo_write/create_directory.js';
-import { createMockContext } from '../../../../helpers/mock-context.js';
 import { assertToolError, assertToolSuccess } from '../../../../helpers/assertions.js';
+import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe.sequential('CreateDirectoryTool', () => {
     let tempDir: string;
@@ -24,7 +24,7 @@ describe.sequential('CreateDirectoryTool', () => {
         if (tempDir) {
             try {
                 await fse.remove(tempDir);
-            } catch (error) {
+            } catch (_error) {
                 // Ignore cleanup errors
             }
         }
@@ -120,10 +120,7 @@ describe.sequential('CreateDirectoryTool', () => {
             // Create parent first
             await fse.ensureDir(path.join(tempDir, 'parent'));
 
-            const result = await CreateDirectoryTool.execute(
-                { path: 'parent/child', recursive: false },
-                context,
-            );
+            const result = await CreateDirectoryTool.execute({ path: 'parent/child', recursive: false }, context);
 
             assertToolSuccess(result);
             expect(result.created).toBe(true);
@@ -137,10 +134,7 @@ describe.sequential('CreateDirectoryTool', () => {
         it('should return error when recursive is false and parent does not exist', async () => {
             const context = createMockContext(tempDir);
 
-            const result = await CreateDirectoryTool.execute(
-                { path: 'nonexistent/child', recursive: false },
-                context,
-            );
+            const result = await CreateDirectoryTool.execute({ path: 'nonexistent/child', recursive: false }, context);
 
             assertToolError(result, 'Parent directory does not exist');
 
@@ -156,10 +150,7 @@ describe.sequential('CreateDirectoryTool', () => {
             // Create all parents
             await fse.ensureDir(path.join(tempDir, 'a', 'b', 'c'));
 
-            const result = await CreateDirectoryTool.execute(
-                { path: 'a/b/c/d', recursive: false },
-                context,
-            );
+            const result = await CreateDirectoryTool.execute({ path: 'a/b/c/d', recursive: false }, context);
 
             assertToolSuccess(result);
             expect(result.created).toBe(true);
@@ -195,10 +186,7 @@ describe.sequential('CreateDirectoryTool', () => {
 
             assertToolSuccess(result);
             // Only l3 and l4 should be tracked
-            expect(result.parents_created).toEqual([
-                path.join('l1', 'l2', 'l3'),
-                path.join('l1', 'l2', 'l3', 'l4'),
-            ]);
+            expect(result.parents_created).toEqual([path.join('l1', 'l2', 'l3'), path.join('l1', 'l2', 'l3', 'l4')]);
         });
 
         it('should return empty array when directory already exists', async () => {
