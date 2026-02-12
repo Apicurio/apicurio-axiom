@@ -6,6 +6,7 @@
 
 import { Octokit } from '@octokit/rest';
 import type Database from 'better-sqlite3';
+import packageJson from '../package.json' with { type: 'json' };
 import { ActionExecutor } from './actions/action-executor.js';
 import { PromptRegistry } from './agent/prompts/registry.js';
 import { listAvailableTools } from './agent/tools/builder.js';
@@ -168,6 +169,7 @@ async function main(): Promise<void> {
         logger.info('░█▀█░█▀█░▀█▀░█▀▀░█░█░█▀▄░▀█▀░█▀█░░░█▀█░█░█░▀█▀░█▀█░█▄█');
         logger.info('░█▀█░█▀▀░░█░░█░░░█░█░█▀▄░░█░░█░█░░░█▀█░▄▀▄░░█░░█░█░█░█');
         logger.info('░▀░▀░▀░░░▀▀▀░▀▀▀░▀▀▀░▀░▀░▀▀▀░▀▀▀░░░▀░▀░▀░▀░▀▀▀░▀▀▀░▀░▀');
+        logger.info(`Version: ${packageJson.version}`);
         logger.info('Running as:');
         logger.info(`  User: ${currentUser?.login}${currentUser?.name ? ` (${currentUser?.name})` : ''}`);
         logger.info(`  Type: ${currentUser?.type}`);
