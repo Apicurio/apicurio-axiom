@@ -507,7 +507,7 @@ describe.sequential('ApplyPatchTool', () => {
             const result = await ApplyPatchTool.execute({ patch }, context);
 
             expect(result.success).toBe(false);
-            expect(result.errors.some((e) => e.includes('outside work directory'))).toBe(true);
+            expect(result.errors.some((error: any) => error.includes('outside work directory'))).toBe(true);
         });
 
         it('should reject file creation outside work directory', async () => {
@@ -522,7 +522,7 @@ describe.sequential('ApplyPatchTool', () => {
             const result = await ApplyPatchTool.execute({ patch }, context);
 
             expect(result.success).toBe(false);
-            expect(result.errors.some((e) => e.includes('outside work directory'))).toBe(true);
+            expect(result.errors.some((error: any) => error.includes('outside work directory'))).toBe(true);
         });
     });
 
