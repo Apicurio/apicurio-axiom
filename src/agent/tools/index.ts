@@ -55,6 +55,9 @@ import { ReplaceInFileTool } from './repo_write/replace_in_file.js';
 import { ReplaceLinesTool } from './repo_write/replace_lines.js';
 import { WriteFileTool } from './repo_write/write_file.js';
 
+// Import all web_read tools (read-only web operations)
+import { FetchUrlTool } from './web_read/fetch_url.js';
+
 /**
  * ToolIndex - Singleton registry of all available tools
  */
@@ -132,6 +135,9 @@ export class ToolIndex {
         this.register(ReplaceInFileTool);
         this.register(ReplaceLinesTool);
         this.register(WriteFileTool);
+
+        // Register web_read tools (read-only web operations)
+        this.register(FetchUrlTool);
     }
 
     /**
