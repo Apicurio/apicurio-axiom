@@ -34,6 +34,7 @@
         "axios": "^1.13.5",
         "better-sqlite3": "12.6.2",
         "diff": "^8.0.3",
+        "duck-duck-scrape": "^2.2.7",
         "fast-glob": "3.3.3",
         "fs-extra": "11.3.3",
         "handlebars": "4.7.8",

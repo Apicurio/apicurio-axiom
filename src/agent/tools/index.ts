@@ -58,6 +58,7 @@ import { WriteFileTool } from './repo_write/write_file.js';
 // Import all web_read tools (read-only web operations)
 import { DownloadFileTool } from './web_read/download_file.js';
 import { FetchUrlTool } from './web_read/fetch_url.js';
+import { SearchWebTool } from './web_read/search_web.js';
 
 /**
  * ToolIndex - Singleton registry of all available tools
@@ -140,6 +141,7 @@ export class ToolIndex {
         // Register web_read tools (read-only web operations)
         this.register(DownloadFileTool);
         this.register(FetchUrlTool);
+        this.register(SearchWebTool);
     }
 
     /**
