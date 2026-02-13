@@ -112,10 +112,16 @@ export interface ToolResult {
     [key: string]: any;
 }
 
+// Context management types
+export interface ContextManagementConfig {
+    keepRecentPairs?: number;
+}
+
 // Runtime types
 export interface AgentConfig {
     vertex: VertexConfig;
     safety?: SafetyConfig;
+    contextManagement?: ContextManagementConfig;
 }
 
 export interface ExecuteParams {

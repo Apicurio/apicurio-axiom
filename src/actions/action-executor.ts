@@ -13,7 +13,7 @@ import { GitHubRepositoryManager } from '../github/repository-manager.js';
 import { createActionLogger, getLogger, type Logger } from '../logging/logger.js';
 import type { ActionConfig, ActionConfigurations, LoggingConfig } from '../types/actions.js';
 import type { VertexConfig } from '../types/agent.js';
-import type { ConfigData, VertexAISafety } from '../types/config.js';
+import type { ConfigData, ContextManagementConfig, VertexAISafety } from '../types/config.js';
 import type { Event } from '../types/events.js';
 import type { ActionExecutorInterface } from './executors/action-executor-interface';
 import { AIAgentActionExecutor } from './executors/ai-agent-action-executor.js';
@@ -47,6 +47,7 @@ export class ActionExecutor {
     private dryRun: boolean;
     private vertexConfig: VertexConfig | null;
     private safetyConfig: VertexAISafety;
+    private contextManagementConfig: ContextManagementConfig;
     private githubToken: string;
     private promptRegistry: PromptRegistry;
     private shellExecutor: ShellActionExecutor;
@@ -80,6 +81,7 @@ export class ActionExecutor {
         this.dryRun = dryRun;
         this.vertexConfig = config?.vertexAI || null;
         this.safetyConfig = config?.vertexAI?.safety || {};
+        this.contextManagementConfig = config?.vertexAI?.contextManagement || { keepRecentPairs: 3 };
         this.githubToken = config?.github?.token || process.env.GITHUB_TOKEN || '';
         this.promptRegistry = promptRegistry || new PromptRegistry();
 
@@ -100,6 +102,7 @@ export class ActionExecutor {
                 this.repositoryManager,
                 this.vertexConfig,
                 this.safetyConfig,
+                this.contextManagementConfig,
                 this.githubToken,
                 this.promptRegistry,
                 dryRun,

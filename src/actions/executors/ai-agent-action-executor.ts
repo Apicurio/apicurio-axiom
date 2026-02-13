@@ -11,7 +11,7 @@ import type { GitHubRepositoryManager } from '../../github/repository-manager.js
 import type { Logger } from '../../logging/logger.js';
 import type { ActionConfig, AIAgentAction } from '../../types/actions.js';
 import type { AgentConfig, VertexConfig } from '../../types/agent.js';
-import type { VertexAISafety } from '../../types/config';
+import type { ContextManagementConfig, VertexAISafety } from '../../types/config';
 import type { Event } from '../../types/events.js';
 import type { ActionExecutorInterface } from './action-executor-interface.js';
 
@@ -26,6 +26,7 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
     private repositoryManager: GitHubRepositoryManager;
     private vertexConfig: VertexConfig;
     private safetyConfig: VertexAISafety;
+    private contextManagementConfig: ContextManagementConfig;
     private githubToken: string;
     private promptRegistry: PromptRegistry;
     private dryRun: boolean;
@@ -35,6 +36,7 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
         repositoryManager: GitHubRepositoryManager,
         vertexConfig: VertexConfig,
         safetyConfig: VertexAISafety,
+        contextManagementConfig: ContextManagementConfig,
         githubToken: string,
         promptRegistry: PromptRegistry,
         dryRun: boolean = false,
@@ -43,6 +45,7 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
         this.repositoryManager = repositoryManager;
         this.vertexConfig = vertexConfig;
         this.safetyConfig = safetyConfig;
+        this.contextManagementConfig = contextManagementConfig;
         this.githubToken = githubToken;
         this.promptRegistry = promptRegistry;
         this.dryRun = dryRun;
@@ -118,6 +121,7 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
                     model: action.model || this.vertexConfig.model,
                 },
                 safety: this.safetyConfig,
+                contextManagement: this.contextManagementConfig,
             };
 
             const runtime = new AgentRuntime(agentConfig, actionLogger);
@@ -132,6 +136,21 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
                     actionLogger.info(`--- Step ${step} ---`);
                     actionLogger.info(`Stop reason: ${response.stop_reason}`);
                     actionLogger.info(`Tokens: ${response.usage.input_tokens} in, ${response.usage.output_tokens} out`);
+
+                    // Log assistant's text response (thought process)
+                    const textBlocks = response.content.filter((block) => block.type === 'text');
+                    if (textBlocks.length > 0) {
+                        actionLogger.info('Assistant response:');
+                        for (const block of textBlocks) {
+                            if (block.text) {
+                                // Log the text with proper indentation for readability
+                                const lines = block.text.split('\n');
+                                for (const line of lines) {
+                                    actionLogger.info(`  ${line}`);
+                                }
+                            }
+                        }
+                    }
 
                     // Log tool usage details if tools were called
                     if (response.stop_reason === 'tool_use') {

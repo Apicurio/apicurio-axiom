@@ -13,7 +13,7 @@
  */
 
 import type { Logger } from '../logging/logger.js';
-import type { AgentConfig, ExecuteParams, ExecutionResult } from '../types/agent.js';
+import type { AgentConfig, ContextManagementConfig, ExecuteParams, ExecutionResult } from '../types/agent.js';
 import type { VertexAISafety } from '../types/config';
 import { Conversation } from './conversation.js';
 import { SafetyLimits } from './safety.js';
@@ -23,6 +23,7 @@ import { VertexClient } from './vertex-client.js';
 export class AgentRuntime {
     private vertex: VertexClient;
     private safetyConfig: VertexAISafety;
+    private contextConfig: ContextManagementConfig;
     private logger: Logger;
 
     /**
@@ -34,6 +35,7 @@ export class AgentRuntime {
     constructor(config: AgentConfig, logger: Logger) {
         this.vertex = new VertexClient(config.vertex, logger);
         this.safetyConfig = config.safety || {};
+        this.contextConfig = config.contextManagement || { keepRecentPairs: 3 };
         this.logger = logger;
 
         this.logger.info('AgentRuntime initialized');
@@ -62,7 +64,7 @@ export class AgentRuntime {
         }
 
         // Initialize conversation and safety limits
-        const conversation = new Conversation(systemPrompt, goal);
+        const conversation = new Conversation(systemPrompt, goal, this.contextConfig.keepRecentPairs || 3);
         const limits = new SafetyLimits(this.safetyConfig, this.logger);
 
         this.logger.info('');
@@ -75,6 +77,7 @@ export class AgentRuntime {
         this.logger.info(
             `Safety limits: steps=${limits.maxSteps}, toolCalls=${limits.maxToolCalls}, tokens=${limits.maxTokens}`,
         );
+        this.logger.info(`Context management: keepRecentPairs=${this.contextConfig.keepRecentPairs || 3}`);
         this.logger.info('');
 
         let stepNumber = 0;

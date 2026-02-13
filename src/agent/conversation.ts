@@ -12,18 +12,21 @@ export class Conversation {
     private messages: Message[];
     private complete: boolean;
     private result: MessageResponse | null;
+    private keepRecentPairs: number;
 
     /**
      * Creates a new Conversation instance
      *
      * @param systemPrompt System prompt to set context
      * @param userGoal Initial user goal/task
+     * @param keepRecentPairs Number of recent assistant/user message pairs to preserve (default: 3)
      */
-    constructor(systemPrompt: string, userGoal: string) {
+    constructor(systemPrompt: string, userGoal: string, keepRecentPairs: number = 3) {
         this.systemPrompt = systemPrompt;
         this.messages = [];
         this.complete = false;
         this.result = null;
+        this.keepRecentPairs = keepRecentPairs;
 
         // Add initial user message with the goal
         this.addUserMessage(userGoal);
@@ -83,12 +86,27 @@ export class Conversation {
     }
 
     /**
-     * Gets all messages for API calls
+     * Gets messages for API calls with intelligent pruning
+     *
+     * Strategy:
+     * - ALWAYS keep first message (the goal/action prompt)
+     * - Keep last N assistant/user pairs (recent context)
+     * - Discard middle messages (old tool results that inflate tokens)
      *
      * @returns Array of message objects
      */
     getMessages(): Message[] {
-        return this.messages;
+        // If conversation is small, return everything
+        const threshold = 1 + this.keepRecentPairs * 2; // first message + N pairs
+        if (this.messages.length <= threshold) {
+            return this.messages;
+        }
+
+        // Otherwise, prune middle messages
+        const firstMessage = this.messages[0]; // The goal
+        const recentMessages = this.messages.slice(-this.keepRecentPairs * 2); // Recent pairs
+
+        return [firstMessage, ...recentMessages];
     }
 
     /**

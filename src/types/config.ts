@@ -41,11 +41,16 @@ export interface VertexAISafety {
     maxTokens?: number;
 }
 
+export interface ContextManagementConfig {
+    keepRecentPairs?: number;
+}
+
 export interface VertexAIConfig {
     projectId: string;
     region?: string;
     model?: string;
     safety?: VertexAISafety;
+    contextManagement?: ContextManagementConfig;
 }
 
 export interface StateConfig {
