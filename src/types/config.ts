@@ -43,6 +43,7 @@ export interface VertexAISafety {
 
 export interface ContextManagementConfig {
     keepRecentPairs?: number;
+    maxToolOutputTokens?: number;
 }
 
 export interface VertexAIConfig {

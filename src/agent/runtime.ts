@@ -35,7 +35,10 @@ export class AgentRuntime {
     constructor(config: AgentConfig, logger: Logger) {
         this.vertex = new VertexClient(config.vertex, logger);
         this.safetyConfig = config.safety || {};
-        this.contextConfig = config.contextManagement || { keepRecentPairs: 3 };
+        this.contextConfig = config.contextManagement || {
+            keepRecentPairs: 3,
+            maxToolOutputTokens: 2000,
+        };
         this.logger = logger;
 
         this.logger.info('AgentRuntime initialized');
@@ -77,7 +80,9 @@ export class AgentRuntime {
         this.logger.info(
             `Safety limits: steps=${limits.maxSteps}, toolCalls=${limits.maxToolCalls}, tokens=${limits.maxTokens}`,
         );
-        this.logger.info(`Context management: keepRecentPairs=${this.contextConfig.keepRecentPairs || 3}`);
+        this.logger.info(
+            `Context management: keepRecentPairs=${this.contextConfig.keepRecentPairs || 3}, maxToolOutputTokens=${this.contextConfig.maxToolOutputTokens || 2000}`,
+        );
         this.logger.info('');
 
         let stepNumber = 0;

@@ -24,6 +24,9 @@ export interface ToolBuilderConfig {
 
     // Work directory for repository tools
     workDir?: string;
+
+    // Maximum tool output size in tokens (approximate)
+    maxToolOutputTokens?: number;
 }
 
 /**
@@ -82,6 +85,7 @@ export function buildToolRegistry(
         owner: config.owner,
         repo: config.repo,
         dryRun: dryRun,
+        maxToolOutputTokens: config.maxToolOutputTokens,
     };
 
     // Create registry with context

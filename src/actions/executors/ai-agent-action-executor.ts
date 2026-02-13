@@ -99,6 +99,7 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
                     owner,
                     repo,
                     workDir,
+                    maxToolOutputTokens: this.contextManagementConfig.maxToolOutputTokens,
                 },
                 toolNames,
                 actionLogger,

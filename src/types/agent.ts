@@ -98,6 +98,7 @@ export interface ToolContext {
     owner?: string;
     repo?: string;
     dryRun: boolean;
+    maxToolOutputTokens?: number;
 }
 
 export interface Tool extends ToolSchema {
@@ -115,6 +116,7 @@ export interface ToolResult {
 // Context management types
 export interface ContextManagementConfig {
     keepRecentPairs?: number;
+    maxToolOutputTokens?: number;
 }
 
 // Runtime types

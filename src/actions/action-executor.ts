@@ -81,7 +81,10 @@ export class ActionExecutor {
         this.dryRun = dryRun;
         this.vertexConfig = config?.vertexAI || null;
         this.safetyConfig = config?.vertexAI?.safety || {};
-        this.contextManagementConfig = config?.vertexAI?.contextManagement || { keepRecentPairs: 3 };
+        this.contextManagementConfig = config?.vertexAI?.contextManagement || {
+            keepRecentPairs: 3,
+            maxToolOutputTokens: 2000,
+        };
         this.githubToken = config?.github?.token || process.env.GITHUB_TOKEN || '';
         this.promptRegistry = promptRegistry || new PromptRegistry();
 

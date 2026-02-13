@@ -72,6 +72,50 @@ export class ToolRegistry {
     }
 
     /**
+     * Truncates a tool result to stay within token limits
+     *
+     * @param result Tool result (any type)
+     * @param maxTokens Maximum tokens allowed (approximate)
+     * @returns Truncated result
+     */
+    private truncateResult(result: any, maxTokens: number): any {
+        // If no limit configured, return as-is
+        if (!maxTokens || maxTokens <= 0) {
+            return result;
+        }
+
+        // Approximate: 1 token ≈ 4 characters
+        const maxChars = maxTokens * 4;
+
+        // Convert result to string for size checking
+        const resultString = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+
+        // If under limit, return original result
+        if (resultString.length <= maxChars) {
+            return result;
+        }
+
+        // Truncate and add notice
+        const truncated = resultString.substring(0, maxChars);
+        const removedChars = resultString.length - maxChars;
+        const removedTokens = Math.ceil(removedChars / 4);
+
+        // Try to parse back to original type if it was JSON
+        if (typeof result !== 'string') {
+            try {
+                return JSON.parse(
+                    truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`,
+                );
+            } catch {
+                // If can't parse, return as string with notice
+                return truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
+            }
+        }
+
+        return truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
+    }
+
+    /**
      * Executes a tool by name
      *
      * In dry-run mode, calls the tool's executeMock method instead of execute.
@@ -93,12 +137,29 @@ export class ToolRegistry {
                 this.context.logger.info(`🔸 [DRY-RUN] Input: ${JSON.stringify(input, null, 2)}`);
                 const result = await tool.executeMock(input, this.context);
                 this.context.logger.info(`🔸 [DRY-RUN] Simulated result: ${JSON.stringify(result, null, 2)}`);
-                return result;
+                const truncatedResult = this.truncateResult(result, this.context.maxToolOutputTokens || 0);
+                return truncatedResult;
             } else {
                 this.context.logger.info(`Executing tool: ${name}`);
                 const result = await tool.execute(input, this.context);
                 this.context.logger.info(`Tool completed: ${name}`);
-                return result;
+
+                // Truncate result if it exceeds token limit
+                const truncatedResult = this.truncateResult(result, this.context.maxToolOutputTokens || 0);
+
+                // Log if truncation occurred
+                if (this.context.maxToolOutputTokens && this.context.maxToolOutputTokens > 0) {
+                    const resultString = typeof result === 'string' ? result : JSON.stringify(result, null, 2);
+                    const maxChars = this.context.maxToolOutputTokens * 4;
+                    if (resultString.length > maxChars) {
+                        const removedTokens = Math.ceil((resultString.length - maxChars) / 4);
+                        this.context.logger.info(
+                            `Tool output truncated: removed ~${removedTokens} tokens to stay within ${this.context.maxToolOutputTokens} token limit`,
+                        );
+                    }
+                }
+
+                return truncatedResult;
             }
         } catch (error) {
             console.error(`Tool execution failed: ${name}`, error);
