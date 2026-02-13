@@ -54,6 +54,7 @@ export interface StateConfig {
 
 export interface PromptsConfig {
     basePath?: string;
+    systemTemplate?: string;
 }
 
 export interface Config {

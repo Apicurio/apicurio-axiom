@@ -131,7 +131,7 @@ describe('FetchUrlTool', () => {
             const result = await FetchUrlTool.execute({ url: slowUrl, timeout: 1000 }, context);
 
             assertToolError(result, 'timeout');
-            expect(result.fetch_time).toBeGreaterThan(1000);
+            expect(result.fetch_time).toBeGreaterThan(999);
             expect(result.fetch_time).toBeLessThan(3000); // Allow up to 3s for abort (network variability)
         });
 

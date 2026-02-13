@@ -3,6 +3,9 @@ node_modules/
 npm-debug.log
 yarn-error.log
 
+# Maven
+target/
+
 # Build output
 dist/
 dist-test/

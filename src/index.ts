@@ -108,9 +108,12 @@ async function main(): Promise<void> {
 
         // Initialize prompt registry
         const promptsDir = config.prompts?.basePath || './prompts';
-        const promptRegistry = new PromptRegistry(promptsDir);
+        const systemTemplate = config.prompts?.systemTemplate || 'system';
+        const promptRegistry = new PromptRegistry(promptsDir, systemTemplate);
         const promptNames = await promptRegistry.getPromptNames();
-        logger.info(`Prompt registry initialized with ${promptNames.length} prompts from ${promptsDir}`);
+        logger.info(
+            `Prompt registry initialized with ${promptNames.length} prompts from ${promptsDir} (system template: ${systemTemplate})`,
+        );
 
         // Initialize event validator
         const eventValidator = new EventValidator();

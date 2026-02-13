@@ -11,17 +11,25 @@ import Handlebars from 'handlebars';
 import { getLogger, type Logger } from '../../logging/logger.js';
 import type { Event } from '../../types/events.js';
 
+export interface RenderedPrompts {
+    systemPrompt: string;
+    actionPrompt: string;
+}
+
 export class PromptRegistry {
     private promptsDir: string;
+    private systemTemplate: string;
     private logger: Logger;
 
     /**
      * Creates a new PromptRegistry
      *
      * @param promptsDir Directory containing prompt template files (defaults to './prompts')
+     * @param systemTemplate Name of the system prompt template (defaults to 'system')
      */
-    constructor(promptsDir: string = './prompts') {
+    constructor(promptsDir: string = './prompts', systemTemplate: string = 'system') {
         this.promptsDir = promptsDir;
+        this.systemTemplate = systemTemplate;
         this.logger = getLogger();
     }
 
@@ -54,40 +62,40 @@ export class PromptRegistry {
     /**
      * Renders a prompt template with event data
      *
-     * Combines the base prompt with the specific prompt and renders using Handlebars.
+     * Returns both the system prompt and the action-specific prompt separately.
      *
-     * @param name Prompt name
+     * @param name Action prompt name
      * @param event Event object
-     * @returns Rendered prompt string
+     * @returns Object containing rendered system and action prompts
      */
-    async render(name: string, event: Event): Promise<string> {
-        // Load base prompt
-        const basePrompt = await this.loadPromptTemplate('base');
+    async render(name: string, event: Event): Promise<RenderedPrompts> {
+        // Load system prompt
+        const systemPromptTemplate = await this.loadPromptTemplate(this.systemTemplate);
 
-        // Load specific prompt template
-        const promptTemplate = await this.loadPromptTemplate(name);
+        // Load action-specific prompt template
+        const actionPromptTemplate = await this.loadPromptTemplate(name);
 
-        // Combine base and specific prompt
-        const combinedTemplate = `${basePrompt}\n\n${promptTemplate}`;
+        // Compile and render both with Handlebars
+        const systemTemplate = Handlebars.compile(systemPromptTemplate);
+        const actionTemplate = Handlebars.compile(actionPromptTemplate);
 
-        // Compile and render with Handlebars
-        // TODO cache the compiled handlebar template by SHA(combinedTemplate)?
-        const template = Handlebars.compile(combinedTemplate);
-        const rendered = template({ event });
-
-        return rendered;
+        return {
+            systemPrompt: systemTemplate({ event }),
+            actionPrompt: actionTemplate({ event }),
+        };
     }
 
     /**
      * Lists all available prompt names by reading the prompts directory
      *
-     * @returns Array of prompt names (without .hbs extension, excluding base.hbs)
+     * @returns Array of prompt names (without .hbs extension, excluding system template)
      */
     async getPromptNames(): Promise<string[]> {
         try {
             const files = await fs.readdir(this.promptsDir);
+            const systemTemplateFile = `${this.systemTemplate}.hbs`;
             return files
-                .filter((file) => file.endsWith('.hbs') && file !== 'base.hbs')
+                .filter((file) => file.endsWith('.hbs') && file !== systemTemplateFile)
                 .map((file) => file.replace(/\.hbs$/, ''))
                 .sort();
         } catch (error) {

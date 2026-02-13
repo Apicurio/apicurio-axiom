@@ -105,13 +105,10 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
             actionLogger.info(`Configured ${toolRegistry.getCount()} tools`);
             actionLogger.info('');
 
-            // Render prompt template with event data
-            const systemPrompt = await this.promptRegistry.render(promptName, event);
+            // Render prompts with event data
+            const prompts = await this.promptRegistry.render(promptName, event);
 
-            // Build goal from event
-            const goal = this.buildGoal(event);
-
-            actionLogger.info(`Goal: ${goal}`);
+            actionLogger.info(`Action prompt: ${promptName}`);
             actionLogger.info('');
 
             // Create agent runtime
@@ -127,8 +124,8 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
 
             // Execute agent with step logging
             const result = await runtime.execute({
-                systemPrompt,
-                goal,
+                systemPrompt: prompts.systemPrompt,
+                goal: prompts.actionPrompt,
                 tools: toolRegistry,
                 dryRun: this.dryRun,
                 onStep: async (step, _conversation, response) => {
@@ -202,23 +199,5 @@ export class AIAgentActionExecutor implements ActionExecutorInterface {
         });
 
         actionLogger.info('--- End of dry run information ---');
-    }
-
-    /**
-     * Builds a goal description from event data
-     *
-     * @param event Event object
-     * @returns Goal description
-     */
-    private buildGoal(event: Event): string {
-        if (event.issue) {
-            return `Analyze GitHub issue #${event.issue.number}: "${event.issue.title}"`;
-        }
-
-        if (event.pullRequest) {
-            return `Analyze GitHub pull request #${event.pullRequest.number}: "${event.pullRequest.title}"`;
-        }
-
-        return `Process GitHub event: ${event.type}`;
     }
 }
