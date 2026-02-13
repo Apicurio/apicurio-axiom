@@ -28,6 +28,8 @@ interface DirectoryTreeOutput {
     tree: TreeNode[];
     total_files: number;
     total_directories: number;
+    truncated?: boolean;
+    message?: string;
 }
 
 export const GetDirectoryTreeTool: Tool = {
@@ -227,9 +229,11 @@ export const GetDirectoryTreeTool: Tool = {
                 total_files: totalFiles,
                 total_directories: totalDirectories,
                 truncated: truncated,
-                ...(truncated && {
-                    message: `Tree truncated at ${maxItems} items. Use max_items parameter to adjust (max: ${ABSOLUTE_MAX_ITEMS})`,
-                }),
+                ...{
+                    message: truncated
+                        ? `Tree truncated at ${maxItems} items. Use max_items parameter to adjust (max: ${ABSOLUTE_MAX_ITEMS})`
+                        : undefined,
+                },
             };
 
             return result;
