@@ -104,15 +104,15 @@ export class ToolRegistry {
         if (typeof result !== 'string') {
             try {
                 return JSON.parse(
-                    truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`,
+                    `${truncated}\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`,
                 );
             } catch {
                 // If can't parse, return as string with notice
-                return truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
+                return `${truncated}\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
             }
         }
 
-        return truncated + `\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
+        return `${truncated}\n\n[... TRUNCATED: removed ~${removedTokens} tokens (${removedChars} chars) ...]`;
     }
 
     /**

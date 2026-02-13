@@ -128,9 +128,7 @@ export const GetDirectoryTreeTool: Tool = {
             const maxDepth = input.max_depth || Number.MAX_SAFE_INTEGER;
             const includeHidden = input.include_hidden ?? false;
             const pattern = input.pattern;
-            const maxItems = input.max_items
-                ? Math.min(input.max_items, ABSOLUTE_MAX_ITEMS)
-                : DEFAULT_MAX_ITEMS;
+            const maxItems = input.max_items ? Math.min(input.max_items, ABSOLUTE_MAX_ITEMS) : DEFAULT_MAX_ITEMS;
 
             // Initialize counters
             let totalFiles = 0;

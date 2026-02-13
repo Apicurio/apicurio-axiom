@@ -114,9 +114,7 @@ export const ListFilesTool: Tool = {
             // Parse max_files with sensible defaults and limits
             const DEFAULT_MAX_FILES = 200;
             const ABSOLUTE_MAX_FILES = 500;
-            const maxFiles = input.max_files
-                ? Math.min(input.max_files, ABSOLUTE_MAX_FILES)
-                : DEFAULT_MAX_FILES;
+            const maxFiles = input.max_files ? Math.min(input.max_files, ABSOLUTE_MAX_FILES) : DEFAULT_MAX_FILES;
 
             // Construct full path and validate it's within work directory
             const fullPath = path.resolve(context.workDir, input.path);
