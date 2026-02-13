@@ -159,7 +159,7 @@ export class WorkDirectoryManager {
     /**
      * Ensures a work directory exists
      *
-     * Creates the work directory and repository subdirectory if they don't exist.
+     * Creates the work directory if it doesn't exist.
      * Does NOT clone the repository - use GitHubRepository.ensureCloned() for that.
      *
      * @param workDir Work directory path
@@ -172,25 +172,16 @@ export class WorkDirectoryManager {
                 workDir,
             });
         }
-
-        // Create repository subdirectory if it doesn't exist
-        const repoDir = join(workDir, 'repository');
-        if (!existsSync(repoDir)) {
-            await mkdir(repoDir, { recursive: true });
-            getLogger().debug('Created repository directory', {
-                repoDir,
-            });
-        }
     }
 
     /**
-     * Gets the path to the repository directory within a work directory
+     * Gets the path to the repository directory (same as work directory)
      *
      * @param workDir Work directory path
-     * @returns Path to the repository directory
+     * @returns Path to the repository directory (same as workDir)
      */
     getRepositoryDir(workDir: string): string {
-        return join(workDir, 'repository');
+        return workDir;
     }
 
     /**

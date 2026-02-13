@@ -479,15 +479,15 @@ The validation runs automatically on startup after loading prompts. Use `--dryRu
 ## Work Directories
 
 Work directories are created per issue/PR/event and reused:
-- `{workDirectory.basePath}/issue-123/repository/`: Git clone for issue #123
-- `{workDirectory.basePath}/pr-456/repository/`: Git clone for PR #456
-- `{workDirectory.basePath}/event-789/repository/`: Git clone for events without associated issues/PRs
+- `{workDirectory.basePath}/issue-123/`: Git clone for issue #123
+- `{workDirectory.basePath}/pr-456/`: Git clone for PR #456
+- `{workDirectory.basePath}/event-789/`: Git clone for events without associated issues/PRs
 
 Example (with default path):
-- `work/issue-123/repository/`
-- `work/pr-456/repository/`
+- `work/issue-123/`
+- `work/pr-456/`
 
-Each work directory contains a `repository` subdirectory with the git clone. The repository is cloned once and updated with `git pull` on subsequent actions.
+The repository is cloned directly into the work directory and updated with `git pull` on subsequent actions.
 
 **Automatic Cleanup**:
 - Monitors total size hourly
