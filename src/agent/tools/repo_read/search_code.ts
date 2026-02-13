@@ -112,7 +112,7 @@ export const SearchCodeTool: Tool = {
             },
             max_results: {
                 type: 'number',
-                description: 'Maximum number of results to return (default: 1000)',
+                description: 'Maximum number of matches to return (default: 100, max: 300)',
                 minimum: 1,
             },
         },
@@ -157,11 +157,15 @@ export const SearchCodeTool: Tool = {
                 };
             }
 
-            // Set defaults
+            // Set defaults and limits
+            const DEFAULT_MAX_RESULTS = 100;
+            const ABSOLUTE_MAX_RESULTS = 300;
             const startPath = input.path || '.';
             const caseSensitive = input.case_sensitive ?? false;
             const contextLines = Math.min(input.context_lines ?? 0, 10);
-            const maxResults = input.max_results ?? 1000;
+            const maxResults = input.max_results
+                ? Math.min(input.max_results, ABSOLUTE_MAX_RESULTS)
+                : DEFAULT_MAX_RESULTS;
 
             // Default exclude patterns - common build/dependency directories
             const defaultExcludes = [

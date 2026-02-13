@@ -33,7 +33,7 @@ interface DirectoryTreeOutput {
 export const GetDirectoryTreeTool: Tool = {
     name: 'repo_read-get_directory_tree',
     description:
-        'Generate a hierarchical tree structure of a directory. Supports depth limiting, hidden file filtering, and pattern matching.',
+        'Generate a hierarchical tree structure of a directory. Supports depth limiting, hidden file filtering, and pattern matching. Limited to 300 items by default to prevent excessive output.',
     input_schema: {
         type: 'object',
         properties: {
@@ -54,6 +54,11 @@ export const GetDirectoryTreeTool: Tool = {
                 type: 'string',
                 description: 'Optional glob pattern to filter results (simple wildcards supported)',
             },
+            max_items: {
+                type: 'number',
+                description: 'Maximum total items (files + directories) to return (default: 300, max: 1000)',
+                minimum: 1,
+            },
         },
         required: [],
     },
@@ -71,6 +76,7 @@ export const GetDirectoryTreeTool: Tool = {
             max_depth?: number;
             include_hidden?: boolean;
             pattern?: string;
+            max_items?: number;
         },
         context: ToolContext,
     ): Promise<any> {
@@ -116,14 +122,20 @@ export const GetDirectoryTreeTool: Tool = {
                 };
             }
 
-            // Set defaults
+            // Set defaults and limits
+            const DEFAULT_MAX_ITEMS = 300;
+            const ABSOLUTE_MAX_ITEMS = 1000;
             const maxDepth = input.max_depth || Number.MAX_SAFE_INTEGER;
             const includeHidden = input.include_hidden ?? false;
             const pattern = input.pattern;
+            const maxItems = input.max_items
+                ? Math.min(input.max_items, ABSOLUTE_MAX_ITEMS)
+                : DEFAULT_MAX_ITEMS;
 
             // Initialize counters
             let totalFiles = 0;
             let totalDirectories = 0;
+            let truncated = false;
 
             context.logger.info(`Building directory tree for: ${targetPath}`);
 
@@ -140,10 +152,22 @@ export const GetDirectoryTreeTool: Tool = {
                     return [];
                 }
 
+                // Check if we've hit the item limit
+                if (totalFiles + totalDirectories >= maxItems) {
+                    truncated = true;
+                    return [];
+                }
+
                 const entries = await fs.readdir(dirPath, { withFileTypes: true });
                 const nodes: TreeNode[] = [];
 
                 for (const entry of entries) {
+                    // Check item limit before processing each entry
+                    if (totalFiles + totalDirectories >= maxItems) {
+                        truncated = true;
+                        break;
+                    }
+
                     // Filter hidden files if requested
                     if (!includeHidden && entry.name.startsWith('.')) {
                         continue;
@@ -196,12 +220,18 @@ export const GetDirectoryTreeTool: Tool = {
             // Build the tree starting from the target directory
             const tree = await buildTree(fullPath, 1, targetPath === '.' ? '' : targetPath);
 
-            context.logger.info(`Directory tree built: ${totalDirectories} directories, ${totalFiles} files`);
+            context.logger.info(
+                `Directory tree built: ${totalDirectories} directories, ${totalFiles} files${truncated ? ' (truncated)' : ''}`,
+            );
 
-            const result: DirectoryTreeOutput = {
+            const result: DirectoryTreeOutput & { truncated?: boolean; message?: string } = {
                 tree: tree,
                 total_files: totalFiles,
                 total_directories: totalDirectories,
+                truncated: truncated,
+                ...(truncated && {
+                    message: `Tree truncated at ${maxItems} items. Use max_items parameter to adjust (max: ${ABSOLUTE_MAX_ITEMS})`,
+                }),
             };
 
             return result;
@@ -225,6 +255,7 @@ export const GetDirectoryTreeTool: Tool = {
             max_depth?: number;
             include_hidden?: boolean;
             pattern?: string;
+            max_items?: number;
         },
         context: ToolContext,
     ): Promise<any> {

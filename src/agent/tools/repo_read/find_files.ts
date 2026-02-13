@@ -33,9 +33,8 @@ export const FindFilesTool: Tool = {
             },
             max_results: {
                 type: 'number',
-                description: 'Maximum number of results to return',
+                description: 'Maximum number of results to return (default: 200, max: 500)',
                 minimum: 1,
-                default: 1000,
             },
         },
         required: ['pattern'],
@@ -71,8 +70,12 @@ export const FindFilesTool: Tool = {
                 };
             }
 
-            // Set defaults
-            const maxResults = input.max_results || 1000;
+            // Set defaults and limits
+            const DEFAULT_MAX_RESULTS = 200;
+            const ABSOLUTE_MAX_RESULTS = 500;
+            const maxResults = input.max_results
+                ? Math.min(input.max_results, ABSOLUTE_MAX_RESULTS)
+                : DEFAULT_MAX_RESULTS;
             const startPath = input.path || '.';
             const excludePatterns = input.exclude || [];
 
