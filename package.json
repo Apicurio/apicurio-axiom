@@ -1,6 +1,6 @@
 {
     "name": "apicurio-axiom",
-    "version": "1.0.5",
+    "version": "1.0.6",
     "description": "A bot that monitors GitHub events and triggers custom actions",
     "main": "dist/index.js",
     "type": "module",
