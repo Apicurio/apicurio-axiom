@@ -101,8 +101,18 @@ export class AgentRuntime {
                     max_tokens: Math.min(4096, limits.remainingTokens()),
                 };
 
+                // Estimate total request size for visibility
+                const systemTokens = Math.ceil(request.system.length / 4);
+                const messagesJson = JSON.stringify(request.messages);
+                const messagesTokens = Math.ceil(messagesJson.length / 4);
+                const toolsTokens = Math.ceil(JSON.stringify(request.tools).length / 4);
+                const totalEstimatedTokens = systemTokens + messagesTokens + toolsTokens;
+
                 // Call AI Agent
                 this.logger.info(`Calling AI Agent with ${conversation.getMessageCount()} messages...`);
+                this.logger.info(
+                    `Estimated request size: ~${totalEstimatedTokens.toLocaleString()} tokens (system: ${systemTokens.toLocaleString()}, messages: ${messagesTokens.toLocaleString()}, tools: ${toolsTokens.toLocaleString()})`,
+                );
                 const response = await this.vertex.createMessage(request);
 
                 // Track token usage

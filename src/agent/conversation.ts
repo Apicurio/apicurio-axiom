@@ -38,10 +38,14 @@ export class Conversation {
      * @param content Message content
      */
     addUserMessage(content: string): void {
-        this.messages.push({
+        const message: Message = {
             role: 'user',
             content: content,
-        });
+        };
+        this.messages.push(message);
+
+        const tokens = this.estimateMessageTokens(message);
+        console.log(`[Conversation] Added user message (~${tokens.toLocaleString()} tokens)`);
     }
 
     /**
@@ -50,10 +54,14 @@ export class Conversation {
      * @param response API response from the AI assistant
      */
     addAssistantMessage(response: MessageResponse): void {
-        this.messages.push({
+        const message: Message = {
             role: 'assistant',
             content: response.content,
-        });
+        };
+        this.messages.push(message);
+
+        const tokens = this.estimateMessageTokens(message);
+        console.log(`[Conversation] Added assistant message (~${tokens.toLocaleString()} tokens)`);
     }
 
     /**
@@ -73,16 +81,29 @@ export class Conversation {
             content: JSON.stringify(result, null, 2),
         };
 
+        // Estimate size of this tool result
+        const resultTokens = Math.ceil(JSON.stringify(toolResultContent).length / 4);
+
         // If the last message is already a user message with tool results, append to it
         if (lastMessage && lastMessage.role === 'user' && Array.isArray(lastMessage.content)) {
             (lastMessage.content as MessageContent[]).push(toolResultContent);
+            console.log(`[Conversation] Appended tool result to existing message (~${resultTokens.toLocaleString()} tokens)`);
         } else {
             // Otherwise create a new user message with the tool result
             this.messages.push({
                 role: 'user',
                 content: [toolResultContent],
             });
+            console.log(`[Conversation] Added tool result in new message (~${resultTokens.toLocaleString()} tokens)`);
         }
+    }
+
+    /**
+     * Estimates token count for a message (rough approximation: 1 token ≈ 4 characters)
+     */
+    private estimateMessageTokens(message: Message): number {
+        const messageStr = JSON.stringify(message);
+        return Math.ceil(messageStr.length / 4);
     }
 
     /**
@@ -96,17 +117,39 @@ export class Conversation {
      * @returns Array of message objects
      */
     getMessages(): Message[] {
+        // Calculate total tokens before pruning
+        const totalTokensBefore = this.messages.reduce((sum, msg) => sum + this.estimateMessageTokens(msg), 0);
+
         // If conversation is small, return everything
         const threshold = 1 + this.keepRecentPairs * 2; // first message + N pairs
         if (this.messages.length <= threshold) {
+            console.log(
+                `[Conversation] Returning all ${this.messages.length} messages (~${totalTokensBefore.toLocaleString()} tokens)`,
+            );
             return this.messages;
         }
 
         // Otherwise, prune middle messages
         const firstMessage = this.messages[0]; // The goal
+        const prunedMessages = this.messages.slice(1, -this.keepRecentPairs * 2); // Messages being pruned
         const recentMessages = this.messages.slice(-this.keepRecentPairs * 2); // Recent pairs
 
-        return [firstMessage, ...recentMessages];
+        // Calculate tokens after pruning
+        const keptMessages = [firstMessage, ...recentMessages];
+        const totalTokensAfter = keptMessages.reduce((sum, msg) => sum + this.estimateMessageTokens(msg), 0);
+
+        // Log pruning details
+        if (prunedMessages.length > 0) {
+            const prunedTokens = prunedMessages.reduce((sum, msg) => sum + this.estimateMessageTokens(msg), 0);
+            console.log(
+                `[Conversation] Pruned ${prunedMessages.length} messages (~${prunedTokens.toLocaleString()} tokens removed)`,
+            );
+            console.log(
+                `[Conversation] Returning ${keptMessages.length} of ${this.messages.length} messages (${totalTokensAfter.toLocaleString()} of ${totalTokensBefore.toLocaleString()} tokens)`,
+            );
+        }
+
+        return keptMessages;
     }
 
     /**
