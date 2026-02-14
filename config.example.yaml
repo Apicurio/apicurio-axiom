@@ -41,6 +41,11 @@ github:
   # When true, only events created after the app's initial startup will be processed
   # When false, all events will be processed (useful for catching up on historical events)
   ignoreEventsBeforeStart: true
+  # Git clone depth (default: 1)
+  # 1 = shallow clone with only latest commit (fastest, least disk space)
+  # >1 = shallow clone with N commits of history
+  # 0 = full clone with complete history (slowest, most disk space)
+  cloneDepth: 1
 
 # Job Queue Configuration
 queue:

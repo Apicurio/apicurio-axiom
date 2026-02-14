@@ -92,25 +92,34 @@ export class GitHubRepository {
 
     /**
      * Clones the repository
+     *
+     * Uses shallow clone by default (--depth 1) for faster cloning and less disk space.
+     * Depth can be configured via githubConfig.cloneDepth (0 = full clone).
      */
     async clone(): Promise<void> {
         const repoUrl = this.getRepositoryUrl();
         const maskedUrl = this.getMaskedRepositoryUrl();
 
+        // Default to shallow clone with depth 1
+        const cloneDepth = this._githubConfig.cloneDepth ?? 1;
+        const depthArg = cloneDepth > 0 ? `--depth ${cloneDepth}` : '';
+
         this.logger.info('Cloning repository', {
             repository: this.getRepositoryId(),
             destination: this.targetPath,
             url: maskedUrl,
+            depth: cloneDepth > 0 ? cloneDepth : 'full',
         });
 
         try {
-            await execAsync(`git clone ${repoUrl} .`, {
+            await execAsync(`git clone ${depthArg} ${repoUrl} .`, {
                 cwd: this.targetPath,
                 maxBuffer: this.maxBuffer,
             });
 
             this.logger.info('Successfully cloned repository', {
                 repository: this.getRepositoryId(),
+                depth: cloneDepth > 0 ? cloneDepth : 'full',
             });
 
             // Add fork remote after successful clone

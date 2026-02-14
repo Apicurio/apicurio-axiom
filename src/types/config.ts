@@ -8,6 +8,7 @@ export interface GitHubConfig {
     token: string;
     pollInterval: number;
     ignoreEventsBeforeStart?: boolean;
+    cloneDepth?: number;
 }
 
 export interface ActionConfig {

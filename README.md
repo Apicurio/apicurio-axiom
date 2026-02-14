@@ -199,7 +199,7 @@ The `config.yaml` file controls all application behavior. See `config.example.ya
 
 **Key sections:**
 - `state`: State database directory location
-- `github`: API token, polling interval, and event filtering
+- `github`: API token, polling interval, event filtering, and clone depth
 - `queue`: Job queue concurrency and polling
 - `workDirectory`: Work directory location, size limits, and cleanup
 - `logging`: Log directory locations and retention

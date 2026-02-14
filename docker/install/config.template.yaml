@@ -39,6 +39,8 @@ github:
   # Ignore events that occurred before the application first started
   # Set to false if you want to process historical events
   ignoreEventsBeforeStart: true
+  # Git clone depth for repository clones (1 = shallow, 0 = full)
+  cloneDepth: 1
 
 # Job Queue Configuration
 queue:
