@@ -9,6 +9,7 @@
 
 import { exec } from 'node:child_process';
 import { existsSync } from 'node:fs';
+import { readdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { getLogger, type Logger } from '../logging/logger.js';
@@ -75,18 +76,18 @@ export class GitHubRepository {
      * Ensures the repository is cloned
      *
      * If the repository doesn't exist, it will be cloned.
-     * If it already exists, this is a no-op.
+     * If it already exists, it will be updated with git pull.
      */
     async ensureCloned(): Promise<void> {
         const gitDir = join(this.targetPath, '.git');
 
         if (!existsSync(gitDir)) {
+            // If directory is not empty but has no .git, clean it first
+            await this.cleanDirectoryIfNeeded();
             await this.clone();
         } else {
-            this.logger.debug('Repository already exists', {
-                repository: this.getRepositoryId(),
-                path: this.targetPath,
-            });
+            // Repository exists, update it with git pull
+            await this.pull();
         }
     }
 
@@ -130,6 +131,74 @@ export class GitHubRepository {
                 url: maskedUrl,
             });
             throw error;
+        }
+    }
+
+    /**
+     * Updates the repository by pulling latest changes
+     *
+     * This is called when the repository already exists and needs to be updated.
+     */
+    async pull(): Promise<void> {
+        const maskedUrl = this.getMaskedRepositoryUrl();
+
+        this.logger.info('Pulling latest changes', {
+            repository: this.getRepositoryId(),
+            path: this.targetPath,
+            url: maskedUrl,
+        });
+
+        try {
+            await execAsync('git pull', {
+                cwd: this.targetPath,
+                maxBuffer: this.maxBuffer,
+            });
+
+            this.logger.info('Successfully pulled latest changes', {
+                repository: this.getRepositoryId(),
+            });
+        } catch (error) {
+            this.logger.error('Failed to pull repository', error as Error, {
+                repository: this.getRepositoryId(),
+                url: maskedUrl,
+            });
+            throw error;
+        }
+    }
+
+    /**
+     * Cleans the target directory if it's not empty
+     *
+     * This handles the case where a previous action left files in the workspace
+     * but the .git directory is missing.
+     */
+    private async cleanDirectoryIfNeeded(): Promise<void> {
+        try {
+            const entries = await readdir(this.targetPath);
+
+            if (entries.length > 0) {
+                this.logger.info('Cleaning non-empty directory before clone', {
+                    repository: this.getRepositoryId(),
+                    path: this.targetPath,
+                    fileCount: entries.length,
+                });
+
+                // Remove all files and directories
+                for (const entry of entries) {
+                    const entryPath = join(this.targetPath, entry);
+                    await rm(entryPath, { recursive: true, force: true });
+                }
+
+                this.logger.debug('Directory cleaned successfully', {
+                    repository: this.getRepositoryId(),
+                });
+            }
+        } catch (error) {
+            // If directory doesn't exist or can't be read, that's fine
+            // The clone operation will handle creating it
+            this.logger.debug('No cleanup needed', {
+                repository: this.getRepositoryId(),
+            });
         }
     }
 
