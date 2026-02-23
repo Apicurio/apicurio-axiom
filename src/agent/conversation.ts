@@ -87,7 +87,9 @@ export class Conversation {
         // If the last message is already a user message with tool results, append to it
         if (lastMessage && lastMessage.role === 'user' && Array.isArray(lastMessage.content)) {
             (lastMessage.content as MessageContent[]).push(toolResultContent);
-            console.log(`[Conversation] Appended tool result to existing message (~${resultTokens.toLocaleString()} tokens)`);
+            console.log(
+                `[Conversation] Appended tool result to existing message (~${resultTokens.toLocaleString()} tokens)`,
+            );
         } else {
             // Otherwise create a new user message with the tool result
             this.messages.push({

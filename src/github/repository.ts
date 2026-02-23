@@ -193,7 +193,7 @@ export class GitHubRepository {
                     repository: this.getRepositoryId(),
                 });
             }
-        } catch (error) {
+        } catch (_error) {
             // If directory doesn't exist or can't be read, that's fine
             // The clone operation will handle creating it
             this.logger.debug('No cleanup needed', {
