@@ -1,0 +1,48 @@
+# GitHub Poller Configuration Example
+#
+# Copy this file to config.yaml and update with your values
+
+# GitHub Configuration
+github:
+  # GitHub personal access token (required)
+  # Can use environment variable: ${GITHUB_TOKEN}
+  token: ${GITHUB_TOKEN}
+
+  # Polling interval in seconds (default: 60)
+  pollInterval: 60
+
+  # Whether to ignore events that occurred before the poller started (default: true)
+  ignoreEventsBeforeStart: true
+
+# NATS Configuration
+nats:
+  # NATS server URL (required)
+  url: nats://localhost:4222
+
+  # Maximum reconnection attempts (-1 for infinite, default: -1)
+  maxReconnectAttempts: -1
+
+  # Wait time between reconnection attempts in milliseconds (default: 2000)
+  reconnectTimeWait: 2000
+
+# Repositories to Monitor
+# List of repositories in owner/repo format (required, at least one)
+repositories:
+  - apicurio/apicurio-registry
+  - apicurio/apicurio-studio
+
+# State Management
+state:
+  # Base path for state database (default: ./data/state)
+  basePath: ./data/state
+
+# Logging Configuration
+logging:
+  # Log level: trace, debug, info, warn, error, fatal (default: info)
+  level: info
+
+  # Enable pretty printing for development (default: true)
+  prettyPrint: true
+
+  # Path for raw event JSON logs (default: ./data/events)
+  eventsPath: ./data/events
