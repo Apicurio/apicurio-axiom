@@ -1,0 +1,215 @@
+version: '3.9'
+
+services:
+  # ============================================================================
+  # NATS JetStream - Message Broker
+  # ============================================================================
+  nats:
+    image: nats:2.10-alpine
+    container_name: axiom-nats
+    command:
+      - "-js"              # Enable JetStream
+      - "-sd=/data"        # Store data in /data directory
+      - "-m"               # Enable monitoring
+      - "8222"             # Monitoring port
+    ports:
+      - "4222:4222"        # Client connections
+      - "8222:8222"        # HTTP monitoring
+    volumes:
+      - nats-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8222/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    restart: unless-stopped
+    networks:
+      - axiom-network
+
+  # ============================================================================
+  # NATS Stream Setup - Initializes JetStream stream on first run
+  # ============================================================================
+  nats-setup:
+    image: natsio/nats-box:latest
+    container_name: axiom-nats-setup
+    command:
+      - /bin/sh
+      - -c
+      - |
+        echo "Waiting for NATS to be ready..."
+        until nats --server=nats:4222 server ping; do
+          echo "NATS not ready, waiting..."
+          sleep 2
+        done
+        echo "NATS is ready, setting up stream..."
+
+        # Check if stream exists
+        if nats --server=nats:4222 stream info AXIOM_EVENTS >/dev/null 2>&1; then
+          echo "Stream AXIOM_EVENTS already exists"
+        else
+          echo "Creating stream AXIOM_EVENTS..."
+          nats --server=nats:4222 stream add AXIOM_EVENTS \
+            --subjects "events.>" \
+            --retention workqueue \
+            --storage file \
+            --max-age 7d \
+            --discard old \
+            --replicas 1
+          echo "Stream created successfully"
+        fi
+
+        # Check if consumer exists
+        if nats --server=nats:4222 consumer info AXIOM_EVENTS axiom-event-handler >/dev/null 2>&1; then
+          echo "Consumer axiom-event-handler already exists"
+        else
+          echo "Creating consumer axiom-event-handler..."
+          nats --server=nats:4222 consumer add AXIOM_EVENTS axiom-event-handler \
+            --filter "events.>" \
+            --ack explicit \
+            --pull \
+            --deliver all \
+            --max-deliver 3 \
+            --wait 5m \
+            --replay instant
+          echo "Consumer created successfully"
+        fi
+
+        echo "NATS setup complete"
+    depends_on:
+      nats:
+        condition: service_healthy
+    networks:
+      - axiom-network
+    restart: "no"
+
+  # ============================================================================
+  # GitHub Poller - Polls GitHub and publishes events to NATS
+  # ============================================================================
+  github-poller:
+    build:
+      context: .
+      dockerfile: packages/github-poller/Dockerfile
+    container_name: axiom-github-poller
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      NODE_ENV: production
+    volumes:
+      - ./packages/github-poller/config.yaml:/app/config.yaml:ro
+      - github-state:/data/state
+      - github-events:/data/events
+    depends_on:
+      nats:
+        condition: service_healthy
+      nats-setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - axiom-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # Jira Poller - Polls Jira and publishes events to NATS
+  # ============================================================================
+  jira-poller:
+    build:
+      context: .
+      dockerfile: packages/jira-poller/Dockerfile
+    container_name: axiom-jira-poller
+    environment:
+      JIRA_USERNAME: ${JIRA_USERNAME}
+      JIRA_API_TOKEN: ${JIRA_API_TOKEN}
+      NODE_ENV: production
+    volumes:
+      - ./packages/jira-poller/config.yaml:/app/config.yaml:ro
+      - jira-state:/data/state
+      - jira-events:/data/events
+    depends_on:
+      nats:
+        condition: service_healthy
+      nats-setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - axiom-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ============================================================================
+  # Event Handler - Consumes events from NATS and executes actions
+  # ============================================================================
+  event-handler:
+    build:
+      context: .
+      dockerfile: packages/event-handler/Dockerfile
+    container_name: axiom-event-handler
+    environment:
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      NODE_ENV: production
+    volumes:
+      - ./packages/event-handler/config.yaml:/app/config.yaml:ro
+      - ./prompts:/app/prompts:ro
+      - ./actions:/app/actions:ro
+      - handler-logs:/data/logs
+      - handler-state:/data/state
+      - handler-work:/data/work
+      - handler-queue:/data/queue
+    depends_on:
+      nats:
+        condition: service_healthy
+      nats-setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - axiom-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ==============================================================================
+# Volumes - Persistent storage for all components
+# ==============================================================================
+volumes:
+  # NATS data
+  nats-data:
+    driver: local
+
+  # GitHub Poller data
+  github-state:
+    driver: local
+  github-events:
+    driver: local
+
+  # Jira Poller data
+  jira-state:
+    driver: local
+  jira-events:
+    driver: local
+
+  # Event Handler data
+  handler-logs:
+    driver: local
+  handler-state:
+    driver: local
+  handler-work:
+    driver: local
+  handler-queue:
+    driver: local
+
+# ==============================================================================
+# Networks - Isolated network for all Axiom components
+# ==============================================================================
+networks:
+  axiom-network:
+    driver: bridge
+    name: axiom-network
