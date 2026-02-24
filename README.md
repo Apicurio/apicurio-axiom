@@ -1,661 +1,423 @@
 # Apicurio Axiom
 
-A locally-running GitHub automation system that monitors GitHub events and triggers custom actions based on configurable rules. Features AI Agent integration via Google Cloud Vertex AI for intelligent automation.
+Event-driven automation system for GitHub and Jira using NATS JetStream. Axiom provides a scalable, distributed
+architecture for monitoring events from multiple sources and executing custom actions based on configurable rules.
+
+## Architecture
+
+Axiom uses a **NATS-based event-driven architecture** with four main components:
+
+```
+┌──────────────┐       ┌──────────────┐
+│   GitHub     │       │     Jira     │
+│     API      │       │     API      │
+└──────┬───────┘       └──────┬───────┘
+       │                      │
+       ▼                      ▼
+┌──────────────┐       ┌──────────────┐
+│   GitHub     │       │     Jira     │
+│   Poller     │       │    Poller    │
+└──────┬───────┘       └──────┬───────┘
+       │                      │
+       └──────┬───────────────┘
+              ▼
+       ┌─────────────┐
+       │    NATS     │
+       │ JetStream   │
+       └──────┬──────┘
+              │
+              ▼
+       ┌─────────────┐
+       │   Event     │
+       │  Handler    │
+       └─────────────┘
+```
+
+### Components
+
+1. **[GitHub Poller](./packages/github-poller/)** - Polls GitHub API for events and publishes to NATS
+2. **[Jira Poller](./packages/jira-poller/)** - Polls Jira API for issue updates and publishes to NATS
+3. **NATS JetStream** - Message broker providing reliable event delivery
+4. **[Event Handler](./packages/event-handler/)** - Consumes events from NATS and executes configured actions
+
+### Benefits of Event-Driven Architecture
+
+- ✅ **Scalability**: Components scale independently based on load
+- ✅ **Reliability**: NATS JetStream provides at-least-once delivery with persistence
+- ✅ **Flexibility**: Easy to add new event sources (webhooks, other APIs, etc.)
+- ✅ **Separation of Concerns**: Event ingestion decoupled from event processing
+- ✅ **Independent Lifecycles**: Deploy and update components separately
 
 ## Features
 
-- **Event Monitoring**: Monitor multiple GitHub repositories for events (issues, PRs, comments, etc.)
-- **Flexible Event Mapping**: Configure event-to-action mappings with flexible filtering
-- **Multiple Action Types**: Execute shell scripts, JavaScript code, or AI Agent actions
-- **Persistent Job Queue**: SQLite-based queue system with configurable concurrency
+### Event Sources
+
+- **GitHub Events**: Issues, Pull Requests, Comments, Reviews, Releases, Discussions, Push, Fork, Create
+- **Jira Events**: Issue created, updated, closed (based on status category)
+
+### Event Processing
+
+- **Flexible Event Mapping**: Configure event-to-action mappings with powerful filtering
+- **Event Deduplication**: SQLite-based state management prevents duplicate processing
+- **Event Validation**: JSON Schema validation for event integrity
+
+### Action Types
+
+- **Shell Actions**: Execute shell scripts with access to event context
+- **JavaScript Actions**: Execute JavaScript code with full Node.js runtime
+- **AI Agent Actions**: Claude AI-powered actions via Anthropic API with comprehensive tool system:
+  - Repository operations (read, write, search)
+  - Git operations (diff, log, status, branch)
+  - GitHub operations (issues, PRs, comments, labels)
+  - Web operations (search, fetch)
+
+### Infrastructure
+
+- **Persistent Job Queue**: SQLite-based queue with configurable concurrency
 - **Work Directory Management**: Automatic repository cloning, size monitoring, and cleanup
-- **Structured Logging**: JSON-based logging with correlation IDs for tracing events through the system
-- **Comprehensive Logging**: All actions logged to files organized by repository and event
-- **AI Agent Actions**: Claude AI-powered actions via Google Cloud Vertex AI with custom tool system
-- **Advanced Validation**: Validates configuration including action references, tool patterns, and repository access
-- **Automatic Cleanup**: Events older than 30 days and logs older than configured retention period
-- **Configurable Directories**: All storage locations (state, logs, events, work) are configurable
+- **Structured Logging**: JSON-based logging with correlation IDs for event tracing
+- **Automatic Cleanup**: Configurable retention for events, logs, and work directories
 
-## Prerequisites
+## Quick Start
 
-- Node.js 20 or higher (for native installation) OR Docker (for container deployment)
-- GitHub Personal Access Token (PAT)
-- SSH key configured for GitHub (Axiom clones repositories using SSH)
-- Google Cloud project with Vertex AI enabled (for AI Agent actions)
-- **Forked repositories**: All monitored repositories must be forked to your GitHub account (see below)
+### Docker Compose (Recommended)
 
-## Docker Deployment (Recommended)
+The fastest way to get started is using Docker Compose, which runs all components together:
 
-Apicurio Axiom uses a **two-phase Docker deployment** that separates image building from deployment:
-
-### For End Users (Deployment)
-
-Use the interactive installer to deploy pre-built Docker images:
-
-```bash
-cd docker/install
-sudo ./install.sh
-```
-
-The installer will:
-- ✅ Pull the official `apicurio/apicurio-axiom` image from Docker Hub
-- ✅ Create directory structure at `/opt/apicurio-axiom/`
-- ✅ Generate SSH keys for GitHub
-- ✅ Configure environment variables
-- ✅ Set up systemd service for automatic startup
-- ✅ Start the application
-
-**Service Management:**
-```bash
-sudo systemctl status apicurio-axiom     # Check status
-sudo systemctl restart apicurio-axiom    # Restart service
-sudo journalctl -u apicurio-axiom -f     # View logs
-```
-
-**Documentation:** See `docker/install/README.md` for complete installation guide.
-
-### For Developers (Building)
-
-Build Docker images:
-
-```bash
-cd docker/build
-./build.sh 1.0.0      # Build image
-```
-
-**Documentation:** See `docker/build/README.md` for build instructions.
-
-### Why Docker?
-
-**Benefits:**
-- ✅ No Node.js version conflicts
-- ✅ Consistent environment across deployments
-- ✅ Easy updates (pull new image version)
-- ✅ Production-ready with systemd integration
-- ✅ Automatic startup on boot
-- ✅ Centralized logging via journald
-
-**Official Images:**
-- Docker Hub: `apicurio/apicurio-axiom:latest`
-- Versioned: `apicurio/apicurio-axiom:1.0.0`
-
-**Learn more:** See `docker/README.md` for overview of both phases.
-
----
-
-## Installation (Native)
-
-1. **Clone the repository**
+1. **Set up environment variables**:
    ```bash
-   git clone https://github.com/your-username/apicurio-axiom.git
-   cd apicurio-axiom
+   cp .env.example .env
+   # Edit .env with your credentials
    ```
 
-2. **Install dependencies**
+2. **Configure components**:
+   ```bash
+   cp packages/github-poller/config.example.yaml packages/github-poller/config.yaml
+   cp packages/jira-poller/config.example.yaml packages/jira-poller/config.yaml
+   cp packages/event-handler/config.example.yaml packages/event-handler/config.yaml
+   # Edit each config.yaml
+   ```
+
+3. **Start all services**:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. **View logs**:
+   ```bash
+   docker-compose logs -f
+   ```
+
+**Complete Guide**: See [DOCKER_COMPOSE.md](./DOCKER_COMPOSE.md) for comprehensive Docker Compose documentation.
+
+### Development Setup
+
+For local development with Node.js:
+
+1. **Prerequisites**:
+   - Node.js >= 20.0.0
+   - Running NATS JetStream server
+   - GitHub Personal Access Token
+   - Jira API credentials (optional)
+   - Anthropic API key (for AI actions)
+
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Configure SSH for GitHub**
-
-   Axiom clones repositories using SSH. Ensure you have an SSH key configured:
-
+3. **Build all packages**:
    ```bash
-   # Generate SSH key if you don't have one
-   ssh-keygen -t ed25519 -C "your_email@example.com"
-
-   # Add the key to ssh-agent
-   eval "$(ssh-agent -s)"
-   ssh-add ~/.ssh/id_ed25519
-
-   # Add the public key to your GitHub account
-   cat ~/.ssh/id_ed25519.pub
-   # Copy the output and add it to https://github.com/settings/keys
-
-   # Test the connection
-   ssh -T git@github.com
+   npm run build
    ```
 
-4. **Copy the example configuration**
+4. **Start NATS locally**:
    ```bash
-   cp config.example.yaml config.yaml
+   # Using Docker
+   docker-compose up nats nats-setup -d
+
+   # Or install NATS server: https://docs.nats.io/running-a-nats-service/introduction/installation
    ```
 
-5. **Edit `config.yaml`**
-   - Set your GitHub PAT (or use `GITHUB_TOKEN` environment variable)
-   - Add repositories to monitor
-   - Configure event mappings and actions
-   - Adjust queue, logging, and work directory settings
+5. **Run individual components**:
+   ```bash
+   # Terminal 1: GitHub Poller
+   npm run dev:github-poller
 
-## Repository Fork Requirement
+   # Terminal 2: Jira Poller (optional)
+   npm run dev:jira-poller
 
-**IMPORTANT**: Apicurio Axiom requires that all monitored repositories are either owned by you or forked to your GitHub account.
-
-### Why Forks Are Required
-
-Axiom needs to work with a fork of each monitored repository because:
-- Axiom clones repositories locally to perform operations
-- Actions may need to create branches, commits, or pull requests
-- Working with forks allows Axiom to push changes without affecting the upstream repository
-
-### Setting Up Forks
-
-For each repository in your `config.yaml` that you don't own:
-
-1. **Navigate to the repository** on GitHub (e.g., `https://github.com/Apicurio/apicurio-registry`)
-2. **Click "Fork"** in the top-right corner
-3. **Create the fork** in your account
-
-**Example:**
-If your config monitors these repositories:
-```yaml
-repositories:
-  - Apicurio/apicurio-registry
-  - Quarkus/quarkus
-  - YourUsername/your-repo
-```
-
-And you're authenticated as `YourUsername`, you need:
-- ✓ `YourUsername/your-repo` - Already owned by you (no fork needed)
-- ✗ `YourUsername/apicurio-registry` - Fork of Apicurio/apicurio-registry (required)
-- ✗ `YourUsername/quarkus` - Fork of Quarkus/quarkus (required)
-
-### Validation on Startup
-
-Axiom automatically validates forks on startup:
-- ✅ Repositories you own are automatically validated
-- ✅ Forks are verified to ensure they're forks of the correct upstream repository
-- ❌ If a required fork is missing, Axiom will exit with a clear error message showing which forks need to be created
-
-**Error Example:**
-```
-Repository fork validation failed:
-
-  • Missing fork: "Apicurio/apicurio-registry" must be forked to "YourUsername/apicurio-registry"
-    Create fork at: https://github.com/Apicurio/apicurio-registry/fork
-
-All monitored repositories must be either:
-  1. Owned by YourUsername, OR
-  2. Forked to YourUsername's account
-```
+   # Terminal 3: Event Handler
+   npm run dev:event-handler
+   ```
 
 ## Configuration
 
 ### Environment Variables
 
-```bash
-# Required
-export GITHUB_TOKEN=your_github_pat_here
+Create a `.env` file with your credentials:
 
-# Required for AI Agent actions
-export ANTHROPIC_VERTEX_PROJECT_ID=your_gcp_project_id
+```bash
+# GitHub
+GITHUB_TOKEN=ghp_your_github_token_here
+
+# Jira (optional)
+JIRA_USERNAME=your.email@example.com
+JIRA_API_TOKEN=your_jira_api_token_here
+
+# AI Agent (optional)
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-api-key-here
 ```
 
-**Note**: For AI Agent actions, you'll also need Google Cloud credentials configured. The Vertex AI configuration (project ID, region, model) is set in `config.yaml`.
+### Component Configuration
 
-### Configuration File
+Each component has its own `config.yaml`:
 
-The `config.yaml` file controls all application behavior. See `config.example.yaml` for a complete example with comments.
+- **GitHub Poller**: `packages/github-poller/config.yaml` - Configure repositories, polling interval
+- **Jira Poller**: `packages/jira-poller/config.yaml` - Configure projects, polling interval
+- **Event Handler**: `packages/event-handler/config.yaml` - Configure event mappings and actions
 
-**Key sections:**
-- `state`: State database directory location
-- `github`: API token, polling interval, event filtering, and clone depth
-- `queue`: Job queue concurrency and polling
-- `workDirectory`: Work directory location, size limits, and cleanup
-- `logging`: Log directory locations and retention
-- `vertexAI`: Google Cloud Vertex AI configuration for AI Agent actions
-- `repositories`: List of repositories to monitor
-- `eventMappings`: Maps events to actions with filters
-- `actions`: Defines available actions
+**Examples**: Each package has a `config.example.yaml` showing available options.
 
-### Directory Configuration
+## Event Mappings
 
-All directory locations are configurable in `config.yaml`:
+Configure event-to-action mappings in the Event Handler:
 
 ```yaml
-state:
-  basePath: ./data/state        # State database location (default: .state/)
+eventMappings:
+  # Trigger on new issues
+  - event: issue.opened
+    filters:
+      - type: repository
+        repositories: [apicurio/apicurio-registry]
+      - type: label
+        labels: [bug]
+    actions: [analyze-bug]
 
-logging:
-  level: info                    # Log level: trace, debug, info, warn, error, fatal
-  prettyPrint: true              # Pretty print logs (false for JSON in production)
-  basePath: ./data/logs          # Action logs location (default: ./logs/)
-  eventsPath: ./data/events      # Event JSON logs location (default: ./logs/events/)
-  retentionDays: 30              # Log retention period
-
-workDirectory:
-  basePath: ./data/work          # Work directories for actions (default: ./work/)
+  # Trigger on PR comments
+  - event: issue_comment.created
+    filters:
+      - type: pull_request
+        is_pull_request: true
+    actions: [review-comment]
 ```
 
-### Event Processing Behavior
+**Filter Types**:
+- `repository`: Filter by repository name
+- `label`: Filter by issue/PR labels
+- `pull_request`: Filter for PRs only
+- `author`: Filter by event author
+- `file_pattern`: Filter by changed files (for PRs)
 
-By default, Axiom only processes events that occur **after the application first started**. This prevents a flood of actions on historical events when Axiom starts up.
+## Actions
 
-**How it works:**
-- On first run, Axiom records the startup time in the database
-- Events with timestamps before this time are skipped (logged but not processed)
-- Only truly new events trigger actions
+Define custom actions in `actions/` directory:
 
-**To process historical events:**
-
-Set `ignoreEventsBeforeStart: false` in `config.yaml`:
+### Shell Action
 
 ```yaml
-github:
-  token: ${GITHUB_TOKEN}
-  pollInterval: 60
-  ignoreEventsBeforeStart: false  # Process all events, including historical
+actions:
+  analyze-bug:
+    type: shell
+    command: ./actions/analyze_bug.sh
+    environment:
+      ISSUE_NUMBER: "{{event.issue.number}}"
+      REPOSITORY: "{{event.repositoryName}}"
 ```
 
-**To reset the start time:**
+### JavaScript Action
 
-Delete the state database and restart (adjust path if you've configured a custom `state.basePath`):
-
-```bash
-# Default location
-rm .state/events.db
-
-# Or if using custom location (e.g., ./data/state)
-rm ./data/state/events.db
-
-./start.sh
-```
-
-## Usage
-
-### Starting the Bot
-
-Use the startup script:
-
-```bash
-./start.sh
-```
-
-Or start directly:
-
-```bash
-npm start
-```
-
-Axiom will validate that all required environment variables are set before starting.
-
-**On startup, Axiom will:**
-- Authenticate with GitHub using your personal access token
-- Display the authenticated user information (username, type, profile URL)
-- Verify all required environment variables are set
-- Initialize all components (state manager, job queue, work directory manager, etc.)
-- Begin polling for GitHub events
-
-### Dry Run Mode
-
-Test your configuration without actually executing actions:
-
-```bash
-npm start -- --dryRun
-```
-
-In dry run mode:
-- All events are processed normally
-- Jobs are queued and logged
-- Read-only tools and operations execute normally
-- Write actions (GitHub API changes, git commits, etc.) are simulated but **not executed**
-- Useful for testing event mappings, prompts, and configuration changes
-
-### Development Mode
-
-For development with auto-restart on file changes:
-
-```bash
-npm run dev
-```
-
-## Architecture
-
-### Components
-
-1. **GitHub Poller**: Polls GitHub API for repository events
-2. **Event Processor**: Matches events against configured rules
-3. **Job Queue**: Persistent queue with concurrency control
-4. **Action Executor**: Executes actions with logging
-5. **Work Directory Manager**: Manages git clones and disk usage
-6. **Log Manager**: Automatically cleans up old log files based on retention policy
-7. **State Manager**: Tracks processed events in SQLite
-
-### Data Flow
-
-```
-GitHub Events → Poller → Event Processor → Job Queue → Action Executor → Logs
-                                                              ↓
-                                                      Work Directories
-```
-
-### Directories
-
-All directory locations are configurable in `config.yaml`. Default locations:
-
-- `{state.basePath}/` (default: `.state/`): SQLite database for events and queue
-- `{workDirectory.basePath}/` (default: `./work/`): Git repository clones (per issue/PR/event)
-- `{logging.basePath}/` (default: `./logs/`): Action execution logs (organized by repo)
-- `{logging.eventsPath}/` (default: `./logs/events/`): Full event JSON logs
-- `src/agent/prompts/`: AI Agent task prompts
-
-## Job Queue
-
-All actions are queued for execution with:
-- **Persistence**: Survives application restarts
-- **Concurrency Control**: Configurable max concurrent jobs
-- **FIFO**: Simple first-in-first-out processing
-- **Status Tracking**: pending → running → completed/failed
-
-View queue status in the SQLite database (adjust path based on your `state.basePath` configuration):
-```bash
-# Default location
-sqlite3 .state/events.db "SELECT * FROM job_queue WHERE status='pending'"
-
-# Or with custom location
-sqlite3 ./data/state/events.db "SELECT * FROM job_queue WHERE status='pending'"
-```
-
-## Logging
-
-### Action Logs
-
-Each action execution creates a log file:
-```
-{logging.basePath}/{owner}/{repo}/{timestamp}_{event-id}_{action}.log
-```
-
-Example (with default path): `logs/owner/repo/2026-01-21T14-19-54-040Z_issue-123_add-issue-labels.log`
-
-Logs include:
-- Event details
-- Action output (stdout/stderr)
-- Success/failure status
-- Timestamps
-
-The log directory can be configured via `logging.basePath` in `config.yaml`.
-
-### Event JSON Logs
-
-Full event JSON is always logged to:
-```
-{logging.eventsPath}/{owner}/{repo}/{timestamp}_{event-id}_{event-type}.json
-```
-
-Example (with default path): `logs/events/owner/repo/2026-01-21T19-06-50-000Z_5968461870_IssuesEvent.json`
-
-This is useful for:
-- Debugging event mappings and filters
-- Understanding the structure of GitHub events
-- Testing new filter configurations
-- Analyzing event payloads for custom actions
-
-The events log directory can be configured via `logging.eventsPath` in `config.yaml`.
-
-### Structured Logging
-
-Axiom uses structured JSON logging with correlation IDs for tracking events through the system:
-
-**Log Levels:**
-- `trace`: Verbose debugging information
-- `debug`: Detailed debugging information
-- `info`: General informational messages (default)
-- `warn`: Warning messages
-- `error`: Error messages
-- `fatal`: Fatal errors that cause the application to exit
-
-**Configuration:**
 ```yaml
-logging:
-  level: info          # Set log level
-  prettyPrint: true    # Pretty print for development
+actions:
+  custom-logic:
+    type: javascript
+    script: ./actions/custom_logic.js
 ```
 
-**Features:**
-- **Correlation IDs**: Each event processing flow is assigned a unique ID for tracing
-- **Context-aware**: Logs include relevant context (eventId, jobId, repository, action)
-- **JSON output**: Machine-readable JSON when `prettyPrint: false`
-- **Pretty printing**: Human-readable output for development when `prettyPrint: true`
+### AI Agent Action
 
-**Example log entry:**
-```json
-{
-  "level": "info",
-  "time": "2026-01-30T12:34:56.789Z",
-  "pid": 12345,
-  "correlationId": "abc123",
-  "eventId": "5968461870",
-  "repository": "owner/repo",
-  "msg": "Event processed successfully"
-}
-```
-
-### Automatic Log Cleanup
-
-Axiom automatically cleans up old log files to prevent unbounded disk usage:
-
-**How it works:**
-- Runs daily cleanup checks automatically
-- Deletes action logs older than `retentionDays` (default: 30 days)
-- Deletes event JSON logs older than `retentionDays`
-- Removes empty directories after file cleanup
-- Runs on first startup and then every 24 hours
-
-**Configuration:**
 ```yaml
-logging:
-  retentionDays: 30    # Delete logs older than 30 days
+actions:
+  code-review:
+    type: ai-agent
+    prompt: code-review
+    tools: [repo_read-*, github_write-add_comment]
+    model: claude-opus-4
 ```
 
-**What gets cleaned:**
-- Action execution logs in `{logging.basePath}/`
-- Event JSON logs in `{logging.eventsPath}/`
-- Empty subdirectories (repository folders with no logs)
+**AI Agent Tools**:
+- `repo_read-*`: Read repository files, search code, analyze structure
+- `repo_write-*`: Modify files, create directories, apply patches
+- `git_read-*`: View diffs, logs, status
+- `git_write-*`: Create branches
+- `github_read-*`: Get issues, PRs, discussions
+- `github_write-*`: Comment, label, assign, close issues/PRs
+- `web_read-*`: Search the web, fetch URLs
 
-**Manual cleanup:**
-To manually clean up old logs immediately, restart Axiom (cleanup runs on startup).
-
-## Configuration Validation
-
-Axiom performs comprehensive validation of the configuration file:
-
-**Validation checks:**
-- Action references in event mappings exist
-- Tool patterns in AI agent actions are valid
-- Event type patterns are recognized
-- AI agent prompts exist
-- Repository access (via GitHub API, skipped in dry-run mode)
-
-**Example validation error:**
-```
-Configuration validation failed:
-
-Event mapping #2 (event: issue.labeled) references undefined action: "analyze-bug"
-AI agent action "my-action" references unknown tool: "invalid-tool"
-```
-
-The validation runs automatically on startup after loading prompts. Use `--dryRun` mode to validate configuration without executing actions or checking repository access.
-
-## Work Directories
-
-Work directories are created per issue/PR/event and reused:
-- `{workDirectory.basePath}/issue-123/`: Git clone for issue #123
-- `{workDirectory.basePath}/pr-456/`: Git clone for PR #456
-- `{workDirectory.basePath}/event-789/`: Git clone for events without associated issues/PRs
-
-Example (with default path):
-- `work/issue-123/`
-- `work/pr-456/`
-
-The repository is cloned directly into the work directory and updated with `git pull` on subsequent actions.
-
-**Automatic Cleanup**:
-- Monitors total size hourly
-- Deletes oldest directories when approaching size limit
-- Configurable max size (default: 100GB)
-- Base path configurable via `workDirectory.basePath` in `config.yaml`
-
-## Troubleshooting
-
-### Testing Configuration
-
-Use dry run mode to test configuration changes without executing write actions:
-
-```bash
-npm start -- --dryRun
-```
-
-Check the logs to verify events are being matched correctly and see what actions would be executed. Full event JSON files are written to the configured events path (default: `./logs/events/`) which you can examine to understand event structure and test filter configurations.
-
-### Bot won't start
-- Check required environment variables are set (`GITHUB_TOKEN`, `ANTHROPIC_VERTEX_PROJECT_ID` if using AI agents)
-- Verify `config.yaml` syntax (use a YAML validator)
-- Ensure repositories are accessible with your GitHub token
-- Check that all environment variables referenced in config are set (bot validates on startup)
-- If GitHub authentication fails, verify your token has the required scopes
-
-### GitHub authentication fails
-- Verify `GITHUB_TOKEN` environment variable is set correctly
-- Check that the token has not expired
-- Ensure the token has the required permissions (repo access at minimum)
-- Axiom displays authenticated user info on startup - check console output
-
-### Repository fork validation fails
-- Axiom requires all monitored repositories to be forked to your account (unless you own them)
-- Check the error message - it will show which forks are missing
-- Follow the fork links provided in the error message to create the required forks
-- Verify that forks are properly created at `https://github.com/YourUsername/repo-name`
-- Ensure forks are actual forks (not just copies) - they should show "forked from..." on GitHub
-- After creating forks, restart the bot
-
-### AI Agent actions fail
-- Verify Google Cloud credentials are configured: `gcloud auth list`
-- Check Vertex AI is enabled in your GCP project
-- Verify `vertexAI.projectId` in `config.yaml` matches your GCP project
-- Check that `ANTHROPIC_VERTEX_PROJECT_ID` environment variable is set
-- Review action logs for specific error messages
-- Test in dry-run mode first to validate prompts and tool configurations
-
-### Actions not executing
-- Check job queue: `sqlite3 {state.basePath}/events.db "SELECT * FROM job_queue"`
-- Review logs in `{logging.basePath}/` directory
-- Verify event mappings in `config.yaml`
-- Check that event filters are correctly configured
-
-### High disk usage
-- Check work directory size: `du -sh {workDirectory.basePath}/`
-- Check logs directory size: `du -sh {logging.basePath}/`
-- Adjust `workDirectory.maxSizeGB` in config
-- Adjust `logging.retentionDays` in config
-- Manually clean old directories if needed
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 apicurio-axiom/
-├── src/
-│   ├── index.ts                    # Main entry point
-│   ├── types/                      # TypeScript type definitions
-│   ├── config/                     # Configuration loading
-│   ├── github/                     # GitHub API & current user
-│   ├── events/                     # Event processing
-│   ├── actions/                    # Action execution
-│   ├── agent/                      # AI Agent runtime
-│   │   ├── prompts/                # AI Agent task prompts
-│   │   └── tools/                  # AI Agent tool system
-│   ├── logging/                    # Logging & log management
-│   ├── queue/                      # Job queue & work directories
-│   └── state/                      # State management
-├── actions/
-│   └── add-test-comment.js         # Example JS action
-├── docs/                           # Documentation
-│   ├── Actions.md                  # Action types and configuration
-│   └── EventMappings.md            # Event mapping guide
-├── start.sh                        # Startup script
-├── config.yaml                     # Your configuration
-└── config.example.yaml             # Example configuration
+├── packages/
+│   ├── common/              # Shared types and validation
+│   ├── github-poller/       # GitHub event poller
+│   ├── jira-poller/         # Jira issue poller
+│   └── event-handler/       # Event processor and action executor
+├── prompts/                 # AI agent prompt templates
+├── actions/                 # Custom action scripts
+├── docker-compose.yml       # Complete stack deployment
+├── DOCKER_COMPOSE.md        # Docker Compose guide
+└── .env.example             # Environment variable template
 ```
 
-### Adding New Event Mappings
+## Package Documentation
 
-Edit `config.yaml`:
-```yaml
-eventMappings:
-  - event: issue.labeled
-    filters:
-      - label: needs-triage
-    actions:
-      - your-action
+Each package has comprehensive documentation:
+
+- **[@axiom/common](./packages/common/)** - Shared types, validation, and schemas
+- **[@axiom/github-poller](./packages/github-poller/)** - GitHub polling and event publishing
+- **[@axiom/jira-poller](./packages/jira-poller/)** - Jira polling and event publishing
+- **[@axiom/event-handler](./packages/event-handler/)** - Event processing and action execution
+
+## Development
+
+### Building
+
+```bash
+# Build all packages
+npm run build
+
+# Build specific package
+npm run build --workspace=@axiom/github-poller
 ```
 
-### Adding New Actions
+### Testing
 
-1. **Shell Action**:
-   ```yaml
-   actions:
-     my-action:
-       type: shell
-       command: ./scripts/my-script.sh
-   ```
+```bash
+# Run all tests
+npm test
 
-2. **JavaScript Action**:
-   ```yaml
-   actions:
-     my-action:
-       type: javascript
-       code: ./actions/my-action.js
-   ```
+# Run tests in watch mode
+npm run test:watch
 
-3. **AI Agent Action**:
-   - Create prompt in `src/agent/prompts/my-task.ts`
-   - Add to config:
-     ```yaml
-     actions:
-       my-action:
-         type: ai-agent
-         prompt: my-task
-         tools:
-           - github-get_issue_details
-           - github-add_comment
-           - repository-*
-     ```
-
-See `docs/Actions.md` for detailed documentation on all action types.
-
-### Accessing Current GitHub User
-
-Axiom provides access to the authenticated GitHub user information throughout the application:
-
-```javascript
-import { getCurrentUser, hasCurrentUser } from './github/current-user.js';
-
-// Check if user is available
-if (hasCurrentUser()) {
-    const user = getCurrentUser();
-    console.log(`Running as: ${user.login}`);
-    console.log(`User type: ${user.type}`);
-    console.log(`Profile: ${user.html_url}`);
-}
+# Run with coverage
+npm run test:coverage
 ```
 
-**Available user information:**
-- `login`: GitHub username
-- `id`: Unique user ID
-- `type`: User type (User, Organization, etc.)
-- `name`: Display name (may be null)
-- `email`: Email address (may be null)
-- `company`: Company name (may be null)
-- `avatar_url`: Avatar image URL
-- `html_url`: GitHub profile URL
+### Linting
 
-This can be useful in custom actions or tools that need to know the application's identity.
+```bash
+# Check code
+npm run lint
 
-## License
+# Fix issues
+npm run lint:fix
+```
 
-Apache-2.0
+### Docker Commands
+
+```bash
+# Start all services
+npm run docker:up
+
+# Stop all services
+npm run docker:down
+
+# View logs
+npm run docker:logs
+
+# Rebuild and start
+npm run docker:build
+```
+
+## Monitoring
+
+### NATS Dashboard
+
+Access NATS monitoring at http://localhost:8222 when running locally.
+
+### Logs
+
+Each component logs to stdout with structured JSON. In Docker:
+
+```bash
+# All services
+docker-compose logs -f
+
+# Specific service
+docker-compose logs -f github-poller
+docker-compose logs -f jira-poller
+docker-compose logs -f event-handler
+```
+
+### NATS CLI
+
+Inspect the NATS stream and messages:
+
+```bash
+# Stream info
+docker run --rm --network axiom-network natsio/nats-box:latest \
+  nats --server=nats:4222 stream info AXIOM_EVENTS
+
+# Monitor messages
+docker run --rm --network axiom-network natsio/nats-box:latest \
+  nats --server=nats:4222 sub "events.>"
+```
+
+## Deployment
+
+### Docker Compose
+
+For single-server deployments, use Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+See [DOCKER_COMPOSE.md](./DOCKER_COMPOSE.md) for complete deployment guide.
+
+### Kubernetes
+
+For production deployments, see individual package READMEs for Kubernetes deployment examples:
+
+- [GitHub Poller Kubernetes Deployment](./packages/github-poller/README.md#kubernetes)
+- [Jira Poller Kubernetes Deployment](./packages/jira-poller/README.md#kubernetes)
+- [Event Handler Kubernetes Deployment](./packages/event-handler/README.md#kubernetes)
+
+## Migration from Monolith
+
+If you're migrating from the previous monolithic version:
+
+1. **Data Migration**: Event state and job queue are compatible
+2. **Configuration**: Event mappings and actions use the same format
+3. **Actions**: Shell, JavaScript, and AI agent actions are unchanged
+4. **Prompts**: AI agent prompts are unchanged
+
+The main differences:
+- Polling logic now runs in separate `github-poller` and `jira-poller` services
+- Event processing runs in `event-handler` service
+- NATS handles event routing instead of direct method calls
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR.
+Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines.
+
+## License
+
+Apache-2.0 - see [LICENSE](./LICENSE) for details.
+
+## Support
+
+- **Documentation**: See individual package READMEs
+- **Issues**: https://github.com/apicurio/apicurio-axiom/issues
+- **Discussions**: https://github.com/apicurio/apicurio-axiom/discussions
+
+## Acknowledgments
+
+Built with:
+- [NATS](https://nats.io/) - Message broker
+- [Anthropic Claude](https://www.anthropic.com/) - AI agent
+- [Octokit](https://github.com/octokit/octokit.js) - GitHub API client
+- [Axios](https://axios-http.com/) - Jira API client
+- [Pino](https://getpino.io/) - Structured logging
+- [Better-SQLite3](https://github.com/WiseLibs/better-sqlite3) - State persistence

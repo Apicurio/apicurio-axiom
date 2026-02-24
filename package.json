@@ -1,18 +1,22 @@
 {
     "name": "apicurio-axiom",
     "version": "1.0.8",
-    "description": "A bot that monitors GitHub events and triggers custom actions",
+    "description": "Event-driven automation system for GitHub and Jira using NATS",
     "private": true,
     "workspaces": [
         "packages/*"
     ],
-    "main": "dist/index.js",
     "type": "module",
     "scripts": {
-        "reset": "rm -rf dist data node_modules",
-        "clean": "rm -rf dist",
-        "build": "tsc",
-        "dev": "node --loader ts-node/esm --watch src/index.ts",
+        "build": "npm run build --workspaces",
+        "clean": "npm run clean --workspaces --if-present && rm -rf data node_modules",
+        "dev:github-poller": "npm run dev --workspace=@axiom/github-poller",
+        "dev:jira-poller": "npm run dev --workspace=@axiom/jira-poller",
+        "dev:event-handler": "npm run dev --workspace=@axiom/event-handler",
+        "docker:up": "docker-compose up -d",
+        "docker:down": "docker-compose down",
+        "docker:logs": "docker-compose logs -f",
+        "docker:build": "docker-compose up --build -d",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
         "test": "vitest run",
