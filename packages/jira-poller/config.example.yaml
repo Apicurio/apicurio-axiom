@@ -1,0 +1,55 @@
+# Jira Poller Configuration Example
+#
+# Copy this file to config.yaml and update with your values
+
+# Jira Configuration
+jira:
+  # Jira instance URL (required)
+  # Example: https://issues.redhat.com
+  url: https://issues.redhat.com
+
+  # Jira username or email (required)
+  # Can use environment variable: ${JIRA_USERNAME}
+  username: ${JIRA_USERNAME}
+
+  # Jira API token (required)
+  # Generate at: https://id.atlassian.com/manage-profile/security/api-tokens
+  # Can use environment variable: ${JIRA_API_TOKEN}
+  apiToken: ${JIRA_API_TOKEN}
+
+  # Polling interval in seconds (default: 120)
+  pollInterval: 120
+
+# NATS Configuration
+nats:
+  # NATS server URL (required)
+  url: nats://localhost:4222
+
+  # Maximum reconnection attempts (-1 for infinite, default: -1)
+  maxReconnectAttempts: -1
+
+  # Wait time between reconnection attempts in milliseconds (default: 2000)
+  reconnectTimeWait: 2000
+
+# Jira Projects to Monitor
+# List of project keys (required, at least one)
+# Project keys must be uppercase alphanumeric with underscores (e.g., APICURIO, APICURIO_REGISTRY)
+projects:
+  - APICURIO
+  - APICURIO_REGISTRY
+
+# State Management
+state:
+  # Base path for state database (default: ./data/state)
+  basePath: ./data/state
+
+# Logging Configuration
+logging:
+  # Log level: trace, debug, info, warn, error, fatal (default: info)
+  level: info
+
+  # Enable pretty printing for development (default: true)
+  prettyPrint: true
+
+  # Path for raw event JSON logs (default: ./data/events)
+  eventsPath: ./data/events
