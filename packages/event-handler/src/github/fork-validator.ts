@@ -6,7 +6,7 @@
  */
 
 import type { Octokit } from '@octokit/rest';
-import { getLogger } from '../logging/logger.js';
+import { getLogger } from '@axiom/common';
 import type { CurrentGitHubUser } from '../types/github-user.js';
 
 /**

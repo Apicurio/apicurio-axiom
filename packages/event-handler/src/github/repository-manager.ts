@@ -4,7 +4,7 @@
  * Manages GitHubRepository instances, creating them on demand and caching them.
  */
 
-import { getLogger } from '../logging/logger.js';
+import { getLogger } from '@axiom/common';
 import type { GitHubConfig } from '../types/config.js';
 import { GitHubRepository } from './repository.js';
 

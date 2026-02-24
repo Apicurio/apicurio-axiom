@@ -5,7 +5,7 @@
  * infinite loops, and other problematic behaviors.
  */
 
-import type { Logger } from '../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { SafetyConfig, SafetyStats } from '../types/agent.js';
 
 export class SafetyLimits {

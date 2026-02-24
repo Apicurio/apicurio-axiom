@@ -5,8 +5,7 @@
  */
 
 import { connect, type NatsConnection, type JetStreamClient } from 'nats';
-import type { Event, NatsEventMessage } from '@axiom/common';
-import type { Logger } from '../logging/logger.js';
+import type { Event, NatsEventMessage, Logger } from '@axiom/common';
 
 export interface NatsPublisherConfig {
     url: string;

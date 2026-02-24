@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import Ajv, { type ErrorObject, type ValidateFunction } from 'ajv';
 import addFormats from 'ajv-formats';
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { Event } from '../types/events.js';
 
 export interface ValidationResult {

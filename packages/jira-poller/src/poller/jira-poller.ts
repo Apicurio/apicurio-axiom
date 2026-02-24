@@ -9,7 +9,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import type { Event, EventValidator } from '@axiom/common';
 import { JiraClient } from '../client/jira-client.js';
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { NatsPublisher } from '../publisher/nats-publisher.js';
 import type { StateManager } from '../state/state-manager.js';
 import type { JiraIssue } from '../types/jira.js';

@@ -6,7 +6,7 @@
  */
 
 import type Database from 'better-sqlite3';
-import { getLogger } from '../logging/logger.js';
+import { getLogger } from '@axiom/common';
 import type { Event } from '../types/events.js';
 import type { Job, JobReadyCallback, QueueConfiguration, QueueStats } from '../types/queue.js';
 

@@ -7,7 +7,7 @@
 import { resolve } from 'node:path';
 import * as pty from 'node-pty';
 import type { GitHubRepositoryManager } from '../../github/repository-manager.js';
-import type { Logger } from '../../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { ActionConfig, ShellAction } from '../../types/actions.js';
 import type { Event } from '../../types/events.js';
 import type { ActionExecutorInterface } from './action-executor-interface.js';

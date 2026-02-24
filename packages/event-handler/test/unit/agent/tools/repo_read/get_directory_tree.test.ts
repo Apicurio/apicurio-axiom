@@ -9,7 +9,7 @@ import { assertToolError, assertToolSuccess } from '../../../../helpers/assertio
 import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('GetDirectoryTreeTool', () => {
-    const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
+    const fixturesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/test-repo');
 
     describe('Basic Functionality', () => {
         it('should have correct tool metadata', () => {

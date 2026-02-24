@@ -13,7 +13,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readdir, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { Event } from '../types/events.js';
 import type { DirectoryInfo, LockInfo, WorkDirectoryConfig } from '../types/work-directory.js';
 

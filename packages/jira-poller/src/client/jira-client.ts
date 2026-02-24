@@ -6,7 +6,7 @@
 
 import axios, { type AxiosInstance } from 'axios';
 import type { JiraIssue } from '../types/jira.js';
-import type { Logger } from '../logging/logger.js';
+import type { Logger } from '@axiom/common';
 
 export class JiraClient {
     private client: AxiosInstance;

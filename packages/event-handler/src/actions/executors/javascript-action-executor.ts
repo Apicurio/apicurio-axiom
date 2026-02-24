@@ -5,7 +5,7 @@
  */
 
 import { resolve } from 'node:path';
-import type { Logger } from '../../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { ActionConfig, ActionContext, JavaScriptAction } from '../../types/actions.js';
 import type { Event } from '../../types/events.js';
 import type { ActionExecutorInterface } from './action-executor-interface.js';

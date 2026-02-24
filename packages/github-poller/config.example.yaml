@@ -42,7 +42,18 @@ logging:
   level: info
 
   # Enable pretty printing for development (default: true)
+  # Set to false for production JSON output
   prettyPrint: true
+
+  # Enable logging to file instead of stdout (default: false)
+  logToFile: false
+
+  # Application log file path (only used if logToFile is true)
+  # Example: ./data/logs/github-poller.log
+  filePath: ./data/logs/github-poller.log
 
   # Path for raw event JSON logs (default: ./data/events)
   eventsPath: ./data/events
+
+  # Log retention in days - old logs will be automatically deleted (default: 30)
+  retentionDays: 30

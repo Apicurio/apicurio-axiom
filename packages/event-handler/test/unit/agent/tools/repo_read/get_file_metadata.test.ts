@@ -9,7 +9,7 @@ import { assertToolError, assertToolSuccess } from '../../../../helpers/assertio
 import { createMockContext } from '../../../../helpers/mock-context.js';
 
 describe('GetFileMetadataTool', () => {
-    const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
+    const fixturesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/test-repo');
 
     describe('Basic Functionality', () => {
         it('should have correct tool metadata', () => {
@@ -98,7 +98,7 @@ describe('GetFileMetadataTool', () => {
         });
 
         it('should detect binary files', async () => {
-            const binaryPath = path.resolve(process.cwd(), 'test/fixtures/binary-files');
+            const binaryPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/binary-files');
             const context = createMockContext(binaryPath);
             const result = await GetFileMetadataTool.execute({ path: 'sample.bin' }, context);
 
@@ -193,7 +193,7 @@ describe('GetFileMetadataTool', () => {
 
     describe('Edge Cases', () => {
         it('should handle empty files', async () => {
-            const edgeCasesPath = path.resolve(process.cwd(), 'test/fixtures/edge-cases');
+            const edgeCasesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/edge-cases');
             const context = createMockContext(edgeCasesPath);
             const result = await GetFileMetadataTool.execute({ path: 'empty.txt' }, context);
 
@@ -205,7 +205,7 @@ describe('GetFileMetadataTool', () => {
         });
 
         it('should handle unicode content', async () => {
-            const edgeCasesPath = path.resolve(process.cwd(), 'test/fixtures/edge-cases');
+            const edgeCasesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/edge-cases');
             const context = createMockContext(edgeCasesPath);
             const result = await GetFileMetadataTool.execute({ path: 'unicode.txt' }, context);
 

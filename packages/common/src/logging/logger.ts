@@ -1,11 +1,14 @@
 /**
  * Structured Logger
  *
- * Provides structured logging with correlation IDs, log levels, and JSON formatting.
+ * Provides structured logging with correlation IDs, log levels, JSON formatting, and file output.
  * Built on Pino for high performance and flexible output.
  */
 
+import { existsSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
+import { dirname, resolve } from 'node:path';
 import pino from 'pino';
 
 /**
@@ -44,7 +47,7 @@ const asyncLocalStorage = new AsyncLocalStorage<LogContext>();
 /**
  * Creates a pino logger instance with the specified configuration
  */
-function createPinoLogger(config: LoggerConfig): pino.Logger {
+async function createPinoLogger(config: LoggerConfig): Promise<pino.Logger> {
     const options: pino.LoggerOptions = {
         level: config.level || 'info',
         formatters: {
@@ -59,7 +62,31 @@ function createPinoLogger(config: LoggerConfig): pino.Logger {
         },
     };
 
-    // Add pretty printing for development
+    // If logging to file
+    if (config.logToFile && config.filePath) {
+        // Ensure directory exists
+        const logDir = dirname(resolve(config.filePath));
+        if (!existsSync(logDir)) {
+            await mkdir(logDir, { recursive: true });
+        }
+
+        return pino({
+            ...options,
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    colorize: false, // No colors in file output
+                    translateTime: 'SYS:standard',
+                    ignore: 'pid,hostname',
+                    destination: resolve(config.filePath),
+                    sync: false, // Async writes for better performance
+                    mkdir: true,
+                },
+            },
+        });
+    }
+
+    // Pretty printing for development (stdout)
     if (config.prettyPrint) {
         return pino({
             ...options,
@@ -74,6 +101,7 @@ function createPinoLogger(config: LoggerConfig): pino.Logger {
         });
     }
 
+    // JSON output to stdout (production)
     return pino(options);
 }
 
@@ -87,18 +115,29 @@ export class Logger {
     /**
      * Creates a new Logger instance
      *
-     * @param config Logger configuration
+     * @param _config Logger configuration (unused, kept for compatibility)
      * @param pinoLoggerOrContext Either a pino logger instance or default context
      */
-    constructor(config: LoggerConfig = {}, pinoLoggerOrContext?: pino.Logger | LogContext) {
+    constructor(_config: LoggerConfig = {}, pinoLoggerOrContext?: pino.Logger | LogContext) {
         // If second param is a pino logger, use it; otherwise create new one
         if (pinoLoggerOrContext && 'info' in pinoLoggerOrContext && typeof pinoLoggerOrContext.info === 'function') {
             this.logger = pinoLoggerOrContext as pino.Logger;
             this.defaultContext = {};
         } else {
-            this.logger = createPinoLogger(config);
-            this.defaultContext = (pinoLoggerOrContext as LogContext) || {};
+            // Note: createPinoLogger is async, but constructor must be sync
+            // This will be handled by initializeLogger
+            throw new Error('Use initializeLogger() to create logger instances');
         }
+    }
+
+    /**
+     * Internal constructor for creating logger with existing pino instance
+     */
+    static createWithPinoLogger(pinoLogger: pino.Logger, defaultContext: LogContext = {}): Logger {
+        const logger = Object.create(Logger.prototype);
+        logger.logger = pinoLogger;
+        logger.defaultContext = defaultContext;
+        return logger;
     }
 
     /**
@@ -177,9 +216,8 @@ export class Logger {
      * Creates a child logger with additional default context
      */
     child(context: LogContext): Logger {
-        const childLogger = new Logger({}, { ...this.defaultContext, ...context });
-        childLogger.logger = this.logger.child(context);
-        return childLogger;
+        const childDefaultContext = { ...this.defaultContext, ...context };
+        return Logger.createWithPinoLogger(this.logger.child(context), childDefaultContext);
     }
 
     /**
@@ -239,8 +277,9 @@ let defaultLogger: Logger | null = null;
  *
  * @param config Logger configuration
  */
-export function initializeLogger(config: LoggerConfig = {}): Logger {
-    defaultLogger = new Logger(config);
+export async function initializeLogger(config: LoggerConfig = {}): Promise<Logger> {
+    const pinoLogger = await createPinoLogger(config);
+    defaultLogger = Logger.createWithPinoLogger(pinoLogger);
     return defaultLogger;
 }
 
@@ -273,7 +312,13 @@ export function isLoggerInitialized(): boolean {
  * @param filePath Path to the log file
  * @returns Logger instance that writes to the file
  */
-export function createActionLogger(filePath: string): Logger {
+export async function createActionLogger(filePath: string): Promise<Logger> {
+    // Ensure directory exists
+    const logDir = dirname(resolve(filePath));
+    if (!existsSync(logDir)) {
+        await mkdir(logDir, { recursive: true });
+    }
+
     const pinoOptions: pino.LoggerOptions = {
         level: 'trace', // Log everything for action logs
         formatters: {
@@ -288,8 +333,9 @@ export function createActionLogger(filePath: string): Logger {
                 colorize: false, // No colors in file output
                 translateTime: 'SYS:standard',
                 ignore: 'pid,hostname',
-                destination: filePath,
+                destination: resolve(filePath),
                 sync: true, // Synchronous writes for action logs to ensure all logs are written
+                mkdir: true,
             },
         },
     };
@@ -297,5 +343,5 @@ export function createActionLogger(filePath: string): Logger {
     // Create a pino logger with pretty formatting
     const pinoLogger = pino(pinoOptions);
 
-    return new Logger({ level: 'trace' }, pinoLogger);
+    return Logger.createWithPinoLogger(pinoLogger);
 }

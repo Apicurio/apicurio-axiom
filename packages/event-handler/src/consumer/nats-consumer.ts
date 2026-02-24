@@ -6,7 +6,7 @@
 
 import { connect, type NatsConnection, type JetStreamClient, type Consumer, type JsMsg } from 'nats';
 import type { Event, NatsEventMessage } from '@axiom/common';
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { EventProcessor } from '../events/event-processor.js';
 
 export interface NatsConsumerConfig {

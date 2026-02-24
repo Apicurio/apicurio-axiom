@@ -10,7 +10,7 @@ import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { PromptRegistry } from '../agent/prompts/registry.js';
 import { GitHubRepositoryManager } from '../github/repository-manager.js';
-import { createActionLogger, getLogger, type Logger } from '../logging/logger.js';
+import { createActionLogger, getLogger, type Logger } from '@axiom/common';
 import type { ActionConfig, ActionConfigurations, LoggingConfig } from '../types/actions.js';
 import type { VertexConfig } from '../types/agent.js';
 import type { ConfigData, ContextManagementConfig, VertexAISafety } from '../types/config.js';
@@ -270,7 +270,7 @@ export class ActionExecutor {
         const logPath = join(repoDir, filename);
 
         // Create action-specific logger
-        const logger = createActionLogger(logPath);
+        const logger = await createActionLogger(logPath);
         logger.info('Action logger created for:', {
             jobId,
             actionName,

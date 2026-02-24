@@ -2,7 +2,7 @@
  * Log Manager
  *
  * Manages automatic cleanup of old log files based on retention policy:
- * - Action execution logs (in basePath)
+ * - Application logs (in basePath)
  * - Event JSON logs (in eventsPath)
  * - Time-based cleanup (delete files older than retentionDays)
  * - Periodic monitoring
@@ -11,8 +11,13 @@
 import { existsSync } from 'node:fs';
 import { readdir, rm, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import type { LoggingConfig } from '../types/config.js';
 import { getLogger } from './logger.js';
+
+export interface LogManagerConfig {
+    basePath?: string;
+    eventsPath?: string;
+    retentionDays?: number;
+}
 
 interface FileInfo {
     path: string;
@@ -32,7 +37,7 @@ export class LogManager {
      *
      * @param config Logging configuration
      */
-    constructor(config: LoggingConfig) {
+    constructor(config: LogManagerConfig) {
         this.logBasePath = resolve(process.cwd(), config.basePath || './data/logs');
         this.eventsPath = resolve(process.cwd(), config.eventsPath || './data/events');
         this.retentionDays = config.retentionDays || 30;

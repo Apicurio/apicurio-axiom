@@ -5,9 +5,8 @@
  */
 
 import { resolve } from 'node:path';
-import { EventValidator } from '@axiom/common';
+import { EventValidator, initializeLogger, LogManager } from '@axiom/common';
 import { loadConfig, validateConfigAdvanced } from './config/config-loader.js';
-import { initializeLogger } from './logging/logger.js';
 import { NatsPublisher } from './publisher/nats-publisher.js';
 import { JiraPoller } from './poller/jira-poller.js';
 import { StateManager } from './state/state-manager.js';
@@ -24,12 +23,24 @@ async function main() {
         const config = await loadConfig(configPath);
 
         // Initialize logger
-        const logger = initializeLogger({
+        const logger = await initializeLogger({
             level: (config.logging?.level as any) || 'info',
             prettyPrint: config.logging?.prettyPrint !== false,
+            logToFile: config.logging?.logToFile,
+            filePath: config.logging?.filePath ? resolve(process.cwd(), config.logging.filePath) : undefined,
         });
 
         logger.info('Starting Axiom Jira Poller...');
+
+        // Initialize log manager for cleanup
+        const logManager = new LogManager({
+            basePath: config.logging?.filePath ? resolve(process.cwd(), config.logging.filePath, '..') : undefined,
+            eventsPath: config.logging?.eventsPath ? resolve(process.cwd(), config.logging.eventsPath) : undefined,
+            retentionDays: config.logging?.retentionDays,
+        });
+
+        await logManager.initialize();
+        logManager.startMonitoring();
 
         // Validate configuration
         await validateConfigAdvanced(config);
@@ -86,6 +97,7 @@ async function main() {
         const shutdown = async () => {
             logger.info('Shutting down...');
 
+            logManager.stopMonitoring();
             await jiraPoller.stop();
             await natsPublisher.disconnect();
 

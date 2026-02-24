@@ -119,9 +119,17 @@ logging:
   level: info
 
   # Enable pretty printing for development (default: true)
+  # Set to false for production JSON output
   prettyPrint: true
 
-  # Base path for logs (default: ./data/logs)
+  # Enable logging to file instead of stdout (default: false)
+  logToFile: false
+
+  # Application log file path (only used if logToFile is true)
+  # Example: ./data/logs/event-handler.log
+  filePath: ./data/logs/event-handler.log
+
+  # Base path for action execution logs (default: ./data/logs)
   basePath: ./data/logs
 
   # Events log path (default: ./data/events)

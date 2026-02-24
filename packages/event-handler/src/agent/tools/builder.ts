@@ -8,7 +8,7 @@
 
 import * as path from 'node:path';
 import { Octokit } from '@octokit/rest';
-import type { Logger } from '../../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { ToolContext } from '../../types/agent.js';
 import { ToolIndex } from './index.js';
 import { ToolRegistry } from './registry.js';

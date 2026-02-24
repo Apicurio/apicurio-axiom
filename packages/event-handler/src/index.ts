@@ -6,6 +6,7 @@
 
 import { Octokit } from '@octokit/rest';
 import type Database from 'better-sqlite3';
+import { initializeLogger, LogManager } from '@axiom/common';
 import { ActionExecutor } from './actions/action-executor.js';
 import { PromptRegistry } from './agent/prompts/registry.js';
 import { listAvailableTools } from './agent/tools/builder.js';
@@ -15,8 +16,6 @@ import { EventProcessor } from './events/event-processor.js';
 import { getAuthenticatedUser } from './github/client.js';
 import { setCurrentUser } from './github/current-user.js';
 import { validateRepositoryForks } from './github/fork-validator.js';
-import { LogManager } from './logging/log-manager.js';
-import { initializeLogger } from './logging/logger.js';
 import { JobQueue } from './queue/job-queue.js';
 import { WorkDirectoryManager } from './queue/work-directory-manager.js';
 import { StateManager } from './state/state-manager.js';
@@ -55,9 +54,11 @@ async function main(): Promise<void> {
         const config = await loadConfig(configPath);
 
         // Initialize logger with configuration
-        const logger = initializeLogger({
+        const logger = await initializeLogger({
             level: (config.logging?.level as any) || 'info',
             prettyPrint: config.logging?.prettyPrint !== false,
+            logToFile: config.logging?.logToFile,
+            filePath: config.logging?.filePath,
         });
 
         logger.info('Apicurio Axiom Event Handler starting...', {

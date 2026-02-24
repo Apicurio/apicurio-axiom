@@ -8,7 +8,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { Octokit } from '@octokit/rest';
-import { getLogger } from '../logging/logger.js';
+import { getLogger } from '@axiom/common';
 import type { LoggingConfig } from '../types/config.js';
 import type { Event } from '../types/events.js';
 import type { GitHubEvent } from '../types/github.js';

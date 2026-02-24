@@ -8,7 +8,7 @@ import type { PromptRegistry } from '../../agent/prompts/registry.js';
 import { AgentRuntime } from '../../agent/runtime.js';
 import { buildToolRegistry, parseRepository } from '../../agent/tools/builder.js';
 import type { GitHubRepositoryManager } from '../../github/repository-manager.js';
-import type { Logger } from '../../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { ActionConfig, AIAgentAction } from '../../types/actions.js';
 import type { AgentConfig, VertexConfig } from '../../types/agent.js';
 import type { ContextManagementConfig, VertexAISafety } from '../../types/config';

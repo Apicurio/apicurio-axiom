@@ -31,6 +31,7 @@ export interface LoggingConfig {
     level?: string;
     logToFile?: boolean;
     prettyPrint?: boolean;
+    filePath?: string;
     basePath?: string;
     eventsPath?: string;
     retentionDays?: number;

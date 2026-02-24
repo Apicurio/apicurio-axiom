@@ -6,7 +6,7 @@
  */
 
 import { AnthropicVertex } from '@anthropic-ai/vertex-sdk';
-import type { Logger } from '../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { CreateMessageParams, MessageResponse, VertexConfig, VertexInfo } from '../types/agent.js';
 
 export class VertexClient {

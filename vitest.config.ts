@@ -8,8 +8,8 @@ export default defineConfig({
         // Test environment
         environment: 'node',
 
-        // Test file patterns
-        include: ['test/**/*.test.ts'],
+        // Test file patterns - look in all packages
+        include: ['packages/*/test/**/*.test.ts'],
 
         // Files to exclude
         exclude: ['node_modules', 'dist', 'work', '.git'],
@@ -22,10 +22,10 @@ export default defineConfig({
             exclude: [
                 'node_modules/**',
                 'dist/**',
-                'test/**',
+                'packages/*/test/**',
                 '**/*.test.ts',
                 '**/*.config.ts',
-                'src/index.ts',
+                'packages/*/src/index.ts',
             ],
             // Coverage thresholds
             thresholds: {

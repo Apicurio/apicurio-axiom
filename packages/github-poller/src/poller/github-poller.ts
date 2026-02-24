@@ -9,7 +9,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { Octokit } from '@octokit/rest';
 import type { Event, EventValidator, GitHubEvent } from '@axiom/common';
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { NatsPublisher } from '../publisher/nats-publisher.js';
 import type { StateManager } from '../state/state-manager.js';
 

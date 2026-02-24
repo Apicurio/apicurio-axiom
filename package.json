@@ -10,6 +10,9 @@
     "scripts": {
         "build": "npm run build --workspaces",
         "clean": "npm run clean --workspaces --if-present && rm -rf data node_modules",
+        "dev:nats": "docker-compose up nats nats-setup -d && echo 'NATS is running on localhost:4222 (monitoring: http://localhost:8222)'",
+        "dev:nats:down": "docker-compose stop nats && docker-compose rm -f nats",
+        "dev:nats:logs": "docker-compose logs -f nats",
         "dev:github-poller": "npm run dev --workspace=@axiom/github-poller",
         "dev:jira-poller": "npm run dev --workspace=@axiom/jira-poller",
         "dev:event-handler": "npm run dev --workspace=@axiom/event-handler",

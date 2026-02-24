@@ -8,7 +8,7 @@
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import Handlebars from 'handlebars';
-import { getLogger, type Logger } from '../../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { Event } from '../../types/events.js';
 
 export interface RenderedPrompts {

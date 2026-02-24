@@ -4,7 +4,7 @@
  * Matches events against configured rules and triggers actions.
  */
 
-import { getLogger, type Logger } from '../logging/logger.js';
+import { getLogger, type Logger } from '@axiom/common';
 import type { Event } from '../types/events.js';
 import type { EventFilter, EventMapping, LegacyFilter, PathFilter } from '../types/filters.js';
 

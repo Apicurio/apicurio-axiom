@@ -10,7 +10,7 @@ import { createMockContext } from '../../../../helpers/mock-context.js';
 import { cleanupTempRepo, createTempRepo } from '../../../../helpers/temp-repo.js';
 
 describe('SearchCodeTool', () => {
-    const fixturesPath = path.resolve(process.cwd(), 'test/fixtures/test-repo');
+    const fixturesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/test-repo');
     let tempDir: string;
 
     describe('Basic Functionality', () => {
@@ -355,7 +355,7 @@ describe('SearchCodeTool', () => {
 
     describe('Binary Files', () => {
         it('should skip binary files gracefully', async () => {
-            const binaryPath = path.resolve(process.cwd(), 'test/fixtures/binary-files');
+            const binaryPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/binary-files');
             const context = createMockContext(binaryPath);
             const result = await SearchCodeTool.execute({ pattern: 'test' }, context);
 
@@ -366,7 +366,7 @@ describe('SearchCodeTool', () => {
 
     describe('Edge Cases', () => {
         it('should handle empty files', async () => {
-            const edgeCasesPath = path.resolve(process.cwd(), 'test/fixtures/edge-cases');
+            const edgeCasesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/edge-cases');
             const context = createMockContext(edgeCasesPath);
             const result = await SearchCodeTool.execute({ pattern: 'test' }, context);
 
@@ -374,7 +374,7 @@ describe('SearchCodeTool', () => {
         });
 
         it('should handle unicode content', async () => {
-            const edgeCasesPath = path.resolve(process.cwd(), 'test/fixtures/edge-cases');
+            const edgeCasesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/edge-cases');
             const context = createMockContext(edgeCasesPath);
             const result = await SearchCodeTool.execute({ pattern: '世界' }, context);
 
@@ -383,7 +383,7 @@ describe('SearchCodeTool', () => {
         });
 
         it('should handle very long lines', async () => {
-            const edgeCasesPath = path.resolve(process.cwd(), 'test/fixtures/edge-cases');
+            const edgeCasesPath = path.resolve(process.cwd(), 'packages/event-handler/test/fixtures/edge-cases');
             const context = createMockContext(edgeCasesPath);
             const result = await SearchCodeTool.execute({ pattern: 'searchable' }, context);
 

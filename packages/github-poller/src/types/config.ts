@@ -21,7 +21,10 @@ export interface StateConfig {
 export interface LoggingConfig {
     level?: string;
     prettyPrint?: boolean;
+    logToFile?: boolean;
+    filePath?: string;
     eventsPath?: string;
+    retentionDays?: number;
 }
 
 export interface Config {

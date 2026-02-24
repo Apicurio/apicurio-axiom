@@ -12,7 +12,7 @@
  * 5. Returns final results
  */
 
-import type { Logger } from '../logging/logger.js';
+import type { Logger } from '@axiom/common';
 import type { AgentConfig, ContextManagementConfig, ExecuteParams, ExecutionResult } from '../types/agent.js';
 import type { VertexAISafety } from '../types/config';
 import { Conversation } from './conversation.js';
