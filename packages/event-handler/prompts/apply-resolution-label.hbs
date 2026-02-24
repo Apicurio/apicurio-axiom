@@ -1,0 +1,83 @@
+# Task: Apply Resolution Label to Closed Issue
+
+Your goal is to analyze a closed GitHub issue and apply an appropriate resolution label to categorize why it was
+closed.
+
+## Event Context
+
+- **Repository**: {{event.repository}}
+- **Issue**: #{{event.issue.number}} - "{{event.issue.title}}"
+- **Author**: @{{event.issue.author}}
+- **Current Labels**: {{event.issue.labels}}
+- **Event Type**: {{event.type}}
+- **State**: {{event.issue.state}}
+
+## Process
+
+1. **Get Available Resolution Labels**
+   - Use `github_read-get_repository_labels` to fetch all labels from the repository
+   - Filter for labels starting with "resolution/" (e.g., resolution/fixed, resolution/rejected)
+   - These are the only labels you should consider applying
+
+2. **Get Issue Details**
+   - Use `github_read-get_issue_details` with parameter `issue_number: {{event.issue.number}}`
+   - Pay special attention to:
+     - The issue body and description
+     - All comments (especially the most recent ones before closing)
+     - The `state_reason` field (may be "completed" or "not_planned")
+     - The `closed_by` field (who or what closed the issue)
+     - The `linked_pull_requests` field (any PRs that reference this issue)
+
+3. **Analyze the Resolution**
+
+   Determine why the issue was closed by examining:
+
+   **Strong Indicators of "resolution/fixed":**
+   - One or more linked pull requests that were merged
+   - Comments indicating the issue was resolved or a fix was implemented
+   - `state_reason` is "completed"
+
+   **Indicators of "resolution/duplicate":**
+   - Comments mentioning this is a duplicate of another issue
+   - References to other issues with similar problems
+
+   **Indicators of "resolution/rejected":**
+   - Comments indicating the issue won't be addressed
+   - `state_reason` is "not_planned"
+   - Discussion concluding the requested feature won't be implemented
+   - Issue was determined to not be a bug after all
+   - Issue was not actually a valid bug report or feature request
+   - User error or misunderstanding
+   - Incomplete or unclear issue that was abandoned
+
+4. **Apply the Resolution Label**
+   - Select the single most appropriate resolution label based on your analysis
+   - Use `github_write-add_labels` with parameters:
+     - `issue_number: {{event.issue.number}}`
+     - `labels: ["resolution/chosen-label"]`
+
+## Decision Guidelines
+
+- **resolution/fixed**: Use when there's clear evidence the issue was resolved through code changes (merged PR,
+  explicit comments about fixing)
+- **resolution/duplicate**: Use when the issue is explicitly identified as a duplicate of another issue
+- **resolution/rejected** or **resolution/wontfix**: Use when the issue was intentionally closed without being
+  addressed
+- **Default**: If truly uncertain after thorough analysis, prefer "resolution/fixed" if state_reason is
+  "completed", otherwise **DO NOT APPLY A LABEL**
+
+## Important Notes
+
+- **Apply AT MOST ONE resolution label** - choose the most accurate one
+- **Only use labels that exist** in the repository - never suggest creating new labels
+- **Don't remove existing labels** - only add the resolution label
+- **Merged PRs are strong evidence**: If there are merged linked PRs, it's almost certainly "resolution/fixed"
+- **State reason matters**: "completed" usually means fixed, "not_planned" usually means rejected/wontfix
+
+## Output
+
+After applying the label, provide a brief summary explaining:
+- Which resolution label you applied
+- The key evidence that led to your decision (e.g., "Merged PR #123", "Author marked as not_planned", "Comment
+  indicates duplicate of #456")
+- Your confidence level (high/medium/low)

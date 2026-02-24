@@ -1,0 +1,139 @@
+# Event Handler Configuration Example
+#
+# Copy this file to config.yaml and update with your values
+
+# NATS Configuration
+nats:
+  # NATS server URL (required)
+  url: nats://localhost:4222
+
+  # Durable consumer name (required)
+  consumerDurable: axiom-event-handler
+
+  # Subject filter pattern (optional, default: events.>)
+  filterSubject: events.>
+
+  # Maximum reconnection attempts (-1 for infinite, default: -1)
+  maxReconnectAttempts: -1
+
+# GitHub Configuration (for action execution)
+github:
+  # GitHub personal access token (required for actions that interact with GitHub)
+  token: ${GITHUB_TOKEN}
+
+# Repositories (optional - for fork validation)
+# If you want to validate that repositories are forks, list them here
+repositories: []
+
+# Event Mappings - Define which events trigger which actions
+eventMappings:
+  # Example: Label issues when they're opened
+  - event: issue.opened
+    actions:
+      - label-issue
+
+  # Example: Process PR when opened (excluding drafts)
+  - event: pull_request.opened
+    filters:
+      - draft: false
+    actions:
+      - analyze-pr
+
+  # Example: React to specific labels
+  - event: issue.labeled
+    filters:
+      - path: label
+        matcher: equals
+        value: bug
+    actions:
+      - analyze-bug
+
+# Action Definitions
+actions:
+  # Shell action example
+  label-issue:
+    type: shell
+    command: echo "Issue opened - ${EVENT_ISSUE_NUMBER}"
+
+  # AI agent action example
+  analyze-pr:
+    type: ai-agent
+    prompt: analyze-pr
+    tools:
+      - list_files
+      - read_file
+      - github_*
+
+  # JavaScript action example
+  analyze-bug:
+    type: javascript
+    script: analyze-bug
+
+# Vertex AI Configuration (for AI agent actions)
+vertexAI:
+  # Google Cloud project ID (required for AI actions)
+  projectId: ${VERTEX_PROJECT_ID}
+
+  # Model to use (default: claude-opus-4-6)
+  model: claude-opus-4-6
+
+  # Location (default: us-east5)
+  location: us-east5
+
+  # Safety settings
+  safety:
+    maxSteps: 20
+    maxToolCalls: 100
+    maxTokens: 16000
+
+# Job Queue Configuration
+queue:
+  # Maximum concurrent jobs (default: 3)
+  maxConcurrent: 3
+
+  # Queue polling interval in seconds (default: 5)
+  pollInterval: 5
+
+# Work Directory Configuration
+workDirectory:
+  # Base path for work directories (default: ./data/work)
+  basePath: ./data/work
+
+  # Maximum size in GB (default: 100)
+  maxSizeGB: 100
+
+  # Cleanup threshold as percentage (default: 90)
+  cleanupThresholdPercent: 90
+
+  # Monitoring interval in seconds (default: 3600)
+  monitorInterval: 3600
+
+# State Management
+state:
+  # Base path for state database (default: ./data/state)
+  basePath: ./data/state
+
+# Logging Configuration
+logging:
+  # Log level: trace, debug, info, warn, error, fatal (default: info)
+  level: info
+
+  # Enable pretty printing for development (default: true)
+  prettyPrint: true
+
+  # Base path for logs (default: ./data/logs)
+  basePath: ./data/logs
+
+  # Events log path (default: ./data/events)
+  eventsPath: ./data/events
+
+  # Log retention in days (default: 30)
+  retentionDays: 30
+
+# Prompts Configuration
+prompts:
+  # Base path for prompts directory (default: ./prompts)
+  basePath: ./prompts
+
+  # System template name (default: system)
+  systemTemplate: system

@@ -1,0 +1,18 @@
+{
+  "id": "12345678902",
+  "type": "pull_request.opened",
+  "repository": "octocat/Hello-World",
+  "repositoryOwner": "octocat",
+  "repositoryName": "Hello-World",
+  "actor": "contributor",
+  "createdAt": "2024-01-15T11:00:00Z",
+  "pullRequest": {
+    "number": 123,
+    "title": "Add new feature for user authentication",
+    "state": "open",
+    "labels": ["enhancement", "security"],
+    "author": "contributor",
+    "url": "https://github.com/octocat/Hello-World/pull/123",
+    "draft": false
+  }
+}

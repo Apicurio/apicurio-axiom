@@ -1,0 +1,18 @@
+{
+  "id": "12345678901",
+  "type": "issue.opened",
+  "repository": "octocat/Hello-World",
+  "repositoryOwner": "octocat",
+  "repositoryName": "Hello-World",
+  "actor": "octocat",
+  "createdAt": "2024-01-15T10:30:00Z",
+  "issue": {
+    "number": 42,
+    "title": "Bug: Application crashes on startup",
+    "state": "open",
+    "labels": ["bug", "high-priority"],
+    "author": "octocat",
+    "url": "https://github.com/octocat/Hello-World/issues/42"
+  },
+  "label": "bug"
+}
