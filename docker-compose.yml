@@ -150,7 +150,7 @@ services:
     container_name: axiom-event-handler
     environment:
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_VERTEX_PROJECT_ID: ${ANTHROPIC_VERTEX_PROJECT_ID}
       NODE_ENV: production
     volumes:
       - ./packages/event-handler/config.yaml:/app/config.yaml:ro
