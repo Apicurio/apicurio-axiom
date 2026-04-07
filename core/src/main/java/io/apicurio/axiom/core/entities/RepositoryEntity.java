@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.time.Instant;
+
 /**
  * A monitored repository (GitHub or Jira project).
  */
@@ -32,4 +34,10 @@ public class RepositoryEntity extends PanacheEntity {
 
     @Column(columnDefinition = "TEXT")
     public String configuration;
+
+    @Column(name = "polling_enabled")
+    public boolean pollingEnabled;
+
+    @Column(name = "last_polled_at")
+    public Instant lastPolledAt;
 }

@@ -1,1065 +1,1733 @@
 {
-    "openapi": "3.1.0",
-    "info": {
-        "title": "Apicurio Axiom API",
-        "description": "REST API for the Apicurio Axiom event-driven project orchestration platform.",
-        "version": "1.0.0",
-        "license": {
-            "name": "Apache 2.0",
-            "url": "https://www.apache.org/licenses/LICENSE-2.0"
-        }
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Apicurio Axiom API",
+    "description": "REST API for the Apicurio Axiom event-driven project orchestration platform.",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
     },
-    "servers": [
-        {
-            "url": "http://localhost:8080",
-            "description": "Local development server"
-        }
-    ],
-    "paths": {
-        "x-codegen-contextRoot": "/api/v1",
-
-        "/system/health": {
-            "get": {
-                "operationId": "getSystemHealth",
-                "summary": "System health check",
-                "tags": ["System"],
-                "responses": {
-                    "200": {
-                        "description": "System is healthy",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/SystemHealth" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/system/config": {
-            "get": {
-                "operationId": "getSystemConfig",
-                "summary": "UI bootstrap configuration",
-                "tags": ["System"],
-                "responses": {
-                    "200": {
-                        "description": "System configuration",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/SystemConfig" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-
-        "/projects": {
-            "get": {
-                "operationId": "listProjects",
-                "summary": "List all projects",
-                "tags": ["Projects"],
-                "responses": {
-                    "200": {
-                        "description": "List of projects",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Project" }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "operationId": "createProject",
-                "summary": "Create a new project",
-                "tags": ["Projects"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewProject" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Project created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Project" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/projects/{projectId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ProjectId" }
-            ],
-            "get": {
-                "operationId": "getProject",
-                "summary": "Get a project by ID",
-                "tags": ["Projects"],
-                "responses": {
-                    "200": {
-                        "description": "The project",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Project" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "put": {
-                "operationId": "updateProject",
-                "summary": "Update a project",
-                "tags": ["Projects"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/UpdateProject" }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Project updated",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Project" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "delete": {
-                "operationId": "deleteProject",
-                "summary": "Delete a project",
-                "tags": ["Projects"],
-                "responses": {
-                    "204": { "description": "Project deleted" },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/projects/{projectId}/tasks": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ProjectId" }
-            ],
-            "get": {
-                "operationId": "listProjectTasks",
-                "summary": "List tasks for a project",
-                "tags": ["Tasks"],
-                "responses": {
-                    "200": {
-                        "description": "List of tasks",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Task" }
-                                }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "post": {
-                "operationId": "createTask",
-                "summary": "Create a task (user-initiated action)",
-                "tags": ["Tasks"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewTask" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Task created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Task" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-        "/projects/{projectId}/tasks/{taskId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ProjectId" },
-                { "$ref": "#/components/parameters/TaskId" }
-            ],
-            "get": {
-                "operationId": "getTask",
-                "summary": "Get a task by ID",
-                "tags": ["Tasks"],
-                "responses": {
-                    "200": {
-                        "description": "The task",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Task" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/projects/{projectId}/thread": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ProjectId" }
-            ],
-            "get": {
-                "operationId": "listThreadEntries",
-                "summary": "List conversation thread entries for a project",
-                "tags": ["Threads"],
-                "responses": {
-                    "200": {
-                        "description": "List of thread entries",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/ThreadEntry" }
-                                }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/actors": {
-            "get": {
-                "operationId": "listActors",
-                "summary": "List all actors",
-                "tags": ["Actors"],
-                "responses": {
-                    "200": {
-                        "description": "List of actors",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Actor" }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "operationId": "createActor",
-                "summary": "Create a new actor",
-                "tags": ["Actors"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewActor" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Actor created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Actor" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/actors/{actorId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ActorId" }
-            ],
-            "get": {
-                "operationId": "getActor",
-                "summary": "Get an actor by ID",
-                "tags": ["Actors"],
-                "responses": {
-                    "200": {
-                        "description": "The actor",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Actor" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "put": {
-                "operationId": "updateActor",
-                "summary": "Update an actor",
-                "tags": ["Actors"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewActor" }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Actor updated",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Actor" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "delete": {
-                "operationId": "deleteActor",
-                "summary": "Delete an actor",
-                "tags": ["Actors"],
-                "responses": {
-                    "204": { "description": "Actor deleted" },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/action-types": {
-            "get": {
-                "operationId": "listActionTypes",
-                "summary": "List all action types",
-                "tags": ["ActionTypes"],
-                "responses": {
-                    "200": {
-                        "description": "List of action types",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/ActionType" }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "operationId": "createActionType",
-                "summary": "Create a new action type",
-                "tags": ["ActionTypes"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewActionType" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Action type created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/ActionType" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/action-types/{actionTypeId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/ActionTypeId" }
-            ],
-            "get": {
-                "operationId": "getActionType",
-                "summary": "Get an action type by ID",
-                "tags": ["ActionTypes"],
-                "responses": {
-                    "200": {
-                        "description": "The action type",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/ActionType" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "put": {
-                "operationId": "updateActionType",
-                "summary": "Update an action type",
-                "tags": ["ActionTypes"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewActionType" }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Action type updated",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/ActionType" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "delete": {
-                "operationId": "deleteActionType",
-                "summary": "Delete an action type",
-                "tags": ["ActionTypes"],
-                "responses": {
-                    "204": { "description": "Action type deleted" },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/policies": {
-            "get": {
-                "operationId": "listPolicies",
-                "summary": "List all policies",
-                "tags": ["Policies"],
-                "responses": {
-                    "200": {
-                        "description": "List of policies",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Policy" }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "operationId": "createPolicy",
-                "summary": "Create a new policy",
-                "tags": ["Policies"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewPolicy" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Policy created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Policy" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/policies/{policyId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/PolicyId" }
-            ],
-            "get": {
-                "operationId": "getPolicy",
-                "summary": "Get a policy by ID",
-                "tags": ["Policies"],
-                "responses": {
-                    "200": {
-                        "description": "The policy",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Policy" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "put": {
-                "operationId": "updatePolicy",
-                "summary": "Update a policy",
-                "tags": ["Policies"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewPolicy" }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Policy updated",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Policy" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "delete": {
-                "operationId": "deletePolicy",
-                "summary": "Delete a policy",
-                "tags": ["Policies"],
-                "responses": {
-                    "204": { "description": "Policy deleted" },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/repositories": {
-            "get": {
-                "operationId": "listRepositories",
-                "summary": "List all monitored repositories",
-                "tags": ["Repositories"],
-                "responses": {
-                    "200": {
-                        "description": "List of repositories",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Repository" }
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            "post": {
-                "operationId": "createRepository",
-                "summary": "Add a monitored repository",
-                "tags": ["Repositories"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewRepository" }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Repository created",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Repository" }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/repositories/{repositoryId}": {
-            "parameters": [
-                { "$ref": "#/components/parameters/RepositoryId" }
-            ],
-            "get": {
-                "operationId": "getRepository",
-                "summary": "Get a repository by ID",
-                "tags": ["Repositories"],
-                "responses": {
-                    "200": {
-                        "description": "The repository",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Repository" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "put": {
-                "operationId": "updateRepository",
-                "summary": "Update a repository",
-                "tags": ["Repositories"],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": { "$ref": "#/components/schemas/NewRepository" }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Repository updated",
-                        "content": {
-                            "application/json": {
-                                "schema": { "$ref": "#/components/schemas/Repository" }
-                            }
-                        }
-                    },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            },
-            "delete": {
-                "operationId": "deleteRepository",
-                "summary": "Delete a repository",
-                "tags": ["Repositories"],
-                "responses": {
-                    "204": { "description": "Repository deleted" },
-                    "404": { "$ref": "#/components/responses/NotFound" }
-                }
-            }
-        },
-
-        "/events": {
-            "get": {
-                "operationId": "listEvents",
-                "summary": "List events",
-                "tags": ["Events"],
-                "responses": {
-                    "200": {
-                        "description": "List of events",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/Event" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-
-        "/activity": {
-            "get": {
-                "operationId": "listActivityLog",
-                "summary": "List global activity log entries",
-                "tags": ["Activity"],
-                "responses": {
-                    "200": {
-                        "description": "List of activity log entries",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": { "$ref": "#/components/schemas/ActivityLogEntry" }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    },
-
-    "components": {
-        "parameters": {
-            "ProjectId": {
-                "name": "projectId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Project ID"
-            },
-            "TaskId": {
-                "name": "taskId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Task ID"
-            },
-            "ActorId": {
-                "name": "actorId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Actor ID"
-            },
-            "ActionTypeId": {
-                "name": "actionTypeId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Action type ID"
-            },
-            "PolicyId": {
-                "name": "policyId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Policy ID"
-            },
-            "RepositoryId": {
-                "name": "repositoryId",
-                "in": "path",
-                "required": true,
-                "schema": { "type": "integer", "format": "int64" },
-                "description": "Repository ID"
-            }
-        },
-
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "x-codegen-contextRoot": "/api/v1",
+    "/system/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "System health check",
+        "operationId": "getSystemHealth",
         "responses": {
-            "NotFound": {
-                "description": "Resource not found",
-                "content": {
-                    "application/json": {
-                        "schema": { "$ref": "#/components/schemas/Error" }
-                    }
+          "200": {
+            "description": "System is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealth"
                 }
+              }
             }
-        },
-
-        "schemas": {
-            "Error": {
-                "type": "object",
-                "properties": {
-                    "message": { "type": "string" },
-                    "errorCode": { "type": "integer" }
-                }
-            },
-
-            "SystemHealth": {
-                "type": "object",
-                "required": ["status", "version", "timestamp"],
-                "properties": {
-                    "status": {
-                        "type": "string",
-                        "enum": ["UP", "DOWN"]
-                    },
-                    "version": { "type": "string" },
-                    "timestamp": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                }
-            },
-            "SystemConfig": {
-                "type": "object",
-                "properties": {
-                    "version": { "type": "string" },
-                    "features": { "$ref": "#/components/schemas/Features" }
-                }
-            },
-            "Features": {
-                "type": "object",
-                "additionalProperties": { "type": "boolean" }
-            },
-
-            "Project": {
-                "type": "object",
-                "required": ["id", "name", "type", "status", "issueSource", "issueRef", "repository", "createdOn", "updatedOn"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": {
-                        "type": "string",
-                        "enum": ["bug-fix", "feature", "question", "help", "other"]
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": ["Created", "InProgress", "Idle", "Completed"]
-                    },
-                    "issueSource": {
-                        "type": "string",
-                        "enum": ["github", "jira"]
-                    },
-                    "issueRef": { "type": "string" },
-                    "repository": { "type": "string" },
-                    "createdOn": { "type": "string", "format": "date-time" },
-                    "updatedOn": { "type": "string", "format": "date-time" },
-                    "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
-                }
-            },
-            "NewProject": {
-                "type": "object",
-                "required": ["name", "type", "issueSource", "issueRef", "repository"],
-                "properties": {
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": {
-                        "type": "string",
-                        "enum": ["bug-fix", "feature", "question", "help", "other"]
-                    },
-                    "issueSource": {
-                        "type": "string",
-                        "enum": ["github", "jira"]
-                    },
-                    "issueRef": { "type": "string" },
-                    "repository": { "type": "string" },
-                    "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
-                }
-            },
-            "UpdateProject": {
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": {
-                        "type": "string",
-                        "enum": ["bug-fix", "feature", "question", "help", "other"]
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": ["Created", "InProgress", "Idle", "Completed"]
-                    },
-                    "metadata": { "type": "object", "additionalProperties": { "type": "string" } }
-                }
-            },
-
-            "Task": {
-                "type": "object",
-                "required": ["id", "projectId", "actionType", "createdBy", "status", "createdOn"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "projectId": { "type": "integer", "format": "int64" },
-                    "actionType": { "type": "string" },
-                    "createdBy": {
-                        "type": "string",
-                        "enum": ["manager", "user"]
-                    },
-                    "assignedActor": { "type": "integer", "format": "int64" },
-                    "status": {
-                        "type": "string",
-                        "enum": ["Pending", "InProgress", "AwaitingInput", "Completed", "Failed", "Cancelled"]
-                    },
-                    "input": { "type": "string" },
-                    "output": { "type": "string" },
-                    "createdOn": { "type": "string", "format": "date-time" },
-                    "completedOn": { "type": "string", "format": "date-time" }
-                }
-            },
-            "NewTask": {
-                "type": "object",
-                "required": ["actionType"],
-                "properties": {
-                    "actionType": { "type": "string" },
-                    "assignedActor": { "type": "integer", "format": "int64" },
-                    "input": { "type": "string" }
-                }
-            },
-
-            "Actor": {
-                "type": "object",
-                "required": ["id", "name", "type"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": {
-                        "type": "string",
-                        "enum": ["human", "ai-agent"]
-                    },
-                    "capabilities": {
-                        "type": "array",
-                        "items": { "type": "string" }
-                    },
-                    "permissions": { "type": "object", "additionalProperties": {} },
-                    "configuration": { "type": "object", "additionalProperties": {} }
-                }
-            },
-            "NewActor": {
-                "type": "object",
-                "required": ["name", "type"],
-                "properties": {
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "type": {
-                        "type": "string",
-                        "enum": ["human", "ai-agent"]
-                    },
-                    "capabilities": {
-                        "type": "array",
-                        "items": { "type": "string" }
-                    },
-                    "permissions": { "type": "object", "additionalProperties": {} },
-                    "configuration": { "type": "object", "additionalProperties": {} }
-                }
-            },
-
-            "ActionType": {
-                "type": "object",
-                "required": ["id", "name", "executionMode", "userTriggerable", "emitsEvent"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "executionMode": {
-                        "type": "string",
-                        "enum": ["actor", "system"]
-                    },
-                    "userTriggerable": { "type": "boolean" },
-                    "inputSchema": { "type": "string" },
-                    "toolConstraints": { "type": "string" },
-                    "emitsEvent": { "type": "boolean" }
-                }
-            },
-            "NewActionType": {
-                "type": "object",
-                "required": ["name", "executionMode"],
-                "properties": {
-                    "name": { "type": "string" },
-                    "description": { "type": "string" },
-                    "executionMode": {
-                        "type": "string",
-                        "enum": ["actor", "system"]
-                    },
-                    "userTriggerable": { "type": "boolean" },
-                    "inputSchema": { "type": "string" },
-                    "toolConstraints": { "type": "string" },
-                    "emitsEvent": { "type": "boolean" }
-                }
-            },
-
-            "Policy": {
-                "type": "object",
-                "required": ["id", "name", "guideline"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "name": { "type": "string" },
-                    "guideline": { "type": "string" },
-                    "actionType": { "type": "string" },
-                    "actorHint": { "type": "string" }
-                }
-            },
-            "NewPolicy": {
-                "type": "object",
-                "required": ["name", "guideline"],
-                "properties": {
-                    "name": { "type": "string" },
-                    "guideline": { "type": "string" },
-                    "actionType": { "type": "string" },
-                    "actorHint": { "type": "string" }
-                }
-            },
-
-            "Repository": {
-                "type": "object",
-                "required": ["id", "name", "owner", "source", "url"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "name": { "type": "string" },
-                    "owner": { "type": "string" },
-                    "source": {
-                        "type": "string",
-                        "enum": ["github", "jira"]
-                    },
-                    "url": { "type": "string" },
-                    "pollInterval": { "type": "integer" },
-                    "webhookSecret": { "type": "string" },
-                    "configuration": { "type": "object", "additionalProperties": {} }
-                }
-            },
-            "NewRepository": {
-                "type": "object",
-                "required": ["name", "owner", "source", "url"],
-                "properties": {
-                    "name": { "type": "string" },
-                    "owner": { "type": "string" },
-                    "source": {
-                        "type": "string",
-                        "enum": ["github", "jira"]
-                    },
-                    "url": { "type": "string" },
-                    "pollInterval": { "type": "integer" },
-                    "webhookSecret": { "type": "string" },
-                    "configuration": { "type": "object", "additionalProperties": {} }
-                }
-            },
-
-            "Event": {
-                "type": "object",
-                "required": ["id", "source", "eventType", "receivedAt"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "source": { "type": "string" },
-                    "eventType": { "type": "string" },
-                    "issueRef": { "type": "string" },
-                    "repository": { "type": "string" },
-                    "projectId": { "type": "integer", "format": "int64" },
-                    "taskId": { "type": "integer", "format": "int64" },
-                    "payload": { "type": "string" },
-                    "receivedAt": { "type": "string", "format": "date-time" }
-                }
-            },
-
-            "ActivityLogEntry": {
-                "type": "object",
-                "required": ["id", "entryType", "summary", "createdOn"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "projectId": { "type": "integer", "format": "int64" },
-                    "taskId": { "type": "integer", "format": "int64" },
-                    "eventId": { "type": "integer", "format": "int64" },
-                    "entryType": { "type": "string" },
-                    "summary": { "type": "string" },
-                    "details": { "type": "string" },
-                    "createdOn": { "type": "string", "format": "date-time" }
-                }
-            },
-
-            "ThreadEntry": {
-                "type": "object",
-                "required": ["id", "projectId", "authorType", "entryType", "content", "createdOn"],
-                "properties": {
-                    "id": { "type": "integer", "format": "int64" },
-                    "projectId": { "type": "integer", "format": "int64" },
-                    "authorType": {
-                        "type": "string",
-                        "enum": ["manager", "actor", "user", "system"]
-                    },
-                    "authorId": { "type": "string" },
-                    "entryType": {
-                        "type": "string",
-                        "enum": ["decision", "update", "question", "answer", "result", "message"]
-                    },
-                    "content": { "type": "string" },
-                    "createdOn": { "type": "string", "format": "date-time" }
-                }
-            }
+          }
         }
+      }
     },
-
-    "tags": [
-        { "name": "System", "description": "System health and configuration" },
-        { "name": "Projects", "description": "Project management" },
-        { "name": "Tasks", "description": "Task management within projects" },
-        { "name": "Threads", "description": "Conversation threads within projects" },
-        { "name": "Actors", "description": "Actor configuration and management" },
-        { "name": "ActionTypes", "description": "Action type registry" },
-        { "name": "Policies", "description": "Manager policy configuration" },
-        { "name": "Repositories", "description": "Monitored repository configuration" },
-        { "name": "Events", "description": "Event log" },
-        { "name": "Activity", "description": "Global activity log" }
-    ]
+    "/system/config": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "UI bootstrap configuration",
+        "operationId": "getSystemConfig",
+        "responses": {
+          "200": {
+            "description": "System configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemConfig"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "List all projects",
+        "operationId": "listProjects",
+        "responses": {
+          "200": {
+            "description": "List of projects",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Project"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Create a new project",
+        "operationId": "createProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewProject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Project created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/projects/{projectId}": {
+      "get": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Get a project by ID",
+        "operationId": "getProject",
+        "responses": {
+          "200": {
+            "description": "The project",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Update a project",
+        "operationId": "updateProject",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProject"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Project updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Projects"
+        ],
+        "summary": "Delete a project",
+        "operationId": "deleteProject",
+        "responses": {
+          "204": {
+            "description": "Project deleted"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ]
+    },
+    "/projects/{projectId}/tasks": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "List tasks for a project",
+        "operationId": "listProjectTasks",
+        "responses": {
+          "200": {
+            "description": "List of tasks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Task"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Create a task (user-initiated action)",
+        "operationId": "createTask",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewTask"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Task created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ]
+    },
+    "/projects/{projectId}/tasks/{taskId}": {
+      "get": {
+        "tags": [
+          "Tasks"
+        ],
+        "summary": "Get a task by ID",
+        "operationId": "getTask",
+        "responses": {
+          "200": {
+            "description": "The task",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Task"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        },
+        {
+          "$ref": "#/components/parameters/TaskId"
+        }
+      ]
+    },
+    "/projects/{projectId}/thread": {
+      "get": {
+        "tags": [
+          "Threads"
+        ],
+        "summary": "List conversation thread entries for a project",
+        "operationId": "listThreadEntries",
+        "responses": {
+          "200": {
+            "description": "List of thread entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ThreadEntry"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ]
+    },
+    "/actors": {
+      "get": {
+        "tags": [
+          "Actors"
+        ],
+        "summary": "List all actors",
+        "operationId": "listActors",
+        "responses": {
+          "200": {
+            "description": "List of actors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Actor"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Actors"
+        ],
+        "summary": "Create a new actor",
+        "operationId": "createActor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewActor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Actor created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actors/{actorId}": {
+      "get": {
+        "tags": [
+          "Actors"
+        ],
+        "summary": "Get an actor by ID",
+        "operationId": "getActor",
+        "responses": {
+          "200": {
+            "description": "The actor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Actors"
+        ],
+        "summary": "Update an actor",
+        "operationId": "updateActor",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewActor"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Actor updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Actors"
+        ],
+        "summary": "Delete an actor",
+        "operationId": "deleteActor",
+        "responses": {
+          "204": {
+            "description": "Actor deleted"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ActorId"
+        }
+      ]
+    },
+    "/action-types": {
+      "get": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "List all action types",
+        "operationId": "listActionTypes",
+        "responses": {
+          "200": {
+            "description": "List of action types",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActionType"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "Create a new action type",
+        "operationId": "createActionType",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewActionType"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Action type created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionType"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/action-types/{actionTypeId}": {
+      "get": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "Get an action type by ID",
+        "operationId": "getActionType",
+        "responses": {
+          "200": {
+            "description": "The action type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionType"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "Update an action type",
+        "operationId": "updateActionType",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewActionType"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Action type updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionType"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "Delete an action type",
+        "operationId": "deleteActionType",
+        "responses": {
+          "204": {
+            "description": "Action type deleted"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ActionTypeId"
+        }
+      ]
+    },
+    "/policies": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "List all policies",
+        "operationId": "listPolicies",
+        "responses": {
+          "200": {
+            "description": "List of policies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Policy"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "Create a new policy",
+        "operationId": "createPolicy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Policy created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/policies/{policyId}": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "Get a policy by ID",
+        "operationId": "getPolicy",
+        "responses": {
+          "200": {
+            "description": "The policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "Update a policy",
+        "operationId": "updatePolicy",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPolicy"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Policy updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Policy"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Policies"
+        ],
+        "summary": "Delete a policy",
+        "operationId": "deletePolicy",
+        "responses": {
+          "204": {
+            "description": "Policy deleted"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/PolicyId"
+        }
+      ]
+    },
+    "/repositories": {
+      "get": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "List all monitored repositories",
+        "operationId": "listRepositories",
+        "responses": {
+          "200": {
+            "description": "List of repositories",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Repository"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "Add a monitored repository",
+        "operationId": "createRepository",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewRepository"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Repository created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{repositoryId}": {
+      "get": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "Get a repository by ID",
+        "operationId": "getRepository",
+        "responses": {
+          "200": {
+            "description": "The repository",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "Update a repository",
+        "operationId": "updateRepository",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewRepository"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Repository updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Repository"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Repositories"
+        ],
+        "summary": "Delete a repository",
+        "operationId": "deleteRepository",
+        "responses": {
+          "204": {
+            "description": "Repository deleted"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/RepositoryId"
+        }
+      ]
+    },
+    "/events": {
+      "get": {
+        "tags": [
+          "Events"
+        ],
+        "summary": "List events",
+        "operationId": "listEvents",
+        "responses": {
+          "200": {
+            "description": "List of events",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Event"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/activity": {
+      "get": {
+        "tags": [
+          "Activity"
+        ],
+        "summary": "List global activity log entries",
+        "operationId": "listActivityLog",
+        "responses": {
+          "200": {
+            "description": "List of activity log entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ActivityLogEntry"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/webhooks/github": {
+      "post": {
+        "tags": [
+          "Webhooks"
+        ],
+        "summary": "Receive a GitHub webhook event",
+        "description": "Receives GitHub webhook payloads, validates the HMAC-SHA256 signature, normalizes the event, and enqueues it for processing.",
+        "operationId": "handleGitHubWebhook",
+        "responses": {
+          "200": {
+            "description": "Event received and enqueued"
+          },
+          "204": {
+            "description": "Event ignored (unsupported event type)"
+          },
+          "401": {
+            "description": "Invalid webhook signature"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errorCode": {
+            "type": "integer"
+          }
+        }
+      },
+      "SystemHealth": {
+        "required": [
+          "status",
+          "version",
+          "timestamp"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "enum": [
+              "UP",
+              "DOWN"
+            ],
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "SystemConfig": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "features": {
+            "$ref": "#/components/schemas/Features"
+          }
+        }
+      },
+      "Features": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "boolean"
+        }
+      },
+      "Project": {
+        "required": [
+          "id",
+          "name",
+          "type",
+          "status",
+          "issueSource",
+          "issueRef",
+          "repository",
+          "createdOn",
+          "updatedOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "bug-fix",
+              "feature",
+              "question",
+              "help",
+              "other"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "Created",
+              "InProgress",
+              "Idle",
+              "Completed"
+            ],
+            "type": "string"
+          },
+          "issueSource": {
+            "enum": [
+              "github",
+              "jira"
+            ],
+            "type": "string"
+          },
+          "issueRef": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "NewProject": {
+        "required": [
+          "name",
+          "type",
+          "issueSource",
+          "issueRef",
+          "repository"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "bug-fix",
+              "feature",
+              "question",
+              "help",
+              "other"
+            ],
+            "type": "string"
+          },
+          "issueSource": {
+            "enum": [
+              "github",
+              "jira"
+            ],
+            "type": "string"
+          },
+          "issueRef": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "UpdateProject": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "bug-fix",
+              "feature",
+              "question",
+              "help",
+              "other"
+            ],
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "Created",
+              "InProgress",
+              "Idle",
+              "Completed"
+            ],
+            "type": "string"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "Task": {
+        "required": [
+          "id",
+          "projectId",
+          "actionType",
+          "createdBy",
+          "status",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "projectId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "createdBy": {
+            "enum": [
+              "manager",
+              "user"
+            ],
+            "type": "string"
+          },
+          "assignedActor": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "Pending",
+              "InProgress",
+              "AwaitingInput",
+              "Completed",
+              "Failed",
+              "Cancelled"
+            ],
+            "type": "string"
+          },
+          "input": {
+            "type": "string"
+          },
+          "output": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "completedOn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "NewTask": {
+        "required": [
+          "actionType"
+        ],
+        "type": "object",
+        "properties": {
+          "actionType": {
+            "type": "string"
+          },
+          "assignedActor": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "input": {
+            "type": "string"
+          }
+        }
+      },
+      "Actor": {
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "human",
+              "ai-agent"
+            ],
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "configuration": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "NewActor": {
+        "required": [
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "human",
+              "ai-agent"
+            ],
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "permissions": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "configuration": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        }
+      },
+      "ActionType": {
+        "required": [
+          "id",
+          "name",
+          "executionMode",
+          "userTriggerable",
+          "emitsEvent"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "executionMode": {
+            "enum": [
+              "actor",
+              "system"
+            ],
+            "type": "string"
+          },
+          "userTriggerable": {
+            "type": "boolean"
+          },
+          "inputSchema": {
+            "type": "string"
+          },
+          "toolConstraints": {
+            "type": "string"
+          },
+          "emitsEvent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "NewActionType": {
+        "required": [
+          "name",
+          "executionMode"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "executionMode": {
+            "enum": [
+              "actor",
+              "system"
+            ],
+            "type": "string"
+          },
+          "userTriggerable": {
+            "type": "boolean"
+          },
+          "inputSchema": {
+            "type": "string"
+          },
+          "toolConstraints": {
+            "type": "string"
+          },
+          "emitsEvent": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Policy": {
+        "required": [
+          "id",
+          "name",
+          "guideline"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "guideline": {
+            "type": "string"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "actorHint": {
+            "type": "string"
+          }
+        }
+      },
+      "NewPolicy": {
+        "required": [
+          "name",
+          "guideline"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "guideline": {
+            "type": "string"
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "actorHint": {
+            "type": "string"
+          }
+        }
+      },
+      "Repository": {
+        "required": [
+          "id",
+          "name",
+          "owner",
+          "source",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "github",
+              "jira"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "pollInterval": {
+            "type": "integer"
+          },
+          "webhookSecret": {
+            "type": "string"
+          },
+          "configuration": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "pollingEnabled": {
+            "description": "Whether polling is enabled for this repository",
+            "type": "boolean"
+          }
+        }
+      },
+      "NewRepository": {
+        "required": [
+          "name",
+          "owner",
+          "source",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "github",
+              "jira"
+            ],
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "pollInterval": {
+            "type": "integer"
+          },
+          "webhookSecret": {
+            "type": "string"
+          },
+          "configuration": {
+            "type": "object",
+            "additionalProperties": {}
+          },
+          "pollingEnabled": {
+            "description": "Whether polling is enabled for this repository",
+            "type": "boolean"
+          }
+        }
+      },
+      "Event": {
+        "required": [
+          "id",
+          "source",
+          "eventType",
+          "receivedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "source": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "issueRef": {
+            "type": "string"
+          },
+          "repository": {
+            "type": "string"
+          },
+          "projectId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "taskId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "payload": {
+            "type": "string"
+          },
+          "receivedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "ActivityLogEntry": {
+        "required": [
+          "id",
+          "entryType",
+          "summary",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "projectId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "taskId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "eventId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "entryType": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      },
+      "ThreadEntry": {
+        "required": [
+          "id",
+          "projectId",
+          "authorType",
+          "entryType",
+          "content",
+          "createdOn"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "projectId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "authorType": {
+            "enum": [
+              "manager",
+              "actor",
+              "user",
+              "system"
+            ],
+            "type": "string"
+          },
+          "authorId": {
+            "type": "string"
+          },
+          "entryType": {
+            "enum": [
+              "decision",
+              "update",
+              "question",
+              "answer",
+              "result",
+              "message"
+            ],
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "responses": {
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "ProjectId": {
+        "name": "projectId",
+        "in": "path",
+        "description": "Project ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "TaskId": {
+        "name": "taskId",
+        "in": "path",
+        "description": "Task ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "ActorId": {
+        "name": "actorId",
+        "in": "path",
+        "description": "Actor ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "ActionTypeId": {
+        "name": "actionTypeId",
+        "in": "path",
+        "description": "Action type ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "PolicyId": {
+        "name": "policyId",
+        "in": "path",
+        "description": "Policy ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "RepositoryId": {
+        "name": "repositoryId",
+        "in": "path",
+        "description": "Repository ID",
+        "required": true,
+        "schema": {
+          "format": "int64",
+          "type": "integer"
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "System",
+      "description": "System health and configuration"
+    },
+    {
+      "name": "Projects",
+      "description": "Project management"
+    },
+    {
+      "name": "Tasks",
+      "description": "Task management within projects"
+    },
+    {
+      "name": "Threads",
+      "description": "Conversation threads within projects"
+    },
+    {
+      "name": "Actors",
+      "description": "Actor configuration and management"
+    },
+    {
+      "name": "ActionTypes",
+      "description": "Action type registry"
+    },
+    {
+      "name": "Policies",
+      "description": "Manager policy configuration"
+    },
+    {
+      "name": "Repositories",
+      "description": "Monitored repository configuration"
+    },
+    {
+      "name": "Events",
+      "description": "Event log"
+    },
+    {
+      "name": "Activity",
+      "description": "Global activity log"
+    },
+    {
+      "name": "Webhooks",
+      "description": "Webhook endpoints for external event sources"
+    }
+  ]
 }

@@ -78,6 +78,7 @@ public class RepositoriesResourceImpl implements RepositoriesResource {
         entity.pollInterval = data.getPollInterval();
         entity.webhookSecret = data.getWebhookSecret();
         entity.configuration = data.getConfiguration() != null ? data.getConfiguration().toString() : null;
+        entity.pollingEnabled = data.getPollingEnabled() != null ? data.getPollingEnabled() : false;
     }
 
     private RepositoryEntity findOrThrow(long id) {
@@ -97,6 +98,7 @@ public class RepositoriesResourceImpl implements RepositoriesResource {
         repo.setUrl(entity.url);
         repo.setPollInterval(entity.pollInterval);
         repo.setWebhookSecret(entity.webhookSecret);
+        repo.setPollingEnabled(entity.pollingEnabled);
         return repo;
     }
 }
