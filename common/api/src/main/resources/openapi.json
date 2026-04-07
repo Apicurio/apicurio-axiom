@@ -1,0 +1,107 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Apicurio Axiom API",
+        "description": "REST API for the Apicurio Axiom event-driven project orchestration platform.",
+        "version": "1.0.0",
+        "license": {
+            "name": "Apache 2.0",
+            "url": "https://www.apache.org/licenses/LICENSE-2.0"
+        }
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8080",
+            "description": "Local development server"
+        }
+    ],
+    "paths": {
+        "/system/health": {
+            "get": {
+                "operationId": "getSystemHealth",
+                "summary": "System health check",
+                "description": "Returns the health status of the Axiom backend.",
+                "tags": ["System"],
+                "responses": {
+                    "200": {
+                        "description": "System is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemHealth"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/system/config": {
+            "get": {
+                "operationId": "getSystemConfig",
+                "summary": "UI bootstrap configuration",
+                "description": "Returns runtime configuration for the frontend application.",
+                "tags": ["System"],
+                "responses": {
+                    "200": {
+                        "description": "System configuration",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemConfig"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "x-codegen-contextRoot": "/api/v1"
+    },
+    "components": {
+        "schemas": {
+            "SystemHealth": {
+                "type": "object",
+                "required": ["status", "version", "timestamp"],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "description": "Health status",
+                        "enum": ["UP", "DOWN"]
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "Application version"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Current server timestamp"
+                    }
+                }
+            },
+            "SystemConfig": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string",
+                        "description": "Application version"
+                    },
+                    "features": {
+                        "type": "object",
+                        "description": "Feature flags",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "System",
+            "description": "System health and configuration endpoints"
+        }
+    ]
+}

@@ -1,0 +1,43 @@
+package io.apicurio.axiom.core.entities;
+
+import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+
+import java.time.Instant;
+
+/**
+ * Represents a discrete unit of work within a Project.
+ */
+@Entity
+@Table(name = "task")
+public class TaskEntity extends PanacheEntity {
+
+    @Column(name = "project_id", nullable = false)
+    public Long projectId;
+
+    @Column(name = "action_type", nullable = false)
+    public String actionType;
+
+    @Column(name = "created_by", nullable = false)
+    public String createdBy;
+
+    @Column(name = "assigned_actor")
+    public Long assignedActor;
+
+    @Column(nullable = false)
+    public String status;
+
+    @Column(columnDefinition = "TEXT")
+    public String input;
+
+    @Column(columnDefinition = "TEXT")
+    public String output;
+
+    @Column(name = "created_on", nullable = false)
+    public Instant createdOn;
+
+    @Column(name = "completed_on")
+    public Instant completedOn;
+}

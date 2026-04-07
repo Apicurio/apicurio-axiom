@@ -1,47 +1,37 @@
+# Maven
+target/
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+
+# Java
+*.class
+hs_err_pid*
+
 # Node.js
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Maven
-target/
-
 # Build output
 dist/
-dist-test/
 
-# Test compiled artifacts (Vitest compiles on-the-fly)
-test/**/*.js
-test/**/*.js.map
-test/**/*.d.ts
-test/**/*.d.ts.map
-
-# Runtime data directories
+# Runtime data
 data/
 logs/
 work/
 .state/
+workspaces/
 
 # Environment variables (secrets)
 .env
 .env.*
 !.env.example
-docker/.env
-docker/.env.*
-!docker/.env.example
-
-# Configuration (may contain sensitive data)
-config.yaml
-config.local.yaml
-secrets.yaml
+secrets.env
 
 # SSH keys
 ssh/
 .ssh/
-
-# Google Cloud credentials
-gcloud/
-.gcloud/
 
 # IDE
 .idea/
@@ -49,6 +39,7 @@ gcloud/
 *.swp
 *.swo
 *~
+*.iml
 
 # OS
 .DS_Store
@@ -58,16 +49,13 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
-
-# Backups
 *.backup
 *.bak
-backups/
 
 # Coverage
 coverage/
 .nyc_output/
-/secrets.env
+
+# Serena / Claude
 /.serena/
 /.claude/
-test/temp/
