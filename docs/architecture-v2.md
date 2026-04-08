@@ -19,7 +19,7 @@ structure, and implementation approach.
 | ORM            | Hibernate ORM with Panache Next |                                            |
 | REST API       | JAX-RS (RESTEasy Reactive)    | Contract-first via OpenAPI + apicurio-codegen|
 | Real-time      | Server-Sent Events (SSE)      | RESTEasy Reactive SSE support                |
-| AI (Manager)   | Anthropic API (direct)        | Tool use for structured decisions            |
+| AI (Manager)   | Claude Code CLI subprocess    | Specialized MCP tools for triage decisions   |
 | AI (Actors)    | Claude Code CLI subprocess    | Scoped to project working directory          |
 | Containerization | Docker Compose              | Backend, PostgreSQL, nginx (UI)              |
 
@@ -49,7 +49,7 @@ apicurio-axiom/
 │
 ├── core/                             # Domain model, entities, repositories, lifecycle logic
 │
-├── manager/                          # AI Manager (Anthropic API integration, policy evaluation)
+├── manager/                          # AI Manager (Claude Code integration, policy evaluation)
 │
 ├── actors/
 │   ├── spi/                          # Actor interface, TaskHandle, lifecycle contracts
@@ -282,34 +282,42 @@ while running:
 
 ### 5.3 Manager (`manager/`)
 
-The Manager is an AI agent that calls the **Anthropic API directly** using tool use.
+The Manager is an AI agent implemented using **Claude Code CLI**, the same subprocess
+technology used for AI Agent actors (see Section 5.5). This unifies the AI integration
+approach — both the Manager and actors use Claude Code, simplifying the architecture and
+reducing the number of distinct AI integration points.
 
-**Why not Claude Code:** The Manager makes structured decisions — it doesn't need file system
-access, code editing, or git operations. A direct API call with well-defined tools is simpler,
-faster, and gives us typed structured output.
+**Why Claude Code for the Manager:** Using Claude Code for both the Manager and actors means
+a single subprocess management implementation, a single MCP integration pattern, and
+consistent behavior across all AI components. The Manager's decision-making tools are
+provided via MCP servers, just like actor tools. This also gives the Manager access to
+Claude Code's built-in capabilities (reasoning, structured output) without building a
+separate Anthropic API integration layer.
 
 **Implementation approach:**
 
-1. Build a prompt containing:
-   - The event payload and metadata
-   - A project summary (if a project exists): id, name, status, type, issue ref
-   - The full list of policies
-   - The list of available action types and their descriptions
-   - The list of available actors and their capabilities
+The Manager is launched as a Claude Code subprocess with:
+- A specialized system prompt containing the event payload, project summary, policies,
+  available action types, and available actors
+- A `--mcp-config` pointing to the Axiom MCP server for decision and query tools
+- `--output-format json` with `--json-schema` to enforce structured decision output
+- `--bare` mode for predictable, fast execution
+- `--max-turns` to limit reasoning depth
 
-2. Define API tools the Manager can call:
+**MCP tools provided to the Manager:**
 
    **Decision tools** — used to communicate the Manager's decision:
    - `create_task(action_type, actor_hint, input_context, confidence)` — create a task for the
      project
    - `ignore_event(reason, confidence)` — skip this event with an explanation
-   - `execute_system_action(action_type, confidence)` — run a system action (close/reopen project)
+   - `execute_system_action(action_type, confidence)` — run a system action (close/reopen
+     project)
    - `escalate(reason)` — flag for user review
 
    **Query tools** — used to drill down into project details before making a decision. The
-   Manager starts with a summary view and can progressively request more detail as needed. This
-   keeps the initial prompt lean while giving the Manager access to full context when the
-   situation is ambiguous.
+   Manager starts with a summary view and can progressively request more detail as needed.
+   This keeps the initial prompt lean while giving the Manager access to full context when
+   the situation is ambiguous.
    - `get_project_summary(project_id)` — project metadata, current status, issue ref, task
      counts by status (e.g. "3 completed, 1 pending"), and the most recent activity entry
    - `get_task_history(project_id, limit?)` — list of tasks for the project with action type,
@@ -322,10 +330,15 @@ faster, and gives us typed structured output.
    - `get_related_events(project_id, limit?)` — recent events associated with this project,
      useful for understanding the sequence of changes that led to the current state
 
-3. Parse the API response into structured decisions
+**Output parsing:**
 
-4. Each decision tool includes a `confidence` field. If confidence is below a configurable
-   threshold, the decision is held for user confirmation via the notification system.
+The Manager's output is structured via `--json-schema`, ensuring a consistent response
+format that the pipeline orchestrator can parse reliably. The schema enforces that the
+Manager returns one or more decisions, each with an action type, confidence level, and
+reasoning.
+
+Each decision includes a `confidence` field. If confidence is below a configurable
+threshold, the decision is held for user confirmation via the notification system.
 
 > **Note on token efficiency:** For most events (e.g. a new issue with no existing project),
 > the Manager won't need to call any query tools — the event payload and policies are
@@ -731,7 +744,8 @@ Both methods can coexist — different repositories can use different authentica
 
 ### 10.1 Secrets Management
 
-- **Anthropic API key:** Provided via environment variable, never stored in the database
+- **Anthropic API key:** Required by Claude Code; provided via environment variable, never
+  stored in the database
 - **GitHub/Jira API tokens:** Stored encrypted in the database or provided via environment variables
 - **Git SSH keys:** Path to private key provided via configuration (not stored in database)
 - **Git PATs:** Stored encrypted in the repository configuration

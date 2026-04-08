@@ -112,10 +112,11 @@ Since the SDK is Node.js/Python, not Java, integration options are:
 
 Use the Anthropic API directly and reimplement Claude Code's tool infrastructure.
 
-**Not recommended because:** Claude Code provides file system tools, git integration, code
-editing, search, and more out of the box. Reimplementing all of this would be enormous effort
-for no benefit. This approach is appropriate for the **Manager** (which needs structured
-decisions, not code editing) but not for the **Actor**.
+**Not recommended** for either the Manager or actors. Claude Code provides file system tools,
+git integration, code editing, search, and more out of the box. Reimplementing all of this
+would be enormous effort for no benefit. Both the Manager and actors use Claude Code CLI —
+the Manager is configured with specialized MCP tools for decision-making rather than code
+editing tools.
 
 
 ## Recommended Architecture

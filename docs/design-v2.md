@@ -134,8 +134,10 @@ the project (if one exists) to decide what to do.
 - If it has **low confidence**, it escalates to the **application user** for confirmation or override
   (via the notification system).
 
-**Manager context and tools:** The Manager needs access to project information to make good
-decisions. It is provided with an MCP server (or equivalent tool interface) that allows it to query:
+**Manager context and tools:** The Manager is implemented using **Claude Code** (the same
+technology used for AI Agent actors), configured with a specialized set of MCP tools for
+querying project information and making decisions. It is provided with an MCP server that
+allows it to query:
 - Project metadata and current status
 - Task history for the project (what has been done so far)
 - Conversation thread (prior discussions and clarifications)

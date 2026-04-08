@@ -132,13 +132,15 @@ empty UI shell.
 
 ### Deliverables
 - **`manager` module:**
-  - Anthropic API client (direct HTTP or SDK)
+  - Claude Code subprocess launcher (reuses the same subprocess pattern as the Claude Code
+    actor in Phase 5)
   - Prompt builder: assembles event payload, project summary, policies, action types, actors
-  - Tool definitions: `create_task`, `ignore_event`, `execute_system_action`, `escalate`
-  - Query tool definitions: `get_project_summary`, `get_task_history`, `get_task_detail`,
-    `get_thread_entries`, `get_related_events`
-  - Query tool implementations: each calls the appropriate repository/service
-  - Response parser: extracts structured decisions from the API response
+    into a system prompt for the Manager
+  - Axiom Manager MCP server: exposes decision tools (`create_task`, `ignore_event`,
+    `execute_system_action`, `escalate`) and query tools (`get_project_summary`,
+    `get_task_history`, `get_task_detail`, `get_thread_entries`, `get_related_events`)
+  - JSON schema for structured output: enforces consistent decision format
+  - Response parser: extracts structured decisions from the Claude Code JSON output
   - Confidence threshold: configurable, decisions below threshold are held for user review
 - **Manager invocation (not yet wired into pipeline):**
   - Can be called directly via a test/debug REST endpoint
@@ -148,7 +150,9 @@ empty UI shell.
 ### Scope Notes
 - The Manager is not yet wired into the event processing pipeline — that's Phase 6
 - Escalation notifications are stored in the database but not yet displayed in the UI
-- The Anthropic API key is provided via environment variable
+- The Manager uses Claude Code CLI (same as actors), configured with `--bare`,
+  `--output-format json`, `--json-schema`, and `--mcp-config` for decision/query tools
+- The Anthropic API key (used by Claude Code) is provided via environment variable
 
 ### Testing Approach
 - Create sample events via the API, then call the Manager debug endpoint
