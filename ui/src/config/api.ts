@@ -129,6 +129,41 @@ export async function fetchProjectTasks(projectId: number): Promise<Task[]> {
     return response.json();
 }
 
+export interface NewTask {
+    actionType: string;
+    assignedActor?: number;
+    input?: string;
+}
+
+export async function createTask(projectId: number, task: NewTask): Promise<Task> {
+    const response = await fetch(`${API}/projects/${projectId}/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(task),
+    });
+    if (!response.ok) throw new Error(`Failed to create task: ${response.status}`);
+    return response.json();
+}
+
+// ── Action Types ──────────────────────────────────────────────────
+
+export interface ActionType {
+    id: number;
+    name: string;
+    description?: string;
+    executionMode: string;
+    userTriggerable: boolean;
+    inputSchema?: string;
+    toolConstraints?: string;
+    emitsEvent: boolean;
+}
+
+export async function fetchActionTypes(): Promise<ActionType[]> {
+    const response = await fetch(`${API}/action-types`);
+    if (!response.ok) throw new Error(`Failed to fetch action types: ${response.status}`);
+    return response.json();
+}
+
 // ── Thread ────────────────────────────────────────────────────────
 
 export async function fetchThreadEntries(projectId: number): Promise<ThreadEntry[]> {

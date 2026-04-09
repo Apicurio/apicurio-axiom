@@ -14,22 +14,35 @@ import {
     EmptyStateBody,
     Flex,
     FlexItem,
+    Form,
+    FormGroup,
+    FormSelect,
+    FormSelectOption,
     Label,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     PageSection,
     Tab,
     TabContent,
     TabTitleText,
     Tabs,
+    TextArea,
     Title,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
 import {
+    type ActionType,
     type Project,
     type Task,
     type ThreadEntry,
+    fetchActionTypes,
     fetchProject,
     fetchProjectTasks,
     fetchThreadEntries,
+    createTask,
 } from "../config/api";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
@@ -51,6 +64,13 @@ export function ProjectDetailPage() {
     const [thread, setThread] = useState<ThreadEntry[]>([]);
     const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    // Trigger Action state
+    const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+    const [actionTypes, setActionTypes] = useState<ActionType[]>([]);
+    const [selectedActionType, setSelectedActionType] = useState("");
+    const [actionInput, setActionInput] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
     const id = Number(projectId);
 
@@ -75,6 +95,37 @@ export function ProjectDetailPage() {
         loadData();
     }, [loadData]);
 
+    const openActionModal = () => {
+        fetchActionTypes()
+            .then((types) => {
+                const triggerable = types.filter(
+                    (t) => t.userTriggerable && t.executionMode === "actor"
+                );
+                setActionTypes(triggerable);
+                if (triggerable.length > 0) {
+                    setSelectedActionType(triggerable[0].name);
+                }
+                setActionInput("");
+                setIsActionModalOpen(true);
+            })
+            .catch(console.error);
+    };
+
+    const handleTriggerAction = () => {
+        if (!selectedActionType) return;
+        setSubmitting(true);
+        createTask(id, {
+            actionType: selectedActionType,
+            input: actionInput || undefined,
+        })
+            .then(() => {
+                setIsActionModalOpen(false);
+                loadData();
+            })
+            .catch(console.error)
+            .finally(() => setSubmitting(false));
+    };
+
     if (loading) {
         return (
             <PageSection>
@@ -95,11 +146,18 @@ export function ProjectDetailPage() {
         );
     }
 
+    const selectedActionDesc = actionTypes.find(
+        (t) => t.name === selectedActionType
+    )?.description;
+
     return (
         <PageSection>
             <Breadcrumb style={{ marginBottom: "16px" }}>
                 <BreadcrumbItem onClick={() => navigate("/")}>
                     Dashboard
+                </BreadcrumbItem>
+                <BreadcrumbItem onClick={() => navigate("/projects")}>
+                    Projects
                 </BreadcrumbItem>
                 <BreadcrumbItem isActive>{project.name}</BreadcrumbItem>
             </Breadcrumb>
@@ -115,6 +173,14 @@ export function ProjectDetailPage() {
                     </Title>
                 </FlexItem>
                 <FlexItem>
+                    <Button
+                        variant="secondary"
+                        icon={<PlayIcon />}
+                        onClick={openActionModal}
+                        style={{ marginRight: "8px" }}
+                    >
+                        Trigger Action
+                    </Button>
                     <Label color={STATUS_COLORS[project.status] || "grey"}>
                         {project.status}
                     </Label>
@@ -190,6 +256,72 @@ export function ProjectDetailPage() {
                     Refresh
                 </Button>
             </div>
+
+            {/* Trigger Action Modal */}
+            <Modal
+                isOpen={isActionModalOpen}
+                onClose={() => setIsActionModalOpen(false)}
+                variant="medium"
+            >
+                <ModalHeader title="Trigger Action" />
+                <ModalBody>
+                    {actionTypes.length === 0 ? (
+                        <EmptyState>
+                            <EmptyStateBody>
+                                No user-triggerable action types configured.
+                            </EmptyStateBody>
+                        </EmptyState>
+                    ) : (
+                        <Form>
+                            <FormGroup label="Action Type" isRequired fieldId="actionType">
+                                <FormSelect
+                                    id="actionType"
+                                    value={selectedActionType}
+                                    onChange={(_e, v) => setSelectedActionType(v)}
+                                >
+                                    {actionTypes.map((at) => (
+                                        <FormSelectOption
+                                            key={at.name}
+                                            value={at.name}
+                                            label={at.name}
+                                        />
+                                    ))}
+                                </FormSelect>
+                            </FormGroup>
+                            {selectedActionDesc && (
+                                <p style={{ color: "#6a6e73", fontSize: "14px", marginTop: "-8px" }}>
+                                    {selectedActionDesc}
+                                </p>
+                            )}
+                            <FormGroup label="Instructions (optional)" fieldId="input">
+                                <TextArea
+                                    id="input"
+                                    placeholder="Additional context or instructions for the actor..."
+                                    value={actionInput}
+                                    onChange={(_e, v) => setActionInput(v)}
+                                    rows={4}
+                                />
+                            </FormGroup>
+                        </Form>
+                    )}
+                </ModalBody>
+                <ModalFooter>
+                    <Button
+                        variant="primary"
+                        onClick={handleTriggerAction}
+                        isDisabled={!selectedActionType || submitting}
+                        isLoading={submitting}
+                    >
+                        {submitting ? "Creating..." : "Trigger"}
+                    </Button>
+                    <Button
+                        variant="link"
+                        onClick={() => setIsActionModalOpen(false)}
+                    >
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
         </PageSection>
     );
 }
