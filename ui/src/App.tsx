@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import {
+    Button,
     Masthead,
     MastheadBrand,
     MastheadContent,
@@ -9,6 +10,14 @@ import {
     Nav,
     NavItem,
     NavList,
+    NotificationBadge,
+    NotificationDrawer,
+    NotificationDrawerBody,
+    NotificationDrawerHeader,
+    NotificationDrawerList,
+    NotificationDrawerListItem,
+    NotificationDrawerListItemBody,
+    NotificationDrawerListItemHeader,
     Page,
     PageSidebar,
     PageSidebarBody,
@@ -19,6 +28,7 @@ import {
     Label,
 } from "@patternfly/react-core";
 import BarsIcon from "@patternfly/react-icons/dist/esm/icons/bars-icon";
+import BellIcon from "@patternfly/react-icons/dist/esm/icons/bell-icon";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -29,10 +39,19 @@ import { ActivityLogPage } from "./pages/ActivityLogPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { fetchSystemHealth } from "./config/api";
+import { sseClient, type AxiomSseEvent } from "./config/sse";
 
 interface NavEntry {
     path: string;
     label: string;
+}
+
+interface Notification {
+    id: number;
+    message: string;
+    severity: string;
+    timestamp: Date;
+    read: boolean;
 }
 
 const NAV_ITEMS: NavEntry[] = [
@@ -45,17 +64,62 @@ const NAV_ITEMS: NavEntry[] = [
     { path: "/repositories", label: "Repositories" },
 ];
 
+let notificationIdCounter = 0;
+
 export function App() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [backendStatus, setBackendStatus] = useState<string>("checking...");
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+
+    const unreadCount = notifications.filter((n) => !n.read).length;
+
+    const addNotification = useCallback((message: string, severity: string) => {
+        setNotifications((prev) => [
+            {
+                id: ++notificationIdCounter,
+                message,
+                severity,
+                timestamp: new Date(),
+                read: false,
+            },
+            ...prev,
+        ].slice(0, 50)); // Keep last 50
+    }, []);
 
     useEffect(() => {
         fetchSystemHealth()
             .then((health) => setBackendStatus(health.status))
             .catch(() => setBackendStatus("DOWN"));
-    }, []);
+
+        // Connect SSE
+        sseClient.connect();
+        const unsubscribe = sseClient.subscribe((event: AxiomSseEvent) => {
+            if (event.type === "notification") {
+                const data = event.data as { message?: string; severity?: string };
+                addNotification(
+                    data.message || "New notification",
+                    data.severity || "info"
+                );
+            }
+        });
+
+        return () => {
+            unsubscribe();
+            sseClient.disconnect();
+        };
+    }, [addNotification]);
+
+    const markAllRead = () => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    };
+
+    const clearAll = () => {
+        setNotifications([]);
+        setIsDrawerOpen(false);
+    };
 
     const masthead = (
         <Masthead>
@@ -79,6 +143,16 @@ export function App() {
             <MastheadContent>
                 <Toolbar>
                     <ToolbarContent>
+                        <ToolbarItem>
+                            <NotificationBadge
+                                variant={unreadCount > 0 ? "unread" : "read"}
+                                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
+                                aria-label="Notifications"
+                                count={unreadCount}
+                            >
+                                <BellIcon />
+                            </NotificationBadge>
+                        </ToolbarItem>
                         <ToolbarItem>
                             <Label
                                 color={backendStatus === "UP" ? "green" : "red"}
@@ -112,8 +186,76 @@ export function App() {
         </PageSidebar>
     );
 
+    const notificationDrawer = isDrawerOpen ? (
+        <NotificationDrawer>
+            <NotificationDrawerHeader
+                count={unreadCount}
+                onClose={() => setIsDrawerOpen(false)}
+            >
+                <Button variant="link" onClick={markAllRead} isInline>
+                    Mark all read
+                </Button>
+                {" "}
+                <Button variant="link" onClick={clearAll} isInline>
+                    Clear all
+                </Button>
+            </NotificationDrawerHeader>
+            <NotificationDrawerBody>
+                <NotificationDrawerList>
+                    {notifications.length === 0 ? (
+                        <div style={{ padding: "24px", textAlign: "center", color: "#6a6e73" }}>
+                            No notifications
+                        </div>
+                    ) : (
+                        notifications.map((n) => (
+                            <NotificationDrawerListItem
+                                key={n.id}
+                                variant={
+                                    n.severity === "error"
+                                        ? "danger"
+                                        : n.severity === "warning"
+                                          ? "warning"
+                                          : "info"
+                                }
+                                isRead={n.read}
+                                onClick={() =>
+                                    setNotifications((prev) =>
+                                        prev.map((x) =>
+                                            x.id === n.id
+                                                ? { ...x, read: true }
+                                                : x
+                                        )
+                                    )
+                                }
+                            >
+                                <NotificationDrawerListItemHeader
+                                    title={n.message}
+                                    variant={
+                                        n.severity === "error"
+                                            ? "danger"
+                                            : n.severity === "warning"
+                                              ? "warning"
+                                              : "info"
+                                    }
+                                />
+                                <NotificationDrawerListItemBody
+                                    timestamp={n.timestamp.toLocaleString()}
+                                />
+                            </NotificationDrawerListItem>
+                        ))
+                    )}
+                </NotificationDrawerList>
+            </NotificationDrawerBody>
+        </NotificationDrawer>
+    ) : undefined;
+
     return (
-        <Page masthead={masthead} sidebar={sidebar}>
+        <Page
+            masthead={masthead}
+            sidebar={sidebar}
+            notificationDrawer={notificationDrawer}
+            isNotificationDrawerExpanded={isDrawerOpen}
+        >
             <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />

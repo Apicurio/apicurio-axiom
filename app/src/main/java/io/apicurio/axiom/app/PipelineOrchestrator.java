@@ -7,12 +7,14 @@ import io.apicurio.axiom.core.entities.EventQueueEntity;
 import io.apicurio.axiom.core.entities.ProjectEntity;
 import io.apicurio.axiom.core.entities.TaskEntity;
 import io.apicurio.axiom.core.entities.ThreadEntryEntity;
+import io.apicurio.axiom.core.events.SseEvent;
 import io.apicurio.axiom.core.lifecycle.ProjectStatus;
 import io.apicurio.axiom.core.services.WorkspaceService;
 import io.apicurio.axiom.manager.ManagerDecision;
 import io.apicurio.axiom.manager.ManagerService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
@@ -40,6 +42,9 @@ public class PipelineOrchestrator {
 
     @Inject
     WorkspaceService workspaceService;
+
+    @Inject
+    Event<SseEvent> sseEvents;
 
     /**
      * Polls the event queue every 5 seconds and processes one pending event at a time.
@@ -155,6 +160,11 @@ public class PipelineOrchestrator {
         // Log to thread
         addThreadEntry(project.id, "manager", "decision",
                 "Created task: " + task.actionType + "\n\nReasoning: " + decision.reasoning());
+
+        // Fire SSE events
+        sseEvents.fire(SseEvent.taskUpdated(project.id, task.id, "Pending"));
+        sseEvents.fire(SseEvent.projectUpdated(project.id));
+        sseEvents.fire(SseEvent.threadEntry(project.id));
     }
 
     @Transactional
@@ -183,6 +193,8 @@ public class PipelineOrchestrator {
                     "Project closed — " + decision.reasoning());
             addThreadEntry(project.id, "system", "message",
                     "Project closed: " + decision.reasoning());
+            sseEvents.fire(SseEvent.projectUpdated(project.id));
+            sseEvents.fire(SseEvent.notification("Project closed: " + project.name, "info"));
         } else if ("reopen-project".equals(actionType)) {
             project.status = ProjectStatus.InProgress.name();
             project.updatedOn = Instant.now();
@@ -190,6 +202,8 @@ public class PipelineOrchestrator {
                     "Project reopened — " + decision.reasoning());
             addThreadEntry(project.id, "system", "message",
                     "Project reopened: " + decision.reasoning());
+            sseEvents.fire(SseEvent.projectUpdated(project.id));
+            sseEvents.fire(SseEvent.notification("Project reopened: " + project.name, "info"));
         } else {
             LOG.warnf("Unknown system action: %s", actionType);
         }
@@ -207,7 +221,10 @@ public class PipelineOrchestrator {
             addThreadEntry(project.id, "manager", "question",
                     "Escalation: " + reason
                             + "\n\nThe Manager needs your input on how to handle this event.");
+            sseEvents.fire(SseEvent.threadEntry(project.id));
         }
+
+        sseEvents.fire(SseEvent.notification("Manager escalation: " + reason, "warning"));
     }
 
     /**

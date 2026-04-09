@@ -11,8 +11,10 @@ import io.apicurio.axiom.core.entities.EventQueueEntity;
 import io.apicurio.axiom.core.entities.ProjectEntity;
 import io.apicurio.axiom.core.entities.TaskEntity;
 import io.apicurio.axiom.core.entities.ThreadEntryEntity;
+import io.apicurio.axiom.core.events.SseEvent;
 import io.apicurio.axiom.core.services.WorkspaceService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -37,6 +39,9 @@ public class TaskExecutionService {
 
     @Inject
     WorkspaceService workspaceService;
+
+    @Inject
+    Event<SseEvent> sseEvents;
 
     /**
      * Attempts to execute the next pending task for the given project.
@@ -162,6 +167,11 @@ public class TaskExecutionService {
             // Log to thread
             addThreadEntry(task.projectId, "system", "update",
                     "Task started: " + task.actionType);
+
+            // Fire SSE events
+            sseEvents.fire(SseEvent.taskUpdated(task.projectId, taskId, "InProgress"));
+            sseEvents.fire(SseEvent.projectUpdated(task.projectId));
+            sseEvents.fire(SseEvent.threadEntry(task.projectId));
         }
     }
 
@@ -200,6 +210,16 @@ public class TaskExecutionService {
             threadContent += "\n\nError: " + result.getErrorMessage();
         }
         addThreadEntry(task.projectId, "system", "result", threadContent);
+
+        // Fire SSE events
+        sseEvents.fire(SseEvent.taskUpdated(task.projectId, taskId, task.status));
+        sseEvents.fire(SseEvent.threadEntry(task.projectId));
+        sseEvents.fire(SseEvent.activity("task-" + statusText,
+                "Task " + statusText + ": " + task.actionType));
+        if (!result.isSuccess()) {
+            sseEvents.fire(SseEvent.notification(
+                    "Task failed: " + task.actionType, "error"));
+        }
 
         // Update project status back to Idle if no more active tasks
         updateProjectStatusAfterTask(task.projectId);
