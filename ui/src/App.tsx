@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import {
-    Brand,
     Masthead,
     MastheadBrand,
     MastheadContent,
@@ -28,6 +27,7 @@ import { PoliciesPage } from "./pages/PoliciesPage";
 import { ActionTypesPage } from "./pages/ActionTypesPage";
 import { ActivityLogPage } from "./pages/ActivityLogPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { fetchSystemHealth } from "./config/api";
 
 interface NavEntry {
@@ -71,7 +71,9 @@ export function App() {
                     </PageToggleButton>
                 </MastheadToggle>
                 <MastheadBrand>
-                    <Brand alt="Apicurio Axiom">Apicurio Axiom</Brand>
+                    <span style={{ color: "white", fontSize: "18px", fontWeight: "bold" }}>
+                        Apicurio Axiom
+                    </span>
                 </MastheadBrand>
             </MastheadMain>
             <MastheadContent>
@@ -115,6 +117,7 @@ export function App() {
             <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
                 <Route path="/actors" element={<ActorsPage />} />
                 <Route path="/policies" element={<PoliciesPage />} />
                 <Route path="/action-types" element={<ActionTypesPage />} />
