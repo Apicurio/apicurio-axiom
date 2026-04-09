@@ -174,10 +174,169 @@ export interface ActionType {
     emitsEvent: boolean;
 }
 
+export type NewActionType = Omit<ActionType, "id">;
+
 export async function fetchActionTypes(): Promise<ActionType[]> {
     const response = await fetch(`${API}/action-types`);
     if (!response.ok) throw new Error(`Failed to fetch action types: ${response.status}`);
     return response.json();
+}
+
+export async function createActionType(at: NewActionType): Promise<ActionType> {
+    const response = await fetch(`${API}/action-types`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(at),
+    });
+    if (!response.ok) throw new Error(`Failed to create action type: ${response.status}`);
+    return response.json();
+}
+
+export async function updateActionType(id: number, at: NewActionType): Promise<ActionType> {
+    const response = await fetch(`${API}/action-types/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(at),
+    });
+    if (!response.ok) throw new Error(`Failed to update action type: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteActionType(id: number): Promise<void> {
+    const response = await fetch(`${API}/action-types/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete action type: ${response.status}`);
+}
+
+// ── Actors ────────────────────────────────────────────────────────
+
+export interface Actor {
+    id: number;
+    name: string;
+    description?: string;
+    type: string;
+    capabilities?: string[];
+}
+
+export type NewActor = Omit<Actor, "id">;
+
+export async function fetchActors(): Promise<Actor[]> {
+    const response = await fetch(`${API}/actors`);
+    if (!response.ok) throw new Error(`Failed to fetch actors: ${response.status}`);
+    return response.json();
+}
+
+export async function createActor(actor: NewActor): Promise<Actor> {
+    const response = await fetch(`${API}/actors`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(actor),
+    });
+    if (!response.ok) throw new Error(`Failed to create actor: ${response.status}`);
+    return response.json();
+}
+
+export async function updateActor(id: number, actor: NewActor): Promise<Actor> {
+    const response = await fetch(`${API}/actors/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(actor),
+    });
+    if (!response.ok) throw new Error(`Failed to update actor: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteActor(id: number): Promise<void> {
+    const response = await fetch(`${API}/actors/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete actor: ${response.status}`);
+}
+
+// ── Policies ──────────────────────────────────────────────────────
+
+export interface Policy {
+    id: number;
+    name: string;
+    guideline: string;
+    actionType?: string;
+    actorHint?: string;
+}
+
+export type NewPolicy = Omit<Policy, "id">;
+
+export async function fetchPolicies(): Promise<Policy[]> {
+    const response = await fetch(`${API}/policies`);
+    if (!response.ok) throw new Error(`Failed to fetch policies: ${response.status}`);
+    return response.json();
+}
+
+export async function createPolicy(policy: NewPolicy): Promise<Policy> {
+    const response = await fetch(`${API}/policies`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(policy),
+    });
+    if (!response.ok) throw new Error(`Failed to create policy: ${response.status}`);
+    return response.json();
+}
+
+export async function updatePolicy(id: number, policy: NewPolicy): Promise<Policy> {
+    const response = await fetch(`${API}/policies/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(policy),
+    });
+    if (!response.ok) throw new Error(`Failed to update policy: ${response.status}`);
+    return response.json();
+}
+
+export async function deletePolicy(id: number): Promise<void> {
+    const response = await fetch(`${API}/policies/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete policy: ${response.status}`);
+}
+
+// ── Repositories ──────────────────────────────────────────────────
+
+export interface Repository {
+    id: number;
+    name: string;
+    owner: string;
+    source: string;
+    url: string;
+    pollInterval?: number;
+    webhookSecret?: string;
+    pollingEnabled?: boolean;
+}
+
+export type NewRepository = Omit<Repository, "id">;
+
+export async function fetchRepositories(): Promise<Repository[]> {
+    const response = await fetch(`${API}/repositories`);
+    if (!response.ok) throw new Error(`Failed to fetch repositories: ${response.status}`);
+    return response.json();
+}
+
+export async function createRepository(repo: NewRepository): Promise<Repository> {
+    const response = await fetch(`${API}/repositories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(repo),
+    });
+    if (!response.ok) throw new Error(`Failed to create repository: ${response.status}`);
+    return response.json();
+}
+
+export async function updateRepository(id: number, repo: NewRepository): Promise<Repository> {
+    const response = await fetch(`${API}/repositories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(repo),
+    });
+    if (!response.ok) throw new Error(`Failed to update repository: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteRepository(id: number): Promise<void> {
+    const response = await fetch(`${API}/repositories/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete repository: ${response.status}`);
 }
 
 // ── Thread ────────────────────────────────────────────────────────
