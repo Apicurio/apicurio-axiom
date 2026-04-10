@@ -83,11 +83,16 @@ public class TaskExecutionService {
             return;
         }
 
+        // Resolve the actor entity for name and ID
+        ActorEntity actorEntity = resolveActorEntity(task);
+        String actorName = actorEntity != null ? actorEntity.name : "Unknown Actor";
+        Long actorEntityId = actorEntity != null ? actorEntity.id : null;
+
         // Mark task status based on actor type
         if ("human".equals(actor.getType())) {
-            markTaskAwaitingInput(task.id);
+            markTaskAwaitingInput(task.id, actorEntityId, actorName);
         } else {
-            markTaskInProgress(task.id);
+            markTaskInProgress(task.id, actorEntityId, actorName);
         }
 
         // Build the actor context
@@ -131,6 +136,17 @@ public class TaskExecutionService {
         return actors.stream().findFirst().orElse(null);
     }
 
+    private ActorEntity resolveActorEntity(TaskEntity task) {
+        if (task.assignedActor != null) {
+            ActorEntity actorEntity = ActorEntity.findById(task.assignedActor);
+            if (actorEntity != null) {
+                return actorEntity;
+            }
+        }
+        // No explicit assignment — pick the first matching actor entity by type
+        return ActorEntity.find("type", "ai-agent").firstResult();
+    }
+
     private Actor findActorByType(String type) {
         for (Actor actor : actors) {
             if (actor.getType().equals(type)) {
@@ -152,10 +168,11 @@ public class TaskExecutionService {
     }
 
     @Transactional
-    void markTaskInProgress(Long taskId) {
+    void markTaskInProgress(Long taskId, Long actorEntityId, String actorName) {
         TaskEntity task = TaskEntity.findById(taskId);
         if (task != null) {
             task.status = "InProgress";
+            task.assignedActor = actorEntityId;
 
             // Update project status
             ProjectEntity project = ProjectEntity.findById(task.projectId);
@@ -166,11 +183,11 @@ public class TaskExecutionService {
 
             // Log to activity
             logActivity(task.projectId, taskId, task.eventId, "task-started",
-                    "Task started: " + task.actionType);
+                    "Task started: " + task.actionType + " (actor: " + actorName + ")");
 
             // Log to thread
             addThreadEntry(task.projectId, "system", "update",
-                    "Task started: " + task.actionType);
+                    "Task started: " + task.actionType + "\nAssigned to: " + actorName);
 
             // Fire SSE events
             sseEvents.fire(SseEvent.taskUpdated(task.projectId, taskId, "InProgress"));
@@ -180,10 +197,11 @@ public class TaskExecutionService {
     }
 
     @Transactional
-    void markTaskAwaitingInput(Long taskId) {
+    void markTaskAwaitingInput(Long taskId, Long actorEntityId, String actorName) {
         TaskEntity task = TaskEntity.findById(taskId);
         if (task != null) {
             task.status = "AwaitingInput";
+            task.assignedActor = actorEntityId;
 
             // Update project status
             ProjectEntity project = ProjectEntity.findById(task.projectId);
@@ -194,11 +212,12 @@ public class TaskExecutionService {
 
             // Log to activity
             logActivity(task.projectId, taskId, task.eventId, "task-awaiting-input",
-                    "Task awaiting human input: " + task.actionType);
+                    "Task awaiting human input: " + task.actionType + " (actor: " + actorName + ")");
 
             // Log to thread
             addThreadEntry(task.projectId, "system", "update",
                     "Task awaiting human input: " + task.actionType
+                            + "\nAssigned to: " + actorName
                             + (task.input != null ? "\n\n" + task.input : ""));
 
             // Fire SSE events

@@ -1,5 +1,7 @@
 package io.apicurio.axiom.app;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.EventEntity;
@@ -42,6 +44,9 @@ public class PipelineOrchestrator {
 
     @Inject
     WorkspaceService workspaceService;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Inject
     Event<SseEvent> sseEvents;
@@ -250,7 +255,7 @@ public class PipelineOrchestrator {
 
     private ProjectEntity createProjectFromEvent(EventEntity event) {
         ProjectEntity project = new ProjectEntity();
-        project.name = event.issueRef != null ? event.issueRef : "Project from event " + event.id;
+        project.name = extractIssueTitle(event);
         project.type = "other";
         project.status = ProjectStatus.Created.name();
         project.issueSource = event.source;
@@ -285,6 +290,25 @@ public class PipelineOrchestrator {
             entry.status = status;
             entry.processedAt = Instant.now();
         }
+    }
+
+    /**
+     * Extracts the issue title from the event payload. Falls back to the
+     * issue reference or a generic name if the title cannot be found.
+     */
+    private String extractIssueTitle(EventEntity event) {
+        if (event.payload != null) {
+            try {
+                JsonNode root = objectMapper.readTree(event.payload);
+                String title = root.path("issue").path("title").asText(null);
+                if (title != null && !title.isBlank()) {
+                    return title;
+                }
+            } catch (Exception e) {
+                LOG.debugf("Could not parse event payload for issue title: %s", e.getMessage());
+            }
+        }
+        return event.issueRef != null ? event.issueRef : "Project from event " + event.id;
     }
 
     private void logActivity(Long projectId, Long taskId, Long eventId,

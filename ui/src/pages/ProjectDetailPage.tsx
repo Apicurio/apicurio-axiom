@@ -42,6 +42,7 @@ import {
     type Task,
     type ThreadEntry,
     fetchActionTypes,
+    fetchActors,
     fetchProject,
     fetchProjectTasks,
     fetchThreadEntries,
@@ -66,6 +67,7 @@ export function ProjectDetailPage() {
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [thread, setThread] = useState<ThreadEntry[]>([]);
+    const [actorNames, setActorNames] = useState<Record<number, string>>({});
     const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
 
@@ -85,11 +87,15 @@ export function ProjectDetailPage() {
             fetchProject(id),
             fetchProjectTasks(id),
             fetchThreadEntries(id),
+            fetchActors(),
         ])
-            .then(([p, t, th]) => {
+            .then(([p, t, th, actors]) => {
                 setProject(p);
                 setTasks(t);
                 setThread(th);
+                const names: Record<number, string> = {};
+                actors.forEach((a) => { names[a.id] = a.name; });
+                setActorNames(names);
             })
             .catch(console.error)
             .finally(() => setLoading(false));
@@ -245,7 +251,7 @@ export function ProjectDetailPage() {
                 <Tabs activeKey={activeTab} onSelect={(_e, k) => setActiveTab(k as number)}>
                     <Tab eventKey={0} title={<TabTitleText>Tasks ({tasks.length})</TabTitleText>}>
                         <TabContent id="tasks-tab" eventKey={0} activeKey={activeTab} style={{ marginTop: "16px" }}>
-                            <TasksTab tasks={tasks} projectId={id} onRefresh={loadData} />
+                            <TasksTab tasks={tasks} projectId={id} actorNames={actorNames} onRefresh={loadData} />
                         </TabContent>
                     </Tab>
                     <Tab eventKey={1} title={<TabTitleText>Thread ({thread.length})</TabTitleText>}>
@@ -331,9 +337,10 @@ export function ProjectDetailPage() {
     );
 }
 
-function TasksTab({ tasks, projectId, onRefresh }: {
+function TasksTab({ tasks, projectId, actorNames, onRefresh }: {
     tasks: Task[];
     projectId: number;
+    actorNames: Record<number, string>;
     onRefresh: () => void;
 }) {
     const [respondingTo, setRespondingTo] = useState<number | null>(null);
@@ -366,6 +373,7 @@ function TasksTab({ tasks, projectId, onRefresh }: {
                 <Thead>
                     <Tr>
                         <Th>Action</Th>
+                        <Th>Actor</Th>
                         <Th>Status</Th>
                         <Th>Created By</Th>
                         <Th>Created</Th>
@@ -378,6 +386,11 @@ function TasksTab({ tasks, projectId, onRefresh }: {
                     {tasks.map((task) => (
                         <Tr key={task.id}>
                             <Td>{task.actionType}</Td>
+                            <Td>
+                                {task.assignedActor
+                                    ? actorNames[task.assignedActor] || `Actor #${task.assignedActor}`
+                                    : "—"}
+                            </Td>
                             <Td>
                                 <Label color={STATUS_COLORS[task.status] || "grey"}>
                                     {task.status}

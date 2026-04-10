@@ -71,24 +71,31 @@ public class SeedDataInitializer {
         LOG.infof("Seeded %d built-in action types", ActionTypeEntity.count());
 
         // Seed actor, policy, and test repository
-        seedActor();
+        seedActors();
         seedPolicy();
         seedRepository();
     }
 
-    private void seedActor() {
+    private void seedActors() {
         if (ActorEntity.count() > 0) {
             LOG.info("Actors already exist, skipping actor seed data");
             return;
         }
 
         ActorEntity actor = new ActorEntity();
-        actor.name = "Claude Code Agent";
+        actor.name = "Blinky";
         actor.description = "AI agent powered by Claude Code CLI";
         actor.type = "ai-agent";
         actor.capabilities = "analyze,auto-tag,implement,propose,review,respond,answer-question";
         actor.persist();
+        LOG.infof("Seeded actor: %s (%s)", actor.name, actor.type);
 
+        actor = new ActorEntity();
+        actor.name = "Clyde";
+        actor.description = "AI agent powered by Claude Code CLI";
+        actor.type = "ai-agent";
+        actor.capabilities = "analyze,auto-tag,implement,propose,review,respond,answer-question";
+        actor.persist();
         LOG.infof("Seeded actor: %s (%s)", actor.name, actor.type);
     }
 
