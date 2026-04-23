@@ -265,8 +265,18 @@ public class ClaudeCodeSubprocess {
                             subtype, turns, cost, durationMs);
                 }
                 case "tool_result" -> {
-                    // Tool completed
-                    LOG.debugf("  [claude] Tool result received");
+                    String toolName = node.path("name").asText("");
+                    boolean isError = node.path("is_error").asBoolean(false);
+                    if (isError) {
+                        String errorContent = node.path("content").asText(
+                                node.path("content").toString());
+                        String errorPreview = errorContent.length() > 200
+                                ? errorContent.substring(0, 197) + "..."
+                                : errorContent;
+                        LOG.warnf("  [claude] Tool failed: %s — %s", toolName, errorPreview);
+                    } else {
+                        LOG.infof("  [claude] Tool completed: %s", toolName);
+                    }
                 }
                 default -> LOG.tracef("  [claude] Stream event type: %s", type);
             }

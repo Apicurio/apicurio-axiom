@@ -15,6 +15,7 @@ public class ActorContext {
     private final List<String> disallowedTools;
     private final String systemPrompt;
     private final String promptTemplate;
+    private final Path mcpConfigFile;
     private final Map<String, String> environment;
 
     private ActorContext(Builder builder) {
@@ -23,6 +24,7 @@ public class ActorContext {
         this.disallowedTools = builder.disallowedTools;
         this.systemPrompt = builder.systemPrompt;
         this.promptTemplate = builder.promptTemplate;
+        this.mcpConfigFile = builder.mcpConfigFile;
         this.environment = builder.environment;
     }
 
@@ -55,6 +57,13 @@ public class ActorContext {
     }
 
     /**
+     * @return the MCP config file path, or null if no MCP tools are configured
+     */
+    public Path getMcpConfigFile() {
+        return mcpConfigFile;
+    }
+
+    /**
      * @return the prompt template for this action type, or null if not configured
      */
     public String getPromptTemplate() {
@@ -78,6 +87,7 @@ public class ActorContext {
         private List<String> disallowedTools = List.of();
         private String systemPrompt;
         private String promptTemplate;
+        private Path mcpConfigFile;
         private Map<String, String> environment = Map.of();
 
         public Builder workingDirectory(Path workingDirectory) {
@@ -102,6 +112,11 @@ public class ActorContext {
 
         public Builder promptTemplate(String promptTemplate) {
             this.promptTemplate = promptTemplate;
+            return this;
+        }
+
+        public Builder mcpConfigFile(Path mcpConfigFile) {
+            this.mcpConfigFile = mcpConfigFile;
             return this;
         }
 

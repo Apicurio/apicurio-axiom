@@ -1,0 +1,11 @@
+{
+    "name": "axiom-mcp-tools",
+    "version": "1.0.0",
+    "description": "Axiom MCP server providing custom tools to AI agents",
+    "private": true,
+    "type": "commonjs",
+    "main": "server.js",
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.0"
+    }
+}

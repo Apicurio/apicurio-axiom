@@ -4,11 +4,14 @@ import io.apicurio.axiom.api.ActionResource;
 import io.apicurio.axiom.api.beans.ActionType;
 import io.apicurio.axiom.api.beans.NewActionType;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
+import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -105,5 +108,21 @@ public class ActionResourceImpl implements ActionResource {
         actionType.setPromptTemplate(entity.promptTemplate);
         actionType.setEmitsEvent(entity.emitsEvent);
         return actionType;
+    }
+
+    // ── Action Type Tool Associations (deprecated — use allowedTools) ──
+
+    @Override
+    public Response listActionTypeTools(BigInteger actionTypeId) {
+        // All tools are always available — access controlled by allowedTools
+        findOrThrow(actionTypeId.longValue());
+        List<ToolDefinitionEntity> allTools = ToolDefinitionEntity.listAll();
+        return Response.ok(allTools).build();
+    }
+
+    @Override
+    @Transactional
+    public void updateActionTypeTools(BigInteger actionTypeId) {
+        // No-op: tool access is controlled by the action type's allowedTools field
     }
 }

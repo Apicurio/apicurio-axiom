@@ -4,6 +4,7 @@ import io.apicurio.axiom.core.entities.ActionTypeEntity;
 import io.apicurio.axiom.core.entities.ActorEntity;
 import io.apicurio.axiom.core.entities.PolicyEntity;
 import io.apicurio.axiom.core.entities.RepositoryEntity;
+import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
@@ -58,7 +59,7 @@ public class SeedDataInitializer {
 
         seedActionType("auto-tag",
                 "Determine appropriate labels/tags for an issue",
-                "actor", false, true, READ_PLUS_GH_TOOLS,
+                "actor", false, true, READ_PLUS_MCP_TOOLS,
                 """
                 You are tagging a GitHub issue with appropriate labels.
 
@@ -167,16 +168,16 @@ public class SeedDataInitializer {
 
         seedActionType("answer-question",
                 "Answer a question asked by a user on the issue",
-                "actor", false, true, READ_PLUS_GH_TOOLS,
+                "actor", false, true, READ_PLUS_MCP_TOOLS,
                 """
                 You are answering a question on a GitHub issue.
 
                 ## Instructions
                 1. Read the question described below
                 2. Examine the repository to find the answer
-                3. Post your answer directly on the issue:
-                   a. Write your answer to /tmp/gh-comment.md using the Write tool
-                   b. Then run: gh issue comment <number> --repo {{repository}} --body-file /tmp/gh-comment.md
+                3. Post your answer directly on the issue using the \
+                post_github_comment tool with the repository, issue number, \
+                and your answer as the body
                 4. Keep your answer concise, friendly, and informative
                 5. If you cannot post the comment, include the full answer in your output
 
@@ -198,9 +199,56 @@ public class SeedDataInitializer {
         LOG.infof("Seeded %d built-in action types", ActionTypeEntity.count());
 
         // Seed actor, policy, and test repository
+        seedTools();
         seedActors();
         seedPolicy();
         seedRepository();
+    }
+
+    private void seedTools() {
+        if (ToolDefinitionEntity.count() > 0) {
+            LOG.info("Tools already exist, skipping tool seed data");
+            return;
+        }
+
+        // Post GitHub Comment tool
+        ToolDefinitionEntity postComment = new ToolDefinitionEntity();
+        postComment.name = "post_github_comment";
+        postComment.description = "Post a comment on a GitHub issue. The comment body is written "
+                + "to a temp file to avoid shell quoting issues.";
+        postComment.type = "script";
+        postComment.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
+                + "{\"name\":\"issue_number\",\"type\":\"number\",\"description\":\"Issue number\",\"required\":true},"
+                + "{\"name\":\"body\",\"type\":\"string\",\"description\":\"Comment body (markdown)\",\"required\":true}]";
+        postComment.scriptTemplate = "gh issue comment {{issue_number}} --repo {{repo}} --body-file {{body_file}}";
+        postComment.persist();
+
+        // Add GitHub Labels tool
+        ToolDefinitionEntity addLabels = new ToolDefinitionEntity();
+        addLabels.name = "add_github_labels";
+        addLabels.description = "Add labels to a GitHub issue.";
+        addLabels.type = "script";
+        addLabels.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
+                + "{\"name\":\"issue_number\",\"type\":\"number\",\"description\":\"Issue number\",\"required\":true},"
+                + "{\"name\":\"labels\",\"type\":\"string\",\"description\":\"Comma-separated label names\",\"required\":true}]";
+        addLabels.scriptTemplate = "gh issue edit {{issue_number}} --repo {{repo}} --add-label \"{{labels}}\"";
+        addLabels.persist();
+
+        // Create GitHub PR tool
+        ToolDefinitionEntity createPr = new ToolDefinitionEntity();
+        createPr.name = "create_github_pr";
+        createPr.description = "Create a pull request on GitHub. The PR body is written "
+                + "to a temp file to avoid shell quoting issues.";
+        createPr.type = "script";
+        createPr.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
+                + "{\"name\":\"title\",\"type\":\"string\",\"description\":\"PR title\",\"required\":true},"
+                + "{\"name\":\"body\",\"type\":\"string\",\"description\":\"PR description (markdown)\",\"required\":true},"
+                + "{\"name\":\"head\",\"type\":\"string\",\"description\":\"Branch to merge from\",\"required\":true}]";
+        createPr.scriptTemplate = "gh pr create --repo {{repo}} --title \"{{title}}\" --body-file {{body_file}} --head {{head}}";
+        createPr.persist();
+
+        LOG.infof("Seeded %d built-in tools", ToolDefinitionEntity.count());
+
     }
 
     private void seedActors() {
@@ -271,11 +319,10 @@ public class SeedDataInitializer {
             "Bash(git status *)", "Bash(git branch *)"
     );
 
-    private static final String READ_PLUS_GH_TOOLS = String.join(",",
+    private static final String READ_PLUS_MCP_TOOLS = String.join(",",
             READ_ONLY_TOOLS,
-            "Write",
-            "Bash(cat *)", "Bash(echo *)",
-            "Bash(gh issue *)", "Bash(gh api *)"
+            "mcp__axiom-tools__post_github_comment",
+            "mcp__axiom-tools__add_github_labels"
     );
 
     private static final String WRITE_TOOLS = String.join(",",
@@ -283,8 +330,9 @@ public class SeedDataInitializer {
             "Edit", "Write",
             "Bash(git add *)", "Bash(git commit *)", "Bash(git checkout *)",
             "Bash(git switch *)", "Bash(git push *)", "Bash(git merge *)",
-            "Bash(gh issue *)", "Bash(gh pr *)", "Bash(gh api *)",
-            "Bash(mkdir *)", "Bash(cp *)", "Bash(mv *)"
+            "Bash(mkdir *)", "Bash(cp *)", "Bash(mv *)",
+            "mcp__axiom-tools__post_github_comment",
+            "mcp__axiom-tools__create_github_pr"
     );
 
     private void seedActionType(String name, String description, String executionMode,

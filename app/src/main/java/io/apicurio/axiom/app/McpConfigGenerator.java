@@ -1,0 +1,279 @@
+package io.apicurio.axiom.app;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Generates MCP configuration files for Claude Code subprocesses.
+ *
+ * <p>For each task execution, this generator:</p>
+ * <ol>
+ *   <li>Ensures the Axiom MCP server Node.js project is installed (once)</li>
+ *   <li>For "script" tools: writes a per-task tools JSON file and references the
+ *       pre-built server in the MCP config</li>
+ *   <li>For "mcp-server" tools: includes them directly in the config</li>
+ *   <li>Writes the --mcp-config JSON file</li>
+ * </ol>
+ *
+ * <p>The MCP server project is a Node.js application bundled as a classpath resource
+ * at {@code templates/axiom-mcp-server/}. On first use it is copied to
+ * {@code ~/.axiom/mcp-server/} and {@code npm install} is run once to resolve
+ * dependencies. Subsequent invocations reuse the installed project.</p>
+ */
+@ApplicationScoped
+public class McpConfigGenerator {
+
+    private static final Logger LOG = Logger.getLogger(McpConfigGenerator.class);
+
+    private static final String MCP_SERVER_DIR_NAME = "mcp-server";
+    private static final String[] TEMPLATE_FILES = { "package.json", "server.js" };
+
+    @Inject
+    ObjectMapper objectMapper;
+
+    /** Lazily resolved path to the installed MCP server project directory. */
+    private volatile Path mcpServerDir;
+
+    /** Prefix used by Claude Code for tools provided by the axiom-tools MCP server. */
+    private static final String AXIOM_TOOLS_PREFIX = "mcp__axiom-tools__";
+
+    /**
+     * Generates the MCP config file for a task, filtered by the action type's
+     * allowed tools list. Only MCP tools that appear in the allowed list are
+     * included in the config. If the allowed list is null or empty, all tools
+     * are included (no restriction).
+     *
+     * @param taskId the task ID (for unique temp file naming)
+     * @param environment environment variables to pass to MCP servers
+     * @param allowedTools the action type's allowed tools list (may be null)
+     * @return path to the generated MCP config file, or null if no tools match
+     */
+    public Path generateMcpConfig(Long taskId, Map<String, String> environment,
+                                   List<String> allowedTools) {
+        List<ToolDefinitionEntity> allTools = ToolDefinitionEntity.listAll();
+        if (allTools.isEmpty()) {
+            return null;
+        }
+
+        boolean hasRestrictions = allowedTools != null && !allowedTools.isEmpty();
+
+        // Filter script tools: include only those whose MCP name is in the allowed list
+        List<ToolDefinitionEntity> scriptTools = allTools.stream()
+                .filter(t -> "script".equals(t.type))
+                .filter(t -> !hasRestrictions
+                        || allowedTools.contains(AXIOM_TOOLS_PREFIX + t.name))
+                .toList();
+
+        // Filter external MCP servers: include only those with at least one
+        // allowed tool matching the mcp__<serverName>__ prefix
+        List<ToolDefinitionEntity> mcpServerTools = allTools.stream()
+                .filter(t -> "mcp-server".equals(t.type))
+                .filter(t -> !hasRestrictions
+                        || allowedTools.stream().anyMatch(a -> a.startsWith("mcp__" + t.name + "__")))
+                .toList();
+
+        if (scriptTools.isEmpty() && mcpServerTools.isEmpty()) {
+            LOG.debugf("No MCP tools matched allowed list for task %d, skipping MCP config", taskId);
+            return null;
+        }
+
+        try {
+            // Build the MCP config JSON
+            StringBuilder configJson = new StringBuilder();
+            configJson.append("{\"mcpServers\":{");
+
+            boolean first = true;
+
+            // If there are script tools, write a per-task tools JSON and reference
+            // the pre-built Axiom MCP server project.
+            if (!scriptTools.isEmpty()) {
+                Path serverDir = ensureMcpServerInstalled();
+                Path toolsJson = writeToolsJson(scriptTools, taskId);
+
+                if (first) first = false; else configJson.append(",");
+                configJson.append("\"axiom-tools\":{");
+                configJson.append("\"command\":\"node\",");
+                configJson.append("\"args\":[\"")
+                        .append(escapeJson(serverDir.resolve("server.js").toAbsolutePath().toString()))
+                        .append("\",\"")
+                        .append(escapeJson(toolsJson.toAbsolutePath().toString()))
+                        .append("\"],");
+                configJson.append("\"env\":{");
+                boolean envFirst = true;
+                for (Map.Entry<String, String> entry : environment.entrySet()) {
+                    if (envFirst) envFirst = false; else configJson.append(",");
+                    configJson.append("\"").append(escapeJson(entry.getKey())).append("\":\"")
+                            .append(escapeJson(entry.getValue())).append("\"");
+                }
+                configJson.append("}}");
+            }
+
+            // Add external MCP servers
+            for (ToolDefinitionEntity mcp : mcpServerTools) {
+                if (first) first = false; else configJson.append(",");
+                configJson.append("\"").append(escapeJson(mcp.name)).append("\":{");
+
+                if (mcp.serverUrl != null && !mcp.serverUrl.isBlank()) {
+                    // HTTP transport
+                    configJson.append("\"type\":\"http\",");
+                    configJson.append("\"url\":\"").append(escapeJson(mcp.serverUrl)).append("\"");
+                } else if (mcp.serverCommand != null) {
+                    // Stdio transport
+                    configJson.append("\"command\":\"").append(escapeJson(mcp.serverCommand)).append("\"");
+                    if (mcp.serverArgs != null) {
+                        configJson.append(",\"args\":").append(mcp.serverArgs);
+                    }
+                    if (mcp.serverEnv != null) {
+                        configJson.append(",\"env\":").append(mcp.serverEnv);
+                    }
+                }
+                configJson.append("}");
+            }
+
+            configJson.append("}}");
+
+            // Write config file
+            Path configFile = Files.createTempFile("axiom-mcp-" + taskId + "-", ".json");
+            Files.writeString(configFile, configJson.toString());
+            LOG.infof("Generated MCP config for task %d: %s (%d script tools, %d MCP servers)",
+                    taskId, configFile, scriptTools.size(), mcpServerTools.size());
+            return configFile;
+
+        } catch (Exception e) {
+            LOG.errorf(e, "Failed to generate MCP config for task %d", taskId);
+            return null;
+        }
+    }
+
+    /**
+     * Ensures the Axiom MCP server Node.js project is installed and dependencies
+     * are resolved. On first call, copies the template project from classpath
+     * resources to {@code ~/.axiom/mcp-server/} and runs {@code npm install}.
+     * Subsequent calls return the cached path.
+     *
+     * @return path to the installed MCP server project directory
+     * @throws IOException if the project cannot be installed
+     */
+    private Path ensureMcpServerInstalled() throws IOException {
+        if (mcpServerDir != null && Files.exists(mcpServerDir.resolve("node_modules"))) {
+            return mcpServerDir;
+        }
+
+        synchronized (this) {
+            // Double-check after acquiring lock
+            if (mcpServerDir != null && Files.exists(mcpServerDir.resolve("node_modules"))) {
+                return mcpServerDir;
+            }
+
+            Path axiomHome = Path.of(System.getProperty("user.home"), ".axiom");
+            Path serverDir = axiomHome.resolve(MCP_SERVER_DIR_NAME);
+            Files.createDirectories(serverDir);
+
+            // Copy template files from classpath resources
+            for (String fileName : TEMPLATE_FILES) {
+                String resourcePath = "templates/axiom-mcp-server/" + fileName;
+                try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
+                    if (is == null) {
+                        throw new IOException("Template resource not found: " + resourcePath);
+                    }
+                    Files.copy(is, serverDir.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+            LOG.infof("Copied MCP server template to %s", serverDir);
+
+            // Run npm install to resolve dependencies
+            LOG.info("Running npm install for Axiom MCP server...");
+            ProcessBuilder pb = new ProcessBuilder("npm", "install", "--production")
+                    .directory(serverDir.toFile())
+                    .redirectErrorStream(true);
+            Process process = pb.start();
+            String output = new String(process.getInputStream().readAllBytes());
+            int exitCode;
+            try {
+                exitCode = process.waitFor();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("npm install interrupted", e);
+            }
+
+            if (exitCode != 0) {
+                throw new IOException("npm install failed (exit code " + exitCode + "): " + output);
+            }
+            LOG.infof("npm install completed successfully in %s", serverDir);
+
+            mcpServerDir = serverDir;
+            return mcpServerDir;
+        }
+    }
+
+    /**
+     * Writes the tool definitions for a task to a JSON file. The generated
+     * MCP server reads this file at startup to discover available tools.
+     *
+     * @param tools the script tool definitions to include
+     * @param taskId the task ID (for unique file naming)
+     * @return path to the written tools JSON file
+     * @throws IOException if the file cannot be written
+     */
+    private Path writeToolsJson(List<ToolDefinitionEntity> tools, Long taskId) throws IOException {
+        String json = buildToolsJson(tools);
+        Path toolsFile = Files.createTempFile("axiom-tools-" + taskId + "-", ".json");
+        Files.writeString(toolsFile, json);
+        LOG.debugf("Wrote tools JSON for task %d: %s (%d tools)", (Object) taskId, toolsFile, tools.size());
+        return toolsFile;
+    }
+
+    /**
+     * Builds the JSON array of tool definitions for the MCP server.
+     *
+     * @param tools the tool definition entities to serialize
+     * @return JSON string representing the tool definitions array
+     */
+    private String buildToolsJson(List<ToolDefinitionEntity> tools) {
+        try {
+            List<Map<String, Object>> toolsList = new ArrayList<>();
+            for (ToolDefinitionEntity tool : tools) {
+                Map<String, Object> toolMap = new java.util.LinkedHashMap<>();
+                toolMap.put("name", tool.name);
+                toolMap.put("description", tool.description);
+                toolMap.put("scriptTemplate", tool.scriptTemplate);
+
+                if (tool.parameters != null) {
+                    List<Map<String, Object>> params = objectMapper.readValue(
+                            tool.parameters, new TypeReference<>() {});
+                    toolMap.put("parameters", params);
+                }
+
+                toolsList.add(toolMap);
+            }
+            return objectMapper.writeValueAsString(toolsList);
+        } catch (Exception e) {
+            LOG.warnf(e, "Failed to serialize tool definitions");
+            return "[]";
+        }
+    }
+
+    /**
+     * Escapes a string for safe inclusion in a JSON value.
+     *
+     * @param s the string to escape
+     * @return the escaped string
+     */
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+}

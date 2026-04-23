@@ -276,6 +276,73 @@ export async function deleteActor(id: number): Promise<void> {
     if (!response.ok) throw new Error(`Failed to delete actor: ${response.status}`);
 }
 
+// ── Tool Definitions ──────────────────────────────────────────────
+
+export interface ToolParameter {
+    name: string;
+    type: string;
+    description?: string;
+    required?: boolean;
+}
+
+export interface ToolDefinition {
+    id: number;
+    name: string;
+    description?: string;
+    type: string;
+    parameters?: ToolParameter[];
+    scriptTemplate?: string;
+    serverCommand?: string;
+    serverArgs?: string[];
+    serverEnv?: Record<string, string>;
+    serverUrl?: string;
+}
+
+export type NewToolDefinition = Omit<ToolDefinition, "id">;
+
+export async function fetchTools(): Promise<ToolDefinition[]> {
+    const response = await fetch(`${API}/tools`);
+    if (!response.ok) throw new Error(`Failed to fetch tools: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchTool(id: number): Promise<ToolDefinition> {
+    const response = await fetch(`${API}/tools/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch tool: ${response.status}`);
+    return response.json();
+}
+
+export async function createTool(tool: NewToolDefinition): Promise<ToolDefinition> {
+    const response = await fetch(`${API}/tools`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tool),
+    });
+    if (!response.ok) throw new Error(`Failed to create tool: ${response.status}`);
+    return response.json();
+}
+
+export async function updateTool(id: number, tool: NewToolDefinition): Promise<ToolDefinition> {
+    const response = await fetch(`${API}/tools/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(tool),
+    });
+    if (!response.ok) throw new Error(`Failed to update tool: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteTool(id: number): Promise<void> {
+    const response = await fetch(`${API}/tools/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete tool: ${response.status}`);
+}
+
+export async function fetchActionTypeTools(actionTypeId: number): Promise<ToolDefinition[]> {
+    const response = await fetch(`${API}/action-types/${actionTypeId}/tools`);
+    if (!response.ok) throw new Error(`Failed to fetch action type tools: ${response.status}`);
+    return response.json();
+}
+
 // ── Policies ──────────────────────────────────────────────────────
 
 export interface Policy {

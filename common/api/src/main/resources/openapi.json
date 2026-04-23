@@ -979,6 +979,173 @@
           }
         }
       ]
+    },
+    "/tools": {
+      "get": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "List all tool definitions",
+        "operationId": "listTools",
+        "responses": {
+          "200": {
+            "description": "List of tool definitions",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Create a new tool definition",
+        "operationId": "createTool",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewToolDefinition"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tool created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolDefinition"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tools/{toolId}": {
+      "get": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Get a tool definition by ID",
+        "operationId": "getTool",
+        "responses": {
+          "200": {
+            "description": "The tool definition",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolDefinition"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tool not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Update a tool definition",
+        "operationId": "updateTool",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewToolDefinition"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tool updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolDefinition"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Tool not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Delete a tool definition",
+        "operationId": "deleteTool",
+        "responses": {
+          "204": {
+            "description": "Tool deleted"
+          },
+          "404": {
+            "description": "Tool not found"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "toolId",
+          "in": "path",
+          "description": "Tool definition ID",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ]
+    },
+    "/action-types/{actionTypeId}/tools": {
+      "get": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "List tools associated with an action type",
+        "operationId": "listActionTypeTools",
+        "responses": {
+          "200": {
+            "description": "List of tools for this action type",
+            "content": {
+              "application/json": {}
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ActionTypes"
+        ],
+        "summary": "Set the tools associated with an action type",
+        "description": "Replaces the full list of tool associations for this action type. Pass an array of tool definition IDs.",
+        "operationId": "updateActionTypeTools",
+        "responses": {
+          "204": {
+            "description": "Tool associations updated"
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "actionTypeId",
+          "in": "path",
+          "description": "Action type ID",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ]
     }
   },
   "components": {
@@ -1786,6 +1953,135 @@
             "type": "string"
           }
         }
+      },
+      "ToolDefinition": {
+        "required": [
+          "id",
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "script",
+              "mcp-server"
+            ],
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolParameter"
+            }
+          },
+          "scriptTemplate": {
+            "type": "string"
+          },
+          "serverCommand": {
+            "type": "string"
+          },
+          "serverArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "serverEnv": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "serverUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "NewToolDefinition": {
+        "required": [
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "script",
+              "mcp-server"
+            ],
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolParameter"
+            }
+          },
+          "scriptTemplate": {
+            "type": "string"
+          },
+          "serverCommand": {
+            "type": "string"
+          },
+          "serverArgs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "serverEnv": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "serverUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "ToolParameter": {
+        "required": [
+          "name",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "string",
+              "number",
+              "boolean"
+            ],
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
       }
     },
     "responses": {
@@ -1911,6 +2207,10 @@
     {
       "name": "Manager",
       "description": "AI Manager event evaluation and debugging"
+    },
+    {
+      "name": "Tools",
+      "description": "Custom tool definitions for AI agents"
     }
   ]
 }

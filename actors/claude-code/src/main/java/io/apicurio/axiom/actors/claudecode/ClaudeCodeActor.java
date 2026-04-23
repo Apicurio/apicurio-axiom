@@ -63,6 +63,10 @@ public class ClaudeCodeActor implements Actor {
 
         model.ifPresent(cmdBuilder::model);
 
+        if (context.getMcpConfigFile() != null) {
+            cmdBuilder.mcpConfigFile(context.getMcpConfigFile());
+        }
+
         List<String> command = cmdBuilder.build();
 
         java.io.File workDir = context.getWorkingDirectory() != null

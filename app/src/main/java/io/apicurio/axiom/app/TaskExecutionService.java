@@ -47,6 +47,9 @@ public class TaskExecutionService {
     @Inject
     Event<SseEvent> sseEvents;
 
+    @Inject
+    McpConfigGenerator mcpConfigGenerator;
+
     @ConfigProperty(name = "axiom.github.token")
     Optional<String> githubToken;
 
@@ -106,12 +109,19 @@ public class TaskExecutionService {
         ProjectEntity project = ProjectEntity.findById(task.projectId);
         ActionTypeEntity actionTypeEntity = ActionTypeEntity.find("name", task.actionType).firstResult();
         Path workspace = workspaceService.getWorkspacePath(project);
+        Map<String, String> env = buildEnvironment();
+
+        // Generate MCP config filtered to only the tools allowed by this action type
+        List<String> allowedTools = getToolsFromActionType(task.actionType);
+        Path mcpConfig = mcpConfigGenerator.generateMcpConfig(task.id, env, allowedTools);
+
         ActorContext context = ActorContext.builder()
                 .workingDirectory(workspace)
                 .systemPrompt(buildSystemPrompt(task, project))
                 .promptTemplate(resolvePromptTemplate(actionTypeEntity, task, project))
-                .allowedTools(getToolsFromActionType(task.actionType))
-                .environment(buildEnvironment())
+                .allowedTools(allowedTools)
+                .mcpConfigFile(mcpConfig)
+                .environment(env)
                 .build();
 
         // Execute asynchronously

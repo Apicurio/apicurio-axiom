@@ -39,6 +39,8 @@ import { ActivityLogPage } from "./pages/ActivityLogPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
+import { ToolsPage } from "./pages/ToolsPage";
+import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ConfigurationWarning } from "./components/ConfigurationWarning";
 import { type StartupCheck, fetchSystemHealth, fetchSystemConfig } from "./config/api";
 import { sseClient, type AxiomSseEvent } from "./config/sse";
@@ -62,6 +64,7 @@ const NAV_ITEMS: NavEntry[] = [
     { path: "/actors", label: "Actors" },
     { path: "/policies", label: "Policies" },
     { path: "/action-types", label: "Action Types" },
+    { path: "/tools", label: "Tools" },
     { path: "/activity", label: "Activity Log" },
     { path: "/repositories", label: "Repositories" },
 ];
@@ -285,6 +288,8 @@ export function App() {
                     <Route path="/policies" element={<PoliciesPage />} />
                     <Route path="/action-types" element={<ActionTypesPage />} />
                     <Route path="/action-types/:actionTypeId" element={<ActionTypeDetailPage />} />
+                    <Route path="/tools" element={<ToolsPage />} />
+                    <Route path="/tools/:toolId" element={<ToolDetailPage />} />
                     <Route path="/activity" element={<ActivityLogPage />} />
                     <Route path="/repositories" element={<RepositoriesPage />} />
                 </Routes>
