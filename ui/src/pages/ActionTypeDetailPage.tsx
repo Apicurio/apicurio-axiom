@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -36,7 +36,6 @@ import {
 
 export function ActionTypeDetailPage() {
     const { actionTypeId } = useParams<{ actionTypeId: string }>();
-    const navigate = useNavigate();
     const id = Number(actionTypeId);
 
     const [actionType, setActionType] = useState<ActionType | null>(null);
@@ -131,9 +130,7 @@ export function ActionTypeDetailPage() {
     return (
         <PageSection>
             <Breadcrumb style={{ marginBottom: "16px" }}>
-                <BreadcrumbItem onClick={() => navigate("/action-types")}>
-                    Action Types
-                </BreadcrumbItem>
+                <BreadcrumbItem><Link to="/action-types">Action Types</Link></BreadcrumbItem>
                 <BreadcrumbItem isActive>{actionType.name}</BreadcrumbItem>
             </Breadcrumb>
 

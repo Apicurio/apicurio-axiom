@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -165,12 +165,8 @@ export function ProjectDetailPage() {
     return (
         <PageSection>
             <Breadcrumb style={{ marginBottom: "16px" }}>
-                <BreadcrumbItem onClick={() => navigate("/")}>
-                    Dashboard
-                </BreadcrumbItem>
-                <BreadcrumbItem onClick={() => navigate("/projects")}>
-                    Projects
-                </BreadcrumbItem>
+                <BreadcrumbItem><Link to="/">Dashboard</Link></BreadcrumbItem>
+                <BreadcrumbItem><Link to="/projects">Projects</Link></BreadcrumbItem>
                 <BreadcrumbItem isActive>{project.name}</BreadcrumbItem>
             </Breadcrumb>
 

@@ -8,6 +8,7 @@ import {
     MastheadMain,
     MastheadToggle,
     Nav,
+    NavExpandable,
     NavItem,
     NavList,
     NotificationBadge,
@@ -45,11 +46,6 @@ import { ConfigurationWarning } from "./components/ConfigurationWarning";
 import { type StartupCheck, fetchSystemHealth, fetchSystemConfig } from "./config/api";
 import { sseClient, type AxiomSseEvent } from "./config/sse";
 
-interface NavEntry {
-    path: string;
-    label: string;
-}
-
 interface Notification {
     id: number;
     message: string;
@@ -58,16 +54,7 @@ interface Notification {
     read: boolean;
 }
 
-const NAV_ITEMS: NavEntry[] = [
-    { path: "/", label: "Dashboard" },
-    { path: "/projects", label: "Projects" },
-    { path: "/actors", label: "Actors" },
-    { path: "/policies", label: "Policies" },
-    { path: "/action-types", label: "Action Types" },
-    { path: "/tools", label: "Tools" },
-    { path: "/activity", label: "Activity Log" },
-    { path: "/repositories", label: "Repositories" },
-];
+const CONFIG_PATHS = ["/actors", "/policies", "/action-types", "/tools", "/repositories"];
 
 let notificationIdCounter = 0;
 
@@ -184,20 +171,41 @@ export function App() {
         </Masthead>
     );
 
+    const isConfigActive = CONFIG_PATHS.some(
+        (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+    );
+
     const sidebar = (
         <PageSidebar isSidebarOpen={isSidebarOpen}>
             <PageSidebarBody>
                 <Nav>
                     <NavList>
-                        {NAV_ITEMS.map((item) => (
-                            <NavItem
-                                key={item.path}
-                                isActive={location.pathname === item.path}
-                                onClick={() => navigate(item.path)}
-                            >
-                                {item.label}
+                        <NavItem isActive={location.pathname === "/"} onClick={() => navigate("/")}>
+                            Dashboard
+                        </NavItem>
+                        <NavItem isActive={location.pathname.startsWith("/projects")} onClick={() => navigate("/projects")}>
+                            Projects
+                        </NavItem>
+                        <NavItem isActive={location.pathname === "/activity"} onClick={() => navigate("/activity")}>
+                            Activity Log
+                        </NavItem>
+                        <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
+                            <NavItem isActive={location.pathname.startsWith("/actors")} onClick={() => navigate("/actors")}>
+                                Actors
                             </NavItem>
-                        ))}
+                            <NavItem isActive={location.pathname.startsWith("/policies")} onClick={() => navigate("/policies")}>
+                                Policies
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/action-types")} onClick={() => navigate("/action-types")}>
+                                Action Types
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/tools")} onClick={() => navigate("/tools")}>
+                                Tools
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/repositories")} onClick={() => navigate("/repositories")}>
+                                Repositories
+                            </NavItem>
+                        </NavExpandable>
                     </NavList>
                 </Nav>
             </PageSidebarBody>

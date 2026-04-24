@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -36,7 +36,6 @@ import {
 
 export function ToolDetailPage() {
     const { toolId } = useParams<{ toolId: string }>();
-    const navigate = useNavigate();
     const id = Number(toolId);
 
     const [tool, setTool] = useState<ToolDefinition | null>(null);
@@ -121,7 +120,7 @@ export function ToolDetailPage() {
     return (
         <PageSection>
             <Breadcrumb style={{ marginBottom: "16px" }}>
-                <BreadcrumbItem onClick={() => navigate("/tools")}>Tools</BreadcrumbItem>
+                <BreadcrumbItem><Link to="/tools">Tools</Link></BreadcrumbItem>
                 <BreadcrumbItem isActive>{tool.name}</BreadcrumbItem>
             </Breadcrumb>
 
