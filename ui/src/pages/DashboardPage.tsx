@@ -1,15 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
     Alert,
     Button,
     Card,
     CardBody,
+    CardFooter,
+    CardHeader,
     CardTitle,
     EmptyState,
     EmptyStateBody,
-    Flex,
-    FlexItem,
+    Gallery,
+    GalleryItem,
+    Grid,
+    GridItem,
     Label,
     PageSection,
     Title,
@@ -17,6 +21,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import CheckCircleIcon from "@patternfly/react-icons/dist/esm/icons/check-circle-icon";
 import ExclamationCircleIcon from "@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon";
+import ArrowRightIcon from "@patternfly/react-icons/dist/esm/icons/arrow-right-icon";
 import {
     type Project,
     type ActivityLogEntry,
@@ -26,13 +31,15 @@ import {
     fetchActors,
     fetchPolicies,
     fetchRepositories,
+    fetchTools,
 } from "../config/api";
 
-const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey"> = {
+const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
     Created: "blue",
     InProgress: "green",
     Idle: "orange",
     Completed: "grey",
+    Failed: "red",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -53,6 +60,7 @@ const ENTRY_TYPE_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "
     "project-reopened": "orange",
     "event-ignored": "grey",
     "manager-escalation": "orange",
+    "manager-no-decision": "grey",
 };
 
 interface SetupRequirement {
@@ -64,12 +72,14 @@ interface SetupRequirement {
 }
 
 export function DashboardPage() {
-    const navigate = useNavigate();
     const [projects, setProjects] = useState<Project[]>([]);
     const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [requirements, setRequirements] = useState<SetupRequirement[]>([]);
     const [setupChecked, setSetupChecked] = useState(false);
+    const [configCounts, setConfigCounts] = useState({
+        actors: 0, policies: 0, actionTypes: 0, tools: 0, repositories: 0,
+    });
 
     const loadData = useCallback(() => {
         setLoading(true);
@@ -80,10 +90,18 @@ export function DashboardPage() {
             fetchActors(),
             fetchPolicies(),
             fetchActionTypes(),
+            fetchTools(),
         ])
-            .then(([p, a, repos, actors, policies, actionTypes]) => {
+            .then(([p, a, repos, actors, policies, actionTypes, tools]) => {
                 setProjects(p);
                 setRecentActivity(a.reverse().slice(0, 10));
+                setConfigCounts({
+                    actors: actors.length,
+                    policies: policies.length,
+                    actionTypes: actionTypes.length,
+                    tools: tools.length,
+                    repositories: repos.length,
+                });
 
                 setRequirements([
                     {
@@ -134,6 +152,7 @@ export function DashboardPage() {
     }, [loadData]);
 
     const unmetRequirements = requirements.filter((r) => !r.met);
+    const setupIncomplete = setupChecked && unmetRequirements.length > 0;
 
     const statusCounts = projects.reduce(
         (acc, p) => {
@@ -143,18 +162,12 @@ export function DashboardPage() {
         {} as Record<string, number>
     );
 
-    const activeProjects = projects.filter(
-        (p) => p.status !== "Completed"
-    );
-
-    const setupIncomplete = setupChecked && unmetRequirements.length > 0;
+    const activeProjects = projects.filter((p) => p.status !== "Completed");
 
     if (setupIncomplete) {
         return (
             <PageSection>
-                <Title headingLevel="h1" size="lg">
-                    Dashboard
-                </Title>
+                <Title headingLevel="h1" size="lg">Dashboard</Title>
                 <Alert
                     variant="warning"
                     title="Setup Incomplete"
@@ -187,13 +200,7 @@ export function DashboardPage() {
                                         ) : (
                                             <>
                                                 {req.description}{" "}
-                                                <Button
-                                                    variant="link"
-                                                    isInline
-                                                    onClick={() => navigate(req.navPath)}
-                                                >
-                                                    {req.navLabel}
-                                                </Button>
+                                                <Link to={req.navPath}>{req.navLabel}</Link>
                                             </>
                                         )}
                                     </td>
@@ -208,130 +215,207 @@ export function DashboardPage() {
 
     return (
         <PageSection>
-            <Title headingLevel="h1" size="lg">
+            <Title headingLevel="h1" size="lg" style={{ marginBottom: "16px" }}>
                 Dashboard
             </Title>
 
-            {/* Status summary cards */}
-            <Flex style={{ marginTop: "16px", gap: "16px" }}>
-                {["Created", "InProgress", "Idle", "Completed"].map(
-                    (status) => (
-                        <FlexItem key={status}>
-                            <Card isCompact>
-                                <CardTitle>
-                                    {STATUS_LABELS[status] || status}
-                                </CardTitle>
-                                <CardBody>
-                                    <span style={{ fontSize: "24px", fontWeight: "bold" }}>
-                                        {statusCounts[status] || 0}
-                                    </span>
-                                </CardBody>
-                            </Card>
-                        </FlexItem>
-                    )
-                )}
-                <FlexItem>
-                    <Card isCompact>
-                        <CardTitle>Total</CardTitle>
+            {/* Row 1: Aggregate status cards */}
+            <Gallery hasGutter minWidths={{ default: "150px" }} style={{ marginBottom: "16px" }}>
+                <GalleryItem>
+                    <StatusCard label="Total Projects" count={projects.length} />
+                </GalleryItem>
+                {["InProgress", "Idle", "Created", "Completed"].map((status) => (
+                    <GalleryItem key={status}>
+                        <StatusCard
+                            label={STATUS_LABELS[status] || status}
+                            count={statusCounts[status] || 0}
+                            color={STATUS_COLORS[status]}
+                        />
+                    </GalleryItem>
+                ))}
+            </Gallery>
+
+            {/* Row 2: Active projects + Recent activity */}
+            <Grid hasGutter>
+                <GridItem span={7}>
+                    <Card isFullHeight>
+                        <CardHeader>
+                            <CardTitle>Active Projects</CardTitle>
+                        </CardHeader>
                         <CardBody>
-                            <span style={{ fontSize: "24px", fontWeight: "bold" }}>
-                                {projects.length}
-                            </span>
+                            {loading ? (
+                                <EmptyState variant="xs">
+                                    <EmptyStateBody>Loading...</EmptyStateBody>
+                                </EmptyState>
+                            ) : activeProjects.length === 0 ? (
+                                <EmptyState variant="xs">
+                                    <EmptyStateBody>
+                                        No active projects. Create a GitHub issue on a
+                                        monitored repository to get started.
+                                    </EmptyStateBody>
+                                </EmptyState>
+                            ) : (
+                                <Table aria-label="Active Projects" variant="compact">
+                                    <Thead>
+                                        <Tr>
+                                            <Th>Name</Th>
+                                            <Th>Status</Th>
+                                            <Th>Issue</Th>
+                                            <Th>Updated</Th>
+                                        </Tr>
+                                    </Thead>
+                                    <Tbody>
+                                        {activeProjects.slice(0, 8).map((project) => (
+                                            <Tr key={project.id} isClickable>
+                                                <Td>
+                                                    <Link to={`/projects/${project.id}`}>
+                                                        {project.name}
+                                                    </Link>
+                                                </Td>
+                                                <Td>
+                                                    <Label isCompact
+                                                        color={STATUS_COLORS[project.status] || "grey"}>
+                                                        {STATUS_LABELS[project.status] || project.status}
+                                                    </Label>
+                                                </Td>
+                                                <Td>{project.issueRef}</Td>
+                                                <Td style={{ whiteSpace: "nowrap" }}>
+                                                    {new Date(project.updatedOn).toLocaleString()}
+                                                </Td>
+                                            </Tr>
+                                        ))}
+                                    </Tbody>
+                                </Table>
+                            )}
                         </CardBody>
+                        {activeProjects.length > 0 && (
+                            <CardFooter>
+                                <Link to="/projects">
+                                    View all projects <ArrowRightIcon />
+                                </Link>
+                            </CardFooter>
+                        )}
                     </Card>
-                </FlexItem>
-            </Flex>
+                </GridItem>
 
-            {/* Active projects */}
-            <Title headingLevel="h2" size="md" style={{ marginTop: "32px" }}>
-                Active Projects
-            </Title>
-            <div style={{ marginTop: "8px" }}>
-                {loading ? (
-                    <EmptyState>
-                        <EmptyStateBody>Loading...</EmptyStateBody>
-                    </EmptyState>
-                ) : activeProjects.length === 0 ? (
-                    <EmptyState>
-                        <EmptyStateBody>No active projects.</EmptyStateBody>
-                    </EmptyState>
-                ) : (
-                    <Table aria-label="Active Projects" variant="compact">
-                        <Thead>
-                            <Tr>
-                                <Th>Name</Th>
-                                <Th>Status</Th>
-                                <Th>Type</Th>
-                                <Th>Issue</Th>
-                                <Th>Updated</Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            {activeProjects.map((project) => (
-                                <Tr
-                                    key={project.id}
-                                    isClickable
-                                    onRowClick={() =>
-                                        navigate(`/projects/${project.id}`)
-                                    }
-                                >
-                                    <Td>{project.name}</Td>
-                                    <Td>
-                                        <Label color={STATUS_COLORS[project.status] || "grey"}>
-                                            {STATUS_LABELS[project.status] || project.status}
-                                        </Label>
-                                    </Td>
-                                    <Td>
-                                        <Label isCompact>{project.type}</Label>
-                                    </Td>
-                                    <Td>{project.issueRef}</Td>
-                                    <Td>{new Date(project.updatedOn).toLocaleString()}</Td>
-                                </Tr>
-                            ))}
-                        </Tbody>
-                    </Table>
-                )}
-            </div>
+                <GridItem span={5}>
+                    <Card isFullHeight>
+                        <CardHeader>
+                            <CardTitle>Recent Activity</CardTitle>
+                        </CardHeader>
+                        <CardBody style={{ maxHeight: "400px", overflowY: "auto" }}>
+                            {recentActivity.length === 0 ? (
+                                <EmptyState variant="xs">
+                                    <EmptyStateBody>No recent activity.</EmptyStateBody>
+                                </EmptyState>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    {recentActivity.map((entry) => (
+                                        <div key={entry.id} style={{
+                                            padding: "8px 0",
+                                            borderBottom: "1px solid var(--pf-t--global--border--color--default)",
+                                        }}>
+                                            <div style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                marginBottom: "4px",
+                                            }}>
+                                                <Label isCompact
+                                                    color={ENTRY_TYPE_COLORS[entry.entryType] || "grey"}>
+                                                    {entry.entryType}
+                                                </Label>
+                                                <span style={{ fontSize: "12px", color: "#6a6e73" }}>
+                                                    {new Date(entry.createdOn).toLocaleTimeString()}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: "13px", color: "#151515" }}>
+                                                {entry.summary.length > 120
+                                                    ? entry.summary.substring(0, 117) + "..."
+                                                    : entry.summary}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardBody>
+                        <CardFooter>
+                            <Link to="/activity">
+                                View full activity log <ArrowRightIcon />
+                            </Link>
+                        </CardFooter>
+                    </Card>
+                </GridItem>
+            </Grid>
 
-            {/* Recent activity */}
-            <Title headingLevel="h2" size="md" style={{ marginTop: "32px" }}>
-                Recent Activity
-            </Title>
-            <div style={{ marginTop: "8px" }}>
-                {recentActivity.length === 0 ? (
-                    <EmptyState>
-                        <EmptyStateBody>No recent activity.</EmptyStateBody>
-                    </EmptyState>
-                ) : (
-                    <Table aria-label="Recent Activity" variant="compact">
-                        <Thead>
-                            <Tr>
-                                <Th>Time</Th>
-                                <Th>Type</Th>
-                                <Th>Summary</Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            {recentActivity.map((entry) => (
-                                <Tr key={entry.id}>
-                                    <Td style={{ whiteSpace: "nowrap" }}>
-                                        {new Date(entry.createdOn).toLocaleString()}
-                                    </Td>
-                                    <Td>
-                                        <Label
-                                            isCompact
-                                            color={ENTRY_TYPE_COLORS[entry.entryType] || "grey"}
-                                        >
-                                            {entry.entryType}
-                                        </Label>
-                                    </Td>
-                                    <Td>{entry.summary}</Td>
-                                </Tr>
-                            ))}
-                        </Tbody>
-                    </Table>
-                )}
-            </div>
+            {/* Row 3: Configuration summary */}
+            <Card style={{ marginTop: "16px" }}>
+                <CardHeader>
+                    <CardTitle>Configuration</CardTitle>
+                </CardHeader>
+                <CardBody>
+                    <Gallery hasGutter minWidths={{ default: "140px" }}>
+                        <GalleryItem>
+                            <ConfigCard label="Repositories" count={configCounts.repositories}
+                                path="/repositories" />
+                        </GalleryItem>
+                        <GalleryItem>
+                            <ConfigCard label="Actors" count={configCounts.actors}
+                                path="/actors" />
+                        </GalleryItem>
+                        <GalleryItem>
+                            <ConfigCard label="Policies" count={configCounts.policies}
+                                path="/policies" />
+                        </GalleryItem>
+                        <GalleryItem>
+                            <ConfigCard label="Action Types" count={configCounts.actionTypes}
+                                path="/action-types" />
+                        </GalleryItem>
+                        <GalleryItem>
+                            <ConfigCard label="Tools" count={configCounts.tools}
+                                path="/tools" />
+                        </GalleryItem>
+                    </Gallery>
+                </CardBody>
+            </Card>
         </PageSection>
+    );
+}
+
+function StatusCard({ label, count, color }: {
+    label: string;
+    count: number;
+    color?: string;
+}) {
+    return (
+        <Card isCompact isFullHeight>
+            <CardBody style={{ textAlign: "center", padding: "16px" }}>
+                <div style={{
+                    fontSize: "28px",
+                    fontWeight: "bold",
+                    color: color ? `var(--pf-t--global--color--status--${color}--default, inherit)` : "inherit",
+                }}>
+                    {count}
+                </div>
+                <div style={{ fontSize: "13px", color: "#6a6e73", marginTop: "4px" }}>
+                    {label}
+                </div>
+            </CardBody>
+        </Card>
+    );
+}
+
+function ConfigCard({ label, count, path }: {
+    label: string;
+    count: number;
+    path: string;
+}) {
+    return (
+        <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "22px", fontWeight: "bold" }}>{count}</div>
+            <div style={{ fontSize: "13px", marginTop: "2px" }}>
+                <Link to={path}>{label}</Link>
+            </div>
+        </div>
     );
 }
