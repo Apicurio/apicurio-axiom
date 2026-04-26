@@ -5,6 +5,7 @@ import io.apicurio.axiom.api.ProjectsResource;
 import io.apicurio.axiom.api.beans.NewProject;
 import io.apicurio.axiom.api.beans.NewTask;
 import io.apicurio.axiom.api.beans.Project;
+import io.apicurio.axiom.api.beans.ProjectSearchResults;
 import io.apicurio.axiom.api.beans.Task;
 import io.apicurio.axiom.api.beans.TaskResponse;
 import io.apicurio.axiom.api.beans.ThreadEntry;
@@ -14,6 +15,8 @@ import io.apicurio.axiom.core.entities.TaskEntity;
 import io.apicurio.axiom.core.entities.ThreadEntryEntity;
 import io.apicurio.axiom.core.lifecycle.ProjectLifecycle;
 import io.apicurio.axiom.core.lifecycle.ProjectStatus;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -23,8 +26,11 @@ import jakarta.ws.rs.WebApplicationException;
 import java.math.BigInteger;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of the Projects REST API (includes tasks and threads).
@@ -42,11 +48,40 @@ public class ProjectsResourceImpl implements ProjectsResource {
      * {@inheritDoc}
      */
     @Override
-    public List<Project> listProjects() {
-        return ProjectEntity.<ProjectEntity>listAll()
+    public ProjectSearchResults listProjects(BigInteger page, BigInteger limit,
+                                              String filterName, String filterStatus) {
+        int pageNum = page != null ? page.intValue() : 1;
+        int pageSize = limit != null ? limit.intValue() : 20;
+
+        StringBuilder hql = new StringBuilder("1=1");
+        Map<String, Object> params = new HashMap<>();
+
+        if (filterName != null && !filterName.isBlank()) {
+            hql.append(" and (lower(name) like :name or lower(issueRef) like :name)");
+            params.put("name", "%" + filterName.toLowerCase() + "%");
+        }
+        if (filterStatus != null && !filterStatus.isBlank()) {
+            List<String> statuses = Arrays.stream(filterStatus.split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty()).toList();
+            hql.append(" and status in :statuses");
+            params.put("statuses", statuses);
+        }
+
+        long totalCount = ProjectEntity.count(hql.toString(), params);
+        List<Project> items = ProjectEntity.<ProjectEntity>find(hql.toString(),
+                        Sort.descending("updatedOn"), params)
+                .page(Page.of(pageNum - 1, pageSize))
+                .list()
                 .stream()
                 .map(this::toProjectBean)
                 .toList();
+
+        ProjectSearchResults results = new ProjectSearchResults();
+        results.setItems(items);
+        results.setTotalCount(totalCount);
+        results.setPage(pageNum);
+        results.setLimit(pageSize);
+        return results;
     }
 
     /**

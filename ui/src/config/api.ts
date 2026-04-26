@@ -35,6 +35,13 @@ export interface SystemConfig {
     checks?: StartupCheck[];
 }
 
+export interface SearchResults<T> {
+    items: T[];
+    totalCount: number;
+    page: number;
+    limit: number;
+}
+
 export interface Project {
     id: number;
     name: string;
@@ -113,8 +120,15 @@ export async function fetchSystemConfig(): Promise<SystemConfig> {
 
 // ── Projects ──────────────────────────────────────────────────────
 
-export async function fetchProjects(): Promise<Project[]> {
-    const response = await fetch(`${API}/projects`);
+export async function fetchProjects(
+    page = 1, limit = 20, filterName?: string, filterStatus?: string
+): Promise<SearchResults<Project>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterName) params.set("filterName", filterName);
+    if (filterStatus) params.set("filterStatus", filterStatus);
+    const response = await fetch(`${API}/projects?${params}`);
     if (!response.ok) throw new Error(`Failed to fetch projects: ${response.status}`);
     return response.json();
 }
@@ -453,8 +467,19 @@ export async function fetchThreadEntries(projectId: number): Promise<ThreadEntry
 
 // ── Activity Log ──────────────────────────────────────────────────
 
-export async function fetchActivityLog(): Promise<ActivityLogEntry[]> {
-    const response = await fetch(`${API}/activity`);
+export async function fetchActivityLog(
+    page = 1, limit = 20,
+    filterEventId?: number, filterSummary?: string,
+    filterProjectId?: number, filterEntryType?: string
+): Promise<SearchResults<ActivityLogEntry>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterEventId != null) params.set("filterEventId", String(filterEventId));
+    if (filterSummary) params.set("filterSummary", filterSummary);
+    if (filterProjectId != null) params.set("filterProjectId", String(filterProjectId));
+    if (filterEntryType) params.set("filterEntryType", filterEntryType);
+    const response = await fetch(`${API}/activity?${params}`);
     if (!response.ok) throw new Error(`Failed to fetch activity log: ${response.status}`);
     return response.json();
 }

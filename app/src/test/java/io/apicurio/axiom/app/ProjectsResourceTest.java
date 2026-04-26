@@ -18,14 +18,17 @@ class ProjectsResourceTest {
     // ── Projects CRUD ─────────────────────────────────────────────────
 
     @Test
-    void testListProjectsEmpty() {
+    void testListProjectsReturnsSearchResults() {
         given()
             .when()
                 .get(PROJECTS_PATH)
             .then()
                 .statusCode(200)
                 .contentType(ContentType.JSON)
-                .body("$", is(notNullValue()));
+                .body("items", is(notNullValue()))
+                .body("totalCount", is(notNullValue()))
+                .body("page", equalTo(1))
+                .body("limit", equalTo(20));
     }
 
     @Test
@@ -281,6 +284,137 @@ class ProjectsResourceTest {
                 .get(PROJECTS_PATH + "/999999/thread")
             .then()
                 .statusCode(404);
+    }
+
+    // ── Pagination and Filtering ───────────────────────────────────────
+
+    @Test
+    void testPaginationDefaults() {
+        // Create a few projects to have data
+        createProject("Page Test 1", "bug-fix", "owner/repo#600");
+        createProject("Page Test 2", "feature", "owner/repo#601");
+
+        given()
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("page", equalTo(1))
+                .body("limit", equalTo(20))
+                .body("totalCount", greaterThanOrEqualTo(2))
+                .body("items.size()", greaterThanOrEqualTo(2));
+    }
+
+    @Test
+    void testPaginationWithPageSize() {
+        createProject("Small Page 1", "bug-fix", "owner/repo#610");
+        createProject("Small Page 2", "feature", "owner/repo#611");
+        createProject("Small Page 3", "other", "owner/repo#612");
+
+        given()
+            .queryParam("page", 1)
+            .queryParam("limit", 2)
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("page", equalTo(1))
+                .body("limit", equalTo(2))
+                .body("items.size()", lessThanOrEqualTo(2))
+                .body("totalCount", greaterThanOrEqualTo(3));
+    }
+
+    @Test
+    void testFilterByName() {
+        createProject("Unique Alpha Project", "bug-fix", "owner/repo#620");
+        createProject("Unique Beta Project", "feature", "owner/repo#621");
+
+        given()
+            .queryParam("filterName", "Alpha")
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", greaterThanOrEqualTo(1))
+                .body("items.name", everyItem(containsStringIgnoringCase("Alpha")));
+    }
+
+    @Test
+    void testFilterByIssueRef() {
+        createProject("IssueRef Filter Test", "bug-fix", "filter-org/filter-repo#999");
+
+        given()
+            .queryParam("filterName", "filter-org/filter-repo")
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", greaterThanOrEqualTo(1))
+                .body("items.issueRef", hasItem(containsString("filter-org/filter-repo")));
+    }
+
+    @Test
+    void testFilterByStatus() {
+        int id = createProject("Status Filter Test", "bug-fix", "owner/repo#630");
+        updateStatus(id, "InProgress");
+
+        given()
+            .queryParam("filterStatus", "InProgress")
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", greaterThanOrEqualTo(1))
+                .body("items.status", everyItem(equalTo("InProgress")));
+    }
+
+    @Test
+    void testFilterByMultipleStatuses() {
+        int id1 = createProject("Multi Status 1", "bug-fix", "owner/repo#640");
+        updateStatus(id1, "InProgress");
+        createProject("Multi Status 2", "feature", "owner/repo#641");
+        // id2 stays in "Created" status
+
+        given()
+            .queryParam("filterStatus", "InProgress,Created")
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", greaterThanOrEqualTo(2))
+                .body("items.status", everyItem(
+                        anyOf(equalTo("InProgress"), equalTo("Created"))));
+    }
+
+    @Test
+    void testFilterNoResults() {
+        given()
+            .queryParam("filterName", "zzz_nonexistent_project_name_zzz")
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", equalTo(0))
+                .body("totalCount", equalTo(0));
+    }
+
+    @Test
+    void testFilterWithPagination() {
+        // Filters should affect totalCount (not just the current page)
+        createProject("Paginated Filter A1", "bug-fix", "owner/repo#650");
+        createProject("Paginated Filter A2", "bug-fix", "owner/repo#651");
+        createProject("Paginated Filter B1", "feature", "owner/repo#652");
+
+        given()
+            .queryParam("filterName", "Paginated Filter A")
+            .queryParam("page", 1)
+            .queryParam("limit", 1)
+            .when()
+                .get(PROJECTS_PATH)
+            .then()
+                .statusCode(200)
+                .body("items.size()", equalTo(1))
+                .body("totalCount", greaterThanOrEqualTo(2));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────

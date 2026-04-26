@@ -84,8 +84,8 @@ export function DashboardPage() {
     const loadData = useCallback(() => {
         setLoading(true);
         Promise.all([
-            fetchProjects(),
-            fetchActivityLog(),
+            fetchProjects(1, 100),
+            fetchActivityLog(1, 10),
             fetchRepositories(),
             fetchActors(),
             fetchPolicies(),
@@ -93,8 +93,8 @@ export function DashboardPage() {
             fetchTools(),
         ])
             .then(([p, a, repos, actors, policies, actionTypes, tools]) => {
-                setProjects(p);
-                setRecentActivity(a.reverse().slice(0, 10));
+                setProjects(p.items);
+                setRecentActivity(a.items);
                 setConfigCounts({
                     actors: actors.length,
                     policies: policies.length,

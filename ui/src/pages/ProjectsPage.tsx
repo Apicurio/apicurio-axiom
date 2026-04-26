@@ -4,24 +4,32 @@ import {
     Button,
     EmptyState,
     EmptyStateBody,
-    Flex,
-    FlexItem,
     Form,
     FormGroup,
     FormSelect,
     FormSelectOption,
     Label,
+    MenuToggle,
+    MenuToggleElement,
     Modal,
     ModalBody,
     ModalFooter,
     ModalHeader,
     PageSection,
+    Pagination,
+    Select,
+    SelectOption,
     TextArea,
     TextInput,
     Title,
+    Toolbar,
+    ToolbarContent,
+    ToolbarItem,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
+import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
+import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import {
     type Project,
     type NewProject,
@@ -46,7 +54,16 @@ const STATUS_LABELS: Record<string, string> = {
 export function ProjectsPage() {
     const navigate = useNavigate();
     const [projects, setProjects] = useState<Project[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
+
+    // Filter state
+    const [filterName, setFilterName] = useState("");
+    const [filterStatus, setFilterStatus] = useState<string[]>([]);
+    const [isStatusSelectOpen, setIsStatusSelectOpen] = useState(false);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newProject, setNewProject] = useState<NewProject>({
         name: "",
@@ -58,15 +75,51 @@ export function ProjectsPage() {
 
     const loadProjects = useCallback(() => {
         setLoading(true);
-        fetchProjects()
-            .then(setProjects)
+        fetchProjects(
+            page, perPage,
+            filterName || undefined,
+            filterStatus.length > 0 ? filterStatus.join(",") : undefined
+        )
+            .then((results) => {
+                setProjects(results.items);
+                setTotalCount(results.totalCount);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, []);
+    }, [page, perPage, filterName, filterStatus]);
 
     useEffect(() => {
         loadProjects();
     }, [loadProjects]);
+
+    const hasActiveFilters = filterName || filterStatus.length > 0;
+
+    const clearFilters = () => {
+        setFilterName("");
+        setFilterStatus([]);
+        setPage(1);
+    };
+
+    const onStatusSelect = (_event: React.MouseEvent | undefined, value: string | number | undefined) => {
+        const val = value as string;
+        setFilterStatus((prev) =>
+            prev.includes(val) ? prev.filter((s) => s !== val) : [...prev, val]
+        );
+        setPage(1);
+    };
+
+    const statusToggle = (toggleRef: React.Ref<MenuToggleElement>) => (
+        <MenuToggle
+            ref={toggleRef}
+            onClick={() => setIsStatusSelectOpen(!isStatusSelectOpen)}
+            isExpanded={isStatusSelectOpen}
+            style={{ minWidth: "150px" }}
+        >
+            {filterStatus.length > 0
+                ? `${filterStatus.length} status${filterStatus.length > 1 ? "es" : ""} selected`
+                : "Status"}
+        </MenuToggle>
+    );
 
     const handleCreate = () => {
         createProject(newProject)
@@ -86,27 +139,79 @@ export function ProjectsPage() {
 
     return (
         <PageSection>
-            <Flex
-                justifyContent={{ default: "justifyContentSpaceBetween" }}
-                alignItems={{ default: "alignItemsCenter" }}
-            >
-                <FlexItem>
-                    <Title headingLevel="h1" size="lg">
-                        Projects
-                    </Title>
-                </FlexItem>
-                <FlexItem>
-                    <Button
-                        variant="primary"
-                        icon={<PlusCircleIcon />}
-                        onClick={() => setIsModalOpen(true)}
-                    >
-                        Create Project
-                    </Button>
-                </FlexItem>
-            </Flex>
+            <Title headingLevel="h1" size="lg">Projects</Title>
 
-            <div style={{ marginTop: "16px" }}>
+            <Toolbar clearAllFilters={clearFilters} style={{ marginTop: "16px" }}>
+                <ToolbarContent>
+                    <ToolbarItem>
+                        <TextInput
+                            type="text"
+                            aria-label="Filter by name or issue"
+                            placeholder="Filter by name or issue"
+                            value={filterName}
+                            onChange={(_e, v) => setFilterName(v)}
+                            style={{ width: "220px" }}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <Select
+                            aria-label="Filter by status"
+                            toggle={statusToggle}
+                            onSelect={onStatusSelect}
+                            selected={filterStatus}
+                            isOpen={isStatusSelectOpen}
+                            onOpenChange={setIsStatusSelectOpen}
+                        >
+                            {["Created", "InProgress", "Idle", "Completed"].map((status) => (
+                                <SelectOption
+                                    key={status}
+                                    value={status}
+                                    hasCheckbox
+                                    isSelected={filterStatus.includes(status)}
+                                >
+                                    <Label isCompact color={STATUS_COLORS[status] || "grey"}>
+                                        {STATUS_LABELS[status] || status}
+                                    </Label>
+                                </SelectOption>
+                            ))}
+                        </Select>
+                    </ToolbarItem>
+                    {hasActiveFilters && (
+                        <ToolbarItem>
+                            <Button variant="link" icon={<TimesIcon />} onClick={clearFilters}>
+                                Clear filters
+                            </Button>
+                        </ToolbarItem>
+                    )}
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
+                        <Button variant="plain" aria-label="Refresh" onClick={loadProjects}>
+                            <SyncAltIcon />
+                        </Button>
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <Button
+                            variant="primary"
+                            icon={<PlusCircleIcon />}
+                            onClick={() => setIsModalOpen(true)}
+                        >
+                            Create Project
+                        </Button>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" align={{ default: "alignEnd" }}>
+                        <Pagination
+                            itemCount={totalCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_e, p) => setPage(p)}
+                            onPerPageSelect={(_e, pp) => { setPerPage(pp); setPage(1); }}
+                            isCompact
+                        />
+                    </ToolbarItem>
+                </ToolbarContent>
+            </Toolbar>
+
+            <div>
                 {loading ? (
                     <EmptyState>
                         <EmptyStateBody>Loading projects...</EmptyStateBody>
@@ -114,8 +219,9 @@ export function ProjectsPage() {
                 ) : projects.length === 0 ? (
                     <EmptyState>
                         <EmptyStateBody>
-                            No projects yet. Create one or wait for events from
-                            a monitored repository.
+                            {hasActiveFilters
+                                ? "No projects match the current filters."
+                                : "No projects yet. Create one or wait for events from a monitored repository."}
                         </EmptyStateBody>
                     </EmptyState>
                 ) : (
@@ -135,20 +241,12 @@ export function ProjectsPage() {
                                 <Tr
                                     key={project.id}
                                     isClickable
-                                    onRowClick={() =>
-                                        navigate(`/projects/${project.id}`)
-                                    }
+                                    onRowClick={() => navigate(`/projects/${project.id}`)}
                                 >
                                     <Td>{project.name}</Td>
                                     <Td>
-                                        <Label
-                                            color={
-                                                STATUS_COLORS[project.status] ||
-                                                "grey"
-                                            }
-                                        >
-                                            {STATUS_LABELS[project.status] ||
-                                                project.status}
+                                        <Label color={STATUS_COLORS[project.status] || "grey"}>
+                                            {STATUS_LABELS[project.status] || project.status}
                                         </Label>
                                     </Td>
                                     <Td>
@@ -156,11 +254,7 @@ export function ProjectsPage() {
                                     </Td>
                                     <Td>{project.issueRef}</Td>
                                     <Td>{project.repository}</Td>
-                                    <Td>
-                                        {new Date(
-                                            project.updatedOn
-                                        ).toLocaleString()}
-                                    </Td>
+                                    <Td>{new Date(project.updatedOn).toLocaleString()}</Td>
                                 </Tr>
                             ))}
                         </Tbody>

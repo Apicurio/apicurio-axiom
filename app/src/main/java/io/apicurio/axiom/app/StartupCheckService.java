@@ -29,6 +29,7 @@ public class StartupCheckService {
     void onStart(@Observes StartupEvent event) {
         LOG.info("Running startup configuration checks...");
         checkGitHubToken();
+        checkNodeJs();
         checkClaudeCodeCli();
 
         long errors = results.stream().filter(r -> "error".equals(r.status())).count();
@@ -84,6 +85,58 @@ public class StartupCheckService {
                     "AXIOM_GITHUB_TOKEN is configured."
             ));
             LOG.info("Startup check OK: AXIOM_GITHUB_TOKEN is set");
+        }
+    }
+
+    private void checkNodeJs() {
+        try {
+            ProcessBuilder pb = new ProcessBuilder("node", "--version");
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            boolean completed = process.waitFor(10, TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroyForcibly();
+                results.add(new CheckResult(
+                        "Node.js",
+                        "error",
+                        "Node.js check timed out. Ensure that the 'node' command is "
+                                + "installed and on your PATH."
+                ));
+                LOG.warn("Startup check FAILED: Node.js check timed out");
+                return;
+            }
+
+            String output = new String(process.getInputStream().readAllBytes()).trim();
+            int exitCode = process.exitValue();
+
+            if (exitCode == 0 && output.startsWith("v")) {
+                results.add(new CheckResult(
+                        "Node.js",
+                        "ok",
+                        "Node.js " + output + " is available."
+                ));
+                LOG.infof("Startup check OK: Node.js %s", output);
+            } else {
+                results.add(new CheckResult(
+                        "Node.js",
+                        "error",
+                        "Node.js returned unexpected output (exit code " + exitCode + "). "
+                                + "Ensure Node.js v18 or later is installed. "
+                                + "Download from https://nodejs.org/"
+                ));
+                LOG.warnf("Startup check FAILED: Node.js exit code %d, output: %s",
+                        exitCode, output);
+            }
+        } catch (Exception e) {
+            results.add(new CheckResult(
+                    "Node.js",
+                    "error",
+                    "Node.js is not installed or not on your PATH. Node.js is required "
+                            + "to run the MCP tool server that provides custom tools to AI agents. "
+                            + "Install Node.js v18 or later from https://nodejs.org/"
+            ));
+            LOG.warnf("Startup check FAILED: Node.js not found: %s", e.getMessage());
         }
     }
 

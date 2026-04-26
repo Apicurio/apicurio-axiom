@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -36,7 +36,6 @@ import {
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import {
     type ActionType,
     type Project,
@@ -49,8 +48,8 @@ import {
     fetchThreadEntries,
     createTask,
     respondToTask,
-    fetchTaskExecutionLog,
 } from "../config/api";
+import { ExecutionLogModal } from "../components/ExecutionLogModal";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
     Created: "blue",
@@ -65,7 +64,6 @@ const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"
 
 export function ProjectDetailPage() {
     const { projectId } = useParams<{ projectId: string }>();
-    const navigate = useNavigate();
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [thread, setThread] = useState<ThreadEntry[]>([]);
@@ -347,18 +345,11 @@ function TasksTab({ tasks, projectId, actorNames, onRefresh }: {
 
     // Execution log modal state
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-    const [logContent, setLogContent] = useState("");
     const [logTaskId, setLogTaskId] = useState<number | null>(null);
-    const [logLoading, setLogLoading] = useState(false);
 
     const handleViewLog = (taskId: number) => {
         setLogTaskId(taskId);
-        setLogLoading(true);
         setIsLogModalOpen(true);
-        fetchTaskExecutionLog(projectId, taskId)
-            .then(setLogContent)
-            .catch((err) => setLogContent("Error loading log: " + err.message))
-            .finally(() => setLogLoading(false));
     };
 
     const handleSubmitResponse = (taskId: number) => {
@@ -486,37 +477,12 @@ function TasksTab({ tasks, projectId, actorNames, onRefresh }: {
                 </Card>
             )}
 
-            {/* Execution Log Modal */}
-            <Modal
+            <ExecutionLogModal
                 isOpen={isLogModalOpen}
-                onClose={() => { setIsLogModalOpen(false); setLogContent(""); }}
-                variant="large"
-            >
-                <ModalHeader title={`Execution Log — Task #${logTaskId}`} />
-                <ModalBody>
-                    {logLoading ? (
-                        <EmptyState>
-                            <EmptyStateBody>Loading execution log...</EmptyStateBody>
-                        </EmptyState>
-                    ) : (
-                        <CodeEditor
-                            code={logContent}
-                            language={Language.plaintext}
-                            height="600px"
-                            isReadOnly
-                            isLineNumbersVisible
-                        />
-                    )}
-                </ModalBody>
-                <ModalFooter>
-                    <Button
-                        variant="link"
-                        onClick={() => { setIsLogModalOpen(false); setLogContent(""); }}
-                    >
-                        Close
-                    </Button>
-                </ModalFooter>
-            </Modal>
+                projectId={projectId}
+                taskId={logTaskId}
+                onClose={() => setIsLogModalOpen(false)}
+            />
         </div>
     );
 }

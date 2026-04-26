@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     Button,
     EmptyState,
     EmptyStateBody,
-    Flex,
-    FlexItem,
     Label,
     PageSection,
+    Pagination,
     Select,
     SelectOption,
     MenuToggle,
@@ -20,9 +19,9 @@ import {
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
-import FilterIcon from "@patternfly/react-icons/dist/esm/icons/filter-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import { type ActivityLogEntry, fetchActivityLog } from "../config/api";
+import { ExecutionLogModal } from "../components/ExecutionLogModal";
 
 const ENTRY_TYPE_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
     "event-received": "blue",
@@ -47,6 +46,9 @@ const ALL_ENTRY_TYPES = Object.keys(ENTRY_TYPE_COLORS);
 export function ActivityLogPage() {
     const navigate = useNavigate();
     const [entries, setEntries] = useState<ActivityLogEntry[]>([]);
+    const [totalCount, setTotalCount] = useState(0);
+    const [page, setPage] = useState(1);
+    const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
 
     // Filter state
@@ -56,13 +58,33 @@ export function ActivityLogPage() {
     const [filterEntryTypes, setFilterEntryTypes] = useState<string[]>([]);
     const [isTypeSelectOpen, setIsTypeSelectOpen] = useState(false);
 
+    // Execution log modal state
+    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [logProjectId, setLogProjectId] = useState<number | null>(null);
+    const [logTaskId, setLogTaskId] = useState<number | null>(null);
+
+    const handleViewLog = (projectId: number, taskId: number) => {
+        setLogProjectId(projectId);
+        setLogTaskId(taskId);
+        setIsLogModalOpen(true);
+    };
+
     const loadData = useCallback(() => {
         setLoading(true);
-        fetchActivityLog()
-            .then((data) => setEntries(data.reverse()))
+        fetchActivityLog(
+            page, perPage,
+            filterEventId ? Number(filterEventId) : undefined,
+            filterSummary || undefined,
+            filterProjectId ? Number(filterProjectId) : undefined,
+            filterEntryTypes.length > 0 ? filterEntryTypes.join(",") : undefined
+        )
+            .then((results) => {
+                setEntries(results.items);
+                setTotalCount(results.totalCount);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, []);
+    }, [page, perPage, filterEventId, filterSummary, filterProjectId, filterEntryTypes]);
 
     useEffect(() => {
         loadData();
@@ -75,31 +97,15 @@ export function ActivityLogPage() {
         setFilterSummary("");
         setFilterProjectId("");
         setFilterEntryTypes([]);
+        setPage(1);
     };
-
-    const filteredEntries = useMemo(() => {
-        return entries.filter((entry) => {
-            if (filterEventId && (!entry.eventId || !entry.eventId.toString().includes(filterEventId))) {
-                return false;
-            }
-            if (filterProjectId && (!entry.projectId || !entry.projectId.toString().includes(filterProjectId))) {
-                return false;
-            }
-            if (filterSummary && !entry.summary.toLowerCase().includes(filterSummary.toLowerCase())) {
-                return false;
-            }
-            if (filterEntryTypes.length > 0 && !filterEntryTypes.includes(entry.entryType)) {
-                return false;
-            }
-            return true;
-        });
-    }, [entries, filterEventId, filterSummary, filterProjectId, filterEntryTypes]);
 
     const onTypeSelect = (_event: React.MouseEvent | undefined, value: string | number | undefined) => {
         const val = value as string;
         setFilterEntryTypes((prev) =>
             prev.includes(val) ? prev.filter((t) => t !== val) : [...prev, val]
         );
+        setPage(1);
     };
 
     const typeToggle = (toggleRef: React.Ref<MenuToggleElement>) => (
@@ -117,28 +123,10 @@ export function ActivityLogPage() {
 
     return (
         <PageSection>
-            <Flex
-                justifyContent={{ default: "justifyContentSpaceBetween" }}
-                alignItems={{ default: "alignItemsCenter" }}
-            >
-                <FlexItem>
-                    <Title headingLevel="h1" size="lg">
-                        Activity Log
-                    </Title>
-                </FlexItem>
-                <FlexItem>
-                    <Button variant="secondary" icon={<SyncAltIcon />} onClick={loadData}>
-                        Refresh
-                    </Button>
-                </FlexItem>
-            </Flex>
+            <Title headingLevel="h1" size="lg">Activity Log</Title>
 
-            {/* Filter toolbar */}
-            <Toolbar clearAllFilters={clearFilters} style={{ marginTop: "8px" }}>
+            <Toolbar clearAllFilters={clearFilters} style={{ marginTop: "16px" }}>
                 <ToolbarContent>
-                    <ToolbarItem>
-                        <FilterIcon style={{ marginRight: "8px", color: "#6a6e73" }} />
-                    </ToolbarItem>
                     <ToolbarItem>
                         <TextInput
                             type="text"
@@ -199,20 +187,31 @@ export function ActivityLogPage() {
                             </Button>
                         </ToolbarItem>
                     )}
-                    <ToolbarItem align={{ default: "alignEnd" }}>
-                        <span style={{ color: "#6a6e73", fontSize: "14px" }}>
-                            {filteredEntries.length} of {entries.length} entries
-                        </span>
+                    <ToolbarItem variant="separator" />
+                    <ToolbarItem>
+                        <Button variant="plain" aria-label="Refresh" onClick={loadData}>
+                            <SyncAltIcon />
+                        </Button>
+                    </ToolbarItem>
+                    <ToolbarItem variant="pagination" align={{ default: "alignEnd" }}>
+                        <Pagination
+                            itemCount={totalCount}
+                            page={page}
+                            perPage={perPage}
+                            onSetPage={(_e, p) => setPage(p)}
+                            onPerPageSelect={(_e, pp) => { setPerPage(pp); setPage(1); }}
+                            isCompact
+                        />
                     </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
 
-            <div style={{ marginTop: "8px" }}>
+            <div>
                 {loading ? (
                     <EmptyState>
                         <EmptyStateBody>Loading activity log...</EmptyStateBody>
                     </EmptyState>
-                ) : filteredEntries.length === 0 ? (
+                ) : entries.length === 0 ? (
                     <EmptyState>
                         <EmptyStateBody>
                             {hasActiveFilters
@@ -232,7 +231,7 @@ export function ActivityLogPage() {
                             </Tr>
                         </Thead>
                         <Tbody>
-                            {filteredEntries.map((entry) => (
+                            {entries.map((entry) => (
                                 <Tr key={entry.id}>
                                     <Td style={{ whiteSpace: "nowrap" }}>
                                         {new Date(entry.createdOn).toLocaleString()}
@@ -252,7 +251,22 @@ export function ActivityLogPage() {
                                             {entry.entryType}
                                         </Label>
                                     </Td>
-                                    <Td>{entry.summary}</Td>
+                                    <Td>
+                                        {entry.summary}
+                                        {(entry.entryType === "task-completed" || entry.entryType === "task-failed")
+                                                && entry.projectId && entry.taskId && (
+                                            <>
+                                                {" — "}
+                                                <Button
+                                                    variant="link"
+                                                    isInline
+                                                    onClick={() => handleViewLog(entry.projectId!, entry.taskId!)}
+                                                >
+                                                    View Log
+                                                </Button>
+                                            </>
+                                        )}
+                                    </Td>
                                     <Td>
                                         {entry.projectId ? (
                                             <Button
@@ -274,6 +288,13 @@ export function ActivityLogPage() {
                     </Table>
                 )}
             </div>
+
+            <ExecutionLogModal
+                isOpen={isLogModalOpen}
+                projectId={logProjectId}
+                taskId={logTaskId}
+                onClose={() => setIsLogModalOpen(false)}
+            />
         </PageSection>
     );
 }

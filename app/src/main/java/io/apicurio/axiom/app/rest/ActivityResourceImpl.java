@@ -2,12 +2,19 @@ package io.apicurio.axiom.app.rest;
 
 import io.apicurio.axiom.api.ActivityResource;
 import io.apicurio.axiom.api.beans.ActivityLogEntry;
+import io.apicurio.axiom.api.beans.ActivityLogSearchResults;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of the Activity Log REST API.
@@ -20,11 +27,49 @@ public class ActivityResourceImpl implements ActivityResource {
      * {@inheritDoc}
      */
     @Override
-    public List<ActivityLogEntry> listActivityLog() {
-        return ActivityLogEntity.<ActivityLogEntity>listAll()
+    public ActivityLogSearchResults listActivityLog(BigInteger page, BigInteger limit,
+                                                     BigInteger filterEventId, String filterSummary,
+                                                     BigInteger filterProjectId, String filterEntryType) {
+        int pageNum = page != null ? page.intValue() : 1;
+        int pageSize = limit != null ? limit.intValue() : 20;
+
+        StringBuilder hql = new StringBuilder("1=1");
+        Map<String, Object> params = new HashMap<>();
+
+        if (filterEventId != null) {
+            hql.append(" and eventId = :eventId");
+            params.put("eventId", filterEventId.longValue());
+        }
+        if (filterSummary != null && !filterSummary.isBlank()) {
+            hql.append(" and lower(summary) like :summary");
+            params.put("summary", "%" + filterSummary.toLowerCase() + "%");
+        }
+        if (filterProjectId != null) {
+            hql.append(" and projectId = :projectId");
+            params.put("projectId", filterProjectId.longValue());
+        }
+        if (filterEntryType != null && !filterEntryType.isBlank()) {
+            List<String> types = Arrays.stream(filterEntryType.split(","))
+                    .map(String::trim).filter(s -> !s.isEmpty()).toList();
+            hql.append(" and entryType in :types");
+            params.put("types", types);
+        }
+
+        long totalCount = ActivityLogEntity.count(hql.toString(), params);
+        List<ActivityLogEntry> items = ActivityLogEntity
+                .<ActivityLogEntity>find(hql.toString(), Sort.descending("createdOn"), params)
+                .page(Page.of(pageNum - 1, pageSize))
+                .list()
                 .stream()
                 .map(this::toBean)
                 .toList();
+
+        ActivityLogSearchResults results = new ActivityLogSearchResults();
+        results.setItems(items);
+        results.setTotalCount(totalCount);
+        results.setPage(pageNum);
+        results.setLimit(pageSize);
+        return results;
     }
 
     private ActivityLogEntry toBean(ActivityLogEntity entity) {

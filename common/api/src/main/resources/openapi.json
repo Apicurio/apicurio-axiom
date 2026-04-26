@@ -64,18 +64,51 @@
         "tags": [
           "Projects"
         ],
-        "summary": "List all projects",
+        "summary": "List projects (paginated)",
         "operationId": "listProjects",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "filterName",
+            "in": "query",
+            "description": "Substring filter on project name or issue reference",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterStatus",
+            "in": "query",
+            "description": "Comma-separated list of status values to include",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of projects",
+            "description": "Paginated list of projects",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Project"
-                  }
+                  "$ref": "#/components/schemas/ProjectSearchResults"
                 }
               }
             }
@@ -861,18 +894,67 @@
         "tags": [
           "Activity"
         ],
-        "summary": "List global activity log entries",
+        "summary": "List activity log entries (paginated)",
         "operationId": "listActivityLog",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items per page",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            }
+          },
+          {
+            "name": "filterEventId",
+            "in": "query",
+            "description": "Filter by exact event ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "filterSummary",
+            "in": "query",
+            "description": "Substring filter on summary text",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterProjectId",
+            "in": "query",
+            "description": "Filter by exact project ID",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "filterEntryType",
+            "in": "query",
+            "description": "Comma-separated list of entry types to include",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of activity log entries",
+            "description": "Paginated list of activity log entries",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ActivityLogEntry"
-                  }
+                  "$ref": "#/components/schemas/ActivityLogSearchResults"
                 }
               }
             }
@@ -1873,6 +1955,48 @@
           "createdOn": {
             "format": "date-time",
             "type": "string"
+          }
+        }
+      },
+      "ProjectSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            }
+          },
+          "totalCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "ActivityLogSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogEntry"
+            }
+          },
+          "totalCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
           }
         }
       },
