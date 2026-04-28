@@ -883,6 +883,60 @@
         }
       ]
     },
+    "/usage": {
+      "get": {
+        "tags": [
+          "Usage"
+        ],
+        "summary": "List AI usage records (paginated)",
+        "operationId": "listUsage",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1 }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "default": 20 }
+          },
+          {
+            "name": "filterInvocationType",
+            "in": "query",
+            "description": "Filter by invocation type (task or manager)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "filterProjectId",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "filterActorId",
+            "in": "query",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "filterActionType",
+            "in": "query",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of AI usage records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiUsageSearchResults"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/events": {
       "get": {
         "tags": [
@@ -1608,6 +1662,10 @@
             "format": "int64",
             "description": "Originating event ID (correlation ID for tracing)",
             "type": "integer"
+          },
+          "sessionId": {
+            "description": "Claude Code session ID",
+            "type": "string"
           }
         }
       },
@@ -1994,6 +2052,51 @@
             "type": "integer"
           },
           "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "AiUsage": {
+        "type": "object",
+        "properties": {
+          "id": { "format": "int64", "type": "integer" },
+          "invocationType": { "type": "string" },
+          "taskId": { "format": "int64", "type": "integer" },
+          "eventId": { "format": "int64", "type": "integer" },
+          "projectId": { "format": "int64", "type": "integer" },
+          "actorId": { "format": "int64", "type": "integer" },
+          "actionType": { "type": "string" },
+          "model": { "type": "string" },
+          "costUsd": { "format": "double", "type": "number" },
+          "inputTokens": { "format": "int64", "type": "integer" },
+          "outputTokens": { "format": "int64", "type": "integer" },
+          "durationMs": { "format": "int64", "type": "integer" },
+          "createdOn": { "format": "date-time", "type": "string" }
+        }
+      },
+      "AiUsageSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/AiUsage" }
+          },
+          "totalCount": { "format": "int64", "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalCostUsd": {
+            "format": "double",
+            "description": "Sum of costUsd across ALL matching records (not just the current page)",
+            "type": "number"
+          },
+          "totalInputTokens": {
+            "format": "int64",
+            "description": "Sum of inputTokens across ALL matching records",
+            "type": "integer"
+          },
+          "totalOutputTokens": {
+            "format": "int64",
+            "description": "Sum of outputTokens across ALL matching records",
             "type": "integer"
           }
         }

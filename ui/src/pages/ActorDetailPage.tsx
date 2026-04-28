@@ -356,7 +356,6 @@ function TaskHistoryTab({ tasks, totalCount, page, perPage, filterActionType, fi
                             <Th>Status</Th>
                             <Th>Created</Th>
                             <Th>Completed</Th>
-                            <Th>Cost</Th>
                             <Th />
                         </Tr>
                     </Thead>
@@ -380,11 +379,6 @@ function TaskHistoryTab({ tasks, totalCount, page, perPage, filterActionType, fi
                                 <Td style={{ whiteSpace: "nowrap" }}>
                                     {task.completedOn
                                         ? new Date(task.completedOn).toLocaleString()
-                                        : "—"}
-                                </Td>
-                                <Td>
-                                    {task.costUsd != null
-                                        ? `$${task.costUsd.toFixed(4)}`
                                         : "—"}
                                 </Td>
                                 <Td>

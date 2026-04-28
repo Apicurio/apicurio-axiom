@@ -171,6 +171,7 @@ public class ActorsResourceImpl implements ActorsResource {
         if (entity.completedOn != null) {
             task.setCompletedOn(Date.from(entity.completedOn));
         }
+        task.setSessionId(entity.sessionId);
         return task;
     }
 }

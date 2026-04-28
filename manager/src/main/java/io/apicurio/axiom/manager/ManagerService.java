@@ -9,6 +9,7 @@ import io.apicurio.axiom.actors.claudecode.ExecutionLogBuilder;
 import io.apicurio.axiom.actors.spi.ActorContext;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
+import io.apicurio.axiom.core.entities.AiUsageEntity;
 import io.apicurio.axiom.core.entities.ActorEntity;
 import io.apicurio.axiom.core.entities.EventEntity;
 import io.apicurio.axiom.core.entities.ManagerConfigEntity;
@@ -133,6 +134,10 @@ public class ManagerService {
             ClaudeCodeResult result = subprocess.execute().join();
             String executionLog = result.executionLog();
 
+            // Record AI usage for this Manager evaluation
+            recordAiUsage(event.id, project != null ? project.id : null,
+                    result.totalCostUsd(), result.inputTokens(), result.outputTokens());
+
             if (!result.isSuccess()) {
                 LOG.errorf("Manager subprocess failed (exit %d): %s",
                         result.exitCode(), result.result());
@@ -245,5 +250,20 @@ public class ManagerService {
         log.details = details;
         log.createdOn = Instant.now();
         log.persist();
+    }
+
+    @Transactional
+    void recordAiUsage(Long eventId, Long projectId,
+                        Double costUsd, Long inputTokens, Long outputTokens) {
+        AiUsageEntity usage = new AiUsageEntity();
+        usage.invocationType = "manager";
+        usage.eventId = eventId;
+        usage.projectId = projectId;
+        usage.actionType = "manager-evaluate";
+        usage.costUsd = costUsd;
+        usage.inputTokens = inputTokens;
+        usage.outputTokens = outputTokens;
+        usage.createdOn = Instant.now();
+        usage.persist();
     }
 }

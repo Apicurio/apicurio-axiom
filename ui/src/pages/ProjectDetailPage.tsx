@@ -400,7 +400,6 @@ function TasksTab({ tasks, projectId, actorNames, onRefresh }: {
                         <Th>Created By</Th>
                         <Th>Created</Th>
                         <Th>Completed</Th>
-                        <Th>Cost</Th>
                         <Th />
                     </Tr>
                 </Thead>
@@ -423,11 +422,6 @@ function TasksTab({ tasks, projectId, actorNames, onRefresh }: {
                             <Td>
                                 {task.completedOn
                                     ? new Date(task.completedOn).toLocaleString()
-                                    : "—"}
-                            </Td>
-                            <Td>
-                                {task.costUsd != null
-                                    ? `$${task.costUsd.toFixed(4)}`
                                     : "—"}
                             </Td>
                             <Td>

@@ -78,9 +78,6 @@ export interface Task {
     createdOn: string;
     completedOn?: string;
     sessionId?: string;
-    costUsd?: number;
-    inputTokens?: number;
-    outputTokens?: number;
 }
 
 export interface ThreadEntry {
@@ -462,6 +459,47 @@ export async function deleteRepository(id: number): Promise<void> {
 export async function fetchThreadEntries(projectId: number): Promise<ThreadEntry[]> {
     const response = await fetch(`${API}/projects/${projectId}/thread`);
     if (!response.ok) throw new Error(`Failed to fetch thread: ${response.status}`);
+    return response.json();
+}
+
+// ── AI Usage ─────────────────────────────────────────────────────
+
+export interface AiUsage {
+    id: number;
+    invocationType: string;
+    taskId?: number;
+    eventId?: number;
+    projectId?: number;
+    actorId?: number;
+    actionType?: string;
+    model?: string;
+    costUsd?: number;
+    inputTokens?: number;
+    outputTokens?: number;
+    durationMs?: number;
+    createdOn: string;
+}
+
+export interface AiUsageSearchResults extends SearchResults<AiUsage> {
+    totalCostUsd: number;
+    totalInputTokens: number;
+    totalOutputTokens: number;
+}
+
+export async function fetchUsage(
+    page = 1, limit = 20,
+    filterInvocationType?: string, filterProjectId?: number,
+    filterActorId?: number, filterActionType?: string
+): Promise<AiUsageSearchResults> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterInvocationType) params.set("filterInvocationType", filterInvocationType);
+    if (filterProjectId != null) params.set("filterProjectId", String(filterProjectId));
+    if (filterActorId != null) params.set("filterActorId", String(filterActorId));
+    if (filterActionType) params.set("filterActionType", filterActionType);
+    const response = await fetch(`${API}/usage?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch usage: ${response.status}`);
     return response.json();
 }
 

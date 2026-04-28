@@ -4,6 +4,7 @@ import io.apicurio.axiom.actors.spi.Actor;
 import io.apicurio.axiom.actors.spi.ActorContext;
 import io.apicurio.axiom.actors.spi.TaskResult;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
+import io.apicurio.axiom.core.entities.AiUsageEntity;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.ActorEntity;
 import io.apicurio.axiom.core.entities.EventEntity;
@@ -329,9 +330,6 @@ public class TaskExecutionService {
         task.output = result.getOutput();
         task.completedOn = Instant.now();
         task.sessionId = result.getSessionId();
-        task.costUsd = result.getCostUsd();
-        task.inputTokens = result.getInputTokens();
-        task.outputTokens = result.getOutputTokens();
         task.executionLog = result.getExecutionLog();
 
         String statusText = result.isSuccess() ? "completed" : "failed";
@@ -340,6 +338,11 @@ public class TaskExecutionService {
                 result.getCostUsd() != null ? String.format("%.4f", result.getCostUsd()) : "n/a",
                 result.getInputTokens() != null ? result.getInputTokens() : 0,
                 result.getOutputTokens() != null ? result.getOutputTokens() : 0);
+
+        // Record AI usage
+        recordAiUsage("task", taskId, task.eventId, task.projectId,
+                task.assignedActor, task.actionType,
+                result.getCostUsd(), result.getInputTokens(), result.getOutputTokens());
 
         // Log to activity
         logActivity(task.projectId, taskId, task.eventId, "task-" + statusText,
@@ -455,5 +458,22 @@ public class TaskExecutionService {
         entry.content = content;
         entry.createdOn = Instant.now();
         entry.persist();
+    }
+
+    private void recordAiUsage(String invocationType, Long taskId, Long eventId,
+                                Long projectId, Long actorId, String actionType,
+                                Double costUsd, Long inputTokens, Long outputTokens) {
+        AiUsageEntity usage = new AiUsageEntity();
+        usage.invocationType = invocationType;
+        usage.taskId = taskId;
+        usage.eventId = eventId;
+        usage.projectId = projectId;
+        usage.actorId = actorId;
+        usage.actionType = actionType;
+        usage.costUsd = costUsd;
+        usage.inputTokens = inputTokens;
+        usage.outputTokens = outputTokens;
+        usage.createdOn = Instant.now();
+        usage.persist();
     }
 }

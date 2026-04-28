@@ -42,6 +42,7 @@ import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { UsagePage } from "./pages/UsagePage";
 import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ConfigurationWarning } from "./components/ConfigurationWarning";
 import { type StartupCheck, fetchSystemHealth, fetchSystemConfig } from "./config/api";
@@ -190,6 +191,9 @@ export function App() {
                         <NavItem isActive={location.pathname === "/activity"} onClick={() => navigate("/activity")}>
                             Activity Log
                         </NavItem>
+                        <NavItem isActive={location.pathname === "/usage"} onClick={() => navigate("/usage")}>
+                            AI Usage
+                        </NavItem>
                         <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
                             <NavItem isActive={location.pathname.startsWith("/actors")} onClick={() => navigate("/actors")}>
                                 Actors
@@ -301,6 +305,7 @@ export function App() {
                     <Route path="/tools" element={<ToolsPage />} />
                     <Route path="/tools/:toolId" element={<ToolDetailPage />} />
                     <Route path="/activity" element={<ActivityLogPage />} />
+                    <Route path="/usage" element={<UsagePage />} />
                     <Route path="/repositories" element={<RepositoriesPage />} />
                 </Routes>
             )}

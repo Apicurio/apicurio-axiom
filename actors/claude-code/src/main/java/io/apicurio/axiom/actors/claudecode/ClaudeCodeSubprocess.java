@@ -35,6 +35,12 @@ public class ClaudeCodeSubprocess {
 
     private Process process;
 
+    // Accumulated from stream-json "result" events during execution
+    private volatile Double streamCostUsd;
+    private volatile Long streamInputTokens;
+    private volatile Long streamOutputTokens;
+    private volatile String streamSessionId;
+
     /**
      * Creates a new subprocess wrapper.
      *
@@ -187,11 +193,19 @@ public class ClaudeCodeSubprocess {
 
         // Parse the final result line
         ClaudeCodeResult result = parseResult(lastResultLine.toString(), exitCode);
+
+        // Merge: prefer data from the parsed result, fall back to stream-captured data
+        String finalResult = result.result();
+        String finalSessionId = result.sessionId() != null ? result.sessionId() : streamSessionId;
+        Double finalCostUsd = result.totalCostUsd() != null ? result.totalCostUsd() : streamCostUsd;
+        Long finalInputTokens = result.inputTokens() != null ? result.inputTokens() : streamInputTokens;
+        Long finalOutputTokens = result.outputTokens() != null ? result.outputTokens() : streamOutputTokens;
+
         logBuilder.footer(result.isSuccess() ? "Completed" : "Failed",
-                result.totalCostUsd(), result.inputTokens(), result.outputTokens(),
+                finalCostUsd, finalInputTokens, finalOutputTokens,
                 Duration.between(startTime, Instant.now()));
-        return new ClaudeCodeResult(result.result(), result.sessionId(),
-                result.totalCostUsd(), result.inputTokens(), result.outputTokens(),
+        return new ClaudeCodeResult(finalResult, finalSessionId,
+                finalCostUsd, finalInputTokens, finalOutputTokens,
                 result.exitCode(), logBuilder.build());
     }
 
@@ -289,6 +303,31 @@ public class ClaudeCodeSubprocess {
                     LOG.infof("  [claude] Result: %s (turns=%d, cost=$%.4f, duration=%dms)",
                             subtype, turns, cost, durationMs);
                     logBuilder.result(subtype, turns, cost, durationMs);
+
+                    // Capture cost and token data from the result event
+                    if (cost > 0) {
+                        streamCostUsd = cost;
+                    }
+                    if (node.has("session_id")) {
+                        streamSessionId = node.path("session_id").asText(null);
+                    }
+                    // Extract tokens from the result event's usage field (if present)
+                    JsonNode resultUsage = node.path("usage");
+                    if (!resultUsage.isMissingNode()) {
+                        if (resultUsage.has("input_tokens")) {
+                            streamInputTokens = resultUsage.get("input_tokens").asLong();
+                        }
+                        if (resultUsage.has("output_tokens")) {
+                            streamOutputTokens = resultUsage.get("output_tokens").asLong();
+                        }
+                    }
+                    // Also try top-level input_tokens/output_tokens
+                    if (streamInputTokens == null && node.has("input_tokens")) {
+                        streamInputTokens = node.get("input_tokens").asLong();
+                    }
+                    if (streamOutputTokens == null && node.has("output_tokens")) {
+                        streamOutputTokens = node.get("output_tokens").asLong();
+                    }
                 }
                 case "tool_result" -> {
                     String toolName = node.path("name").asText("");
