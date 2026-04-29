@@ -4,8 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apicurio.axiom.api.ToolsResource;
 import io.apicurio.axiom.api.beans.NewToolDefinition;
+import io.apicurio.axiom.api.beans.ToolAiEditRequest;
+import io.apicurio.axiom.api.beans.ToolAiEditResponse;
 import io.apicurio.axiom.api.beans.ToolDefinition;
 import io.apicurio.axiom.api.beans.ToolParameter;
+import io.apicurio.axiom.app.ToolAiService;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -26,6 +29,9 @@ public class ToolsResourceImpl implements ToolsResource {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    ToolAiService toolAiService;
 
     @Override
     public Response listTools() {
@@ -64,6 +70,18 @@ public class ToolsResourceImpl implements ToolsResource {
         ToolDefinitionEntity entity = findOrThrow(toolId.longValue());
         entity.delete();
     }
+
+    // ── AI-Assisted Editing ────────────────────────────────────────
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ToolAiEditResponse aiEditTool(ToolAiEditRequest data) {
+        return toolAiService.editTool(data);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
 
     private ToolDefinitionEntity findOrThrow(long id) {
         ToolDefinitionEntity entity = ToolDefinitionEntity.findById(id);

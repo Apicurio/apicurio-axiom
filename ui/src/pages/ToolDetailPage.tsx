@@ -26,6 +26,7 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
+import MagicIcon from "@patternfly/react-icons/dist/esm/icons/magic-icon";
 import {
     type ToolDefinition,
     type ToolParameter,
@@ -33,6 +34,7 @@ import {
     fetchTool,
     updateTool,
 } from "../config/api";
+import { ToolAiPanel } from "../components/ToolAiPanel";
 
 export function ToolDetailPage() {
     const { toolId } = useParams<{ toolId: string }>();
@@ -45,6 +47,18 @@ export function ToolDetailPage() {
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
+    const [aiPanelOpen, setAiPanelOpen] = useState(false);
+
+    // Warn on browser close/refresh with unsaved changes
+    useEffect(() => {
+        const handler = (e: BeforeUnloadEvent) => {
+            if (dirty) {
+                e.preventDefault();
+            }
+        };
+        window.addEventListener("beforeunload", handler);
+        return () => window.removeEventListener("beforeunload", handler);
+    }, [dirty]);
 
     const loadData = useCallback(() => {
         if (!id) return;
@@ -141,45 +155,71 @@ export function ToolDetailPage() {
                     >
                         {saving ? "Saving..." : "Save Changes"}
                     </Button>
+                    {isScript && (
+                        <Button
+                            variant={aiPanelOpen ? "secondary" : "tertiary"}
+                            icon={<MagicIcon />}
+                            onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                            style={{ marginLeft: "8px" }}
+                        >
+                            AI Assistant
+                        </Button>
+                    )}
                 </FlexItem>
             </Flex>
 
-            <Tabs activeKey={activeTab} onSelect={(_e, k) => setActiveTab(k as number)}>
-                <Tab eventKey={0} title={<TabTitleText>Info</TabTitleText>}>
-                    <TabContent id="info-tab" eventKey={0} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                        <InfoTab form={form} updateForm={updateForm} />
-                    </TabContent>
-                </Tab>
-                {!isScript && (
-                    <Tab eventKey={1} title={<TabTitleText>MCP Server Configuration</TabTitleText>}>
-                        <TabContent id="mcp-tab" eventKey={1} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                            <McpServerTab form={form} updateForm={updateForm} />
-                        </TabContent>
-                    </Tab>
+            <div style={{ display: "flex", gap: "0", minHeight: "500px" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <Tabs activeKey={activeTab} onSelect={(_e, k) => setActiveTab(k as number)}>
+                        <Tab eventKey={0} title={<TabTitleText>Info</TabTitleText>}>
+                            <TabContent id="info-tab" eventKey={0} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                <InfoTab form={form} updateForm={updateForm} />
+                            </TabContent>
+                        </Tab>
+                        {!isScript && (
+                            <Tab eventKey={1} title={<TabTitleText>MCP Server Configuration</TabTitleText>}>
+                                <TabContent id="mcp-tab" eventKey={1} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                    <McpServerTab form={form} updateForm={updateForm} />
+                                </TabContent>
+                            </Tab>
+                        )}
+                        {isScript && (
+                            <Tab eventKey={2} title={<TabTitleText>Parameters ({params.length})</TabTitleText>}>
+                                <TabContent id="params-tab" eventKey={2} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                    <ParametersTab
+                                        params={params}
+                                        addParam={addParam}
+                                        updateParam={updateParam}
+                                        removeParam={removeParam}
+                                    />
+                                </TabContent>
+                            </Tab>
+                        )}
+                        {isScript && (
+                            <Tab eventKey={3} title={<TabTitleText>Script Template</TabTitleText>}>
+                                <TabContent id="script-tab" eventKey={3} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                    <ScriptTemplateTab
+                                        value={form.scriptTemplate || ""}
+                                        onChange={(v) => updateForm({ scriptTemplate: v })}
+                                    />
+                                </TabContent>
+                            </Tab>
+                        )}
+                    </Tabs>
+                </div>
+                {aiPanelOpen && (
+                    <ToolAiPanel
+                        form={form}
+                        params={params}
+                        onUpdate={(updates, newParams) => {
+                            setForm((prev) => ({ ...prev, ...updates }));
+                            setParams(newParams);
+                            setDirty(true);
+                        }}
+                        onClose={() => setAiPanelOpen(false)}
+                    />
                 )}
-                {isScript && (
-                    <Tab eventKey={2} title={<TabTitleText>Parameters ({params.length})</TabTitleText>}>
-                        <TabContent id="params-tab" eventKey={2} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                            <ParametersTab
-                                params={params}
-                                addParam={addParam}
-                                updateParam={updateParam}
-                                removeParam={removeParam}
-                            />
-                        </TabContent>
-                    </Tab>
-                )}
-                {isScript && (
-                    <Tab eventKey={3} title={<TabTitleText>Script Template</TabTitleText>}>
-                        <TabContent id="script-tab" eventKey={3} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                            <ScriptTemplateTab
-                                value={form.scriptTemplate || ""}
-                                onChange={(v) => updateForm({ scriptTemplate: v })}
-                            />
-                        </TabContent>
-                    </Tab>
-                )}
-            </Tabs>
+            </div>
         </PageSection>
     );
 }

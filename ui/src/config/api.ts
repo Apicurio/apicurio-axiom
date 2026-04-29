@@ -379,6 +379,26 @@ export async function deleteTool(id: number): Promise<void> {
     if (!response.ok) throw new Error(`Failed to delete tool: ${response.status}`);
 }
 
+export interface ToolAiEditRequest {
+    message: string;
+    currentTool?: NewToolDefinition;
+}
+
+export interface ToolAiEditResponse {
+    tool?: NewToolDefinition;
+    explanation?: string;
+}
+
+export async function aiEditTool(request: ToolAiEditRequest): Promise<ToolAiEditResponse> {
+    const response = await fetch(`${API}/tools/ai-edit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error(`Failed to AI edit tool: ${response.status}`);
+    return response.json();
+}
+
 export async function fetchActionTypeTools(actionTypeId: number): Promise<ToolDefinition[]> {
     const response = await fetch(`${API}/action-types/${actionTypeId}/tools`);
     if (!response.ok) throw new Error(`Failed to fetch action type tools: ${response.status}`);
