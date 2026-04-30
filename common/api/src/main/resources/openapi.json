@@ -883,6 +883,112 @@
         }
       ]
     },
+    "/reports/definitions": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "List all report definitions",
+        "operationId": "listReportDefinitions",
+        "responses": {
+          "200": {
+            "description": "List of report definitions",
+            "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/ReportDefinition" } } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Reports"],
+        "summary": "Create a report definition",
+        "operationId": "createReportDefinition",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewReportDefinition" } } }, "required": true },
+        "responses": {
+          "200": {
+            "description": "Report definition created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportDefinition" } } }
+          }
+        }
+      }
+    },
+    "/reports/definitions/{definitionId}": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get a report definition",
+        "operationId": "getReportDefinition",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportDefinition" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Reports"],
+        "summary": "Update a report definition",
+        "operationId": "updateReportDefinition",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewReportDefinition" } } }, "required": true },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportDefinition" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Reports"],
+        "summary": "Delete a report definition",
+        "operationId": "deleteReportDefinition",
+        "responses": { "204": { "description": "Deleted" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "parameters": [{ "name": "definitionId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
+    },
+    "/reports/definitions/{definitionId}/run": {
+      "post": {
+        "tags": ["Reports"],
+        "summary": "Manually trigger a report generation",
+        "operationId": "runReportDefinition",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Report" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "parameters": [{ "name": "definitionId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
+    },
+    "/reports": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "List generated reports (paginated)",
+        "operationId": "listReports",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "filterDefinitionId", "in": "query", "schema": { "type": "integer" } },
+          { "name": "filterStatus", "in": "query", "description": "Comma-separated statuses", "schema": { "type": "string" } },
+          { "name": "filterTitle", "in": "query", "description": "Substring match on title", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportSearchResults" } } } }
+        }
+      }
+    },
+    "/reports/{reportId}": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get a generated report",
+        "operationId": "getReport",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Report" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "parameters": [{ "name": "reportId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
+    },
+    "/reports/{reportId}/log": {
+      "get": {
+        "tags": ["Reports"],
+        "summary": "Get the execution log for a report",
+        "operationId": "getReportExecutionLog",
+        "responses": {
+          "200": { "content": { "text/plain": { "schema": { "type": "string" } } } },
+          "404": { "description": "Report not found or no log available" }
+        }
+      },
+      "parameters": [{ "name": "reportId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
+    },
     "/usage": {
       "get": {
         "tags": [
@@ -2138,6 +2244,64 @@
           "limit": {
             "type": "integer"
           }
+        }
+      },
+      "ReportDefinition": {
+        "type": "object",
+        "properties": {
+          "id": { "format": "int64", "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "schedule": { "type": "string" },
+          "scheduleTime": { "type": "string" },
+          "timeWindow": { "type": "string" },
+          "repositories": { "type": "array", "items": { "type": "string" } },
+          "promptTemplate": { "type": "string" },
+          "allowedTools": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" },
+          "nextRunAt": { "format": "date-time", "type": "string" },
+          "lastRunAt": { "format": "date-time", "type": "string" },
+          "createdOn": { "format": "date-time", "type": "string" },
+          "updatedOn": { "format": "date-time", "type": "string" }
+        }
+      },
+      "NewReportDefinition": {
+        "required": ["name", "schedule", "timeWindow", "promptTemplate"],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "schedule": { "type": "string" },
+          "scheduleTime": { "type": "string" },
+          "timeWindow": { "type": "string" },
+          "repositories": { "type": "array", "items": { "type": "string" } },
+          "promptTemplate": { "type": "string" },
+          "allowedTools": { "type": "array", "items": { "type": "string" } },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "id": { "format": "int64", "type": "integer" },
+          "definitionId": { "format": "int64", "type": "integer" },
+          "status": { "type": "string" },
+          "title": { "type": "string" },
+          "content": { "type": "string" },
+          "timeRangeStart": { "format": "date-time", "type": "string" },
+          "timeRangeEnd": { "format": "date-time", "type": "string" },
+          "costUsd": { "format": "double", "type": "number" },
+          "createdOn": { "format": "date-time", "type": "string" },
+          "completedOn": { "format": "date-time", "type": "string" }
+        }
+      },
+      "ReportSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Report" } },
+          "totalCount": { "format": "int64", "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" }
         }
       },
       "ProjectMetrics": {

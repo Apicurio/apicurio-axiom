@@ -482,6 +482,110 @@ export async function fetchThreadEntries(projectId: number): Promise<ThreadEntry
     return response.json();
 }
 
+// ── Reports ──────────────────────────────────────────────────────
+
+export interface ReportDefinition {
+    id: number;
+    name: string;
+    description?: string;
+    schedule: string;
+    scheduleTime?: string;
+    timeWindow: string;
+    repositories?: string[];
+    promptTemplate: string;
+    allowedTools?: string[];
+    enabled: boolean;
+    nextRunAt?: string;
+    lastRunAt?: string;
+    createdOn: string;
+    updatedOn: string;
+}
+
+export type NewReportDefinition = Omit<ReportDefinition, "id" | "createdOn" | "updatedOn" | "nextRunAt" | "lastRunAt">;
+
+export interface Report {
+    id: number;
+    definitionId: number;
+    status: string;
+    title?: string;
+    content?: string;
+    timeRangeStart?: string;
+    timeRangeEnd?: string;
+    costUsd?: number;
+    createdOn: string;
+    completedOn?: string;
+}
+
+export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
+    const response = await fetch(`${API}/reports/definitions`);
+    if (!response.ok) throw new Error(`Failed to fetch report definitions: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchReportDefinition(id: number): Promise<ReportDefinition> {
+    const response = await fetch(`${API}/reports/definitions/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch report definition: ${response.status}`);
+    return response.json();
+}
+
+export async function createReportDefinition(def: NewReportDefinition): Promise<ReportDefinition> {
+    const response = await fetch(`${API}/reports/definitions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+    });
+    if (!response.ok) throw new Error(`Failed to create report definition: ${response.status}`);
+    return response.json();
+}
+
+export async function updateReportDefinition(id: number, def: NewReportDefinition): Promise<ReportDefinition> {
+    const response = await fetch(`${API}/reports/definitions/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(def),
+    });
+    if (!response.ok) throw new Error(`Failed to update report definition: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteReportDefinition(id: number): Promise<void> {
+    const response = await fetch(`${API}/reports/definitions/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete report definition: ${response.status}`);
+}
+
+export async function runReportDefinition(id: number): Promise<Report> {
+    const response = await fetch(`${API}/reports/definitions/${id}/run`, { method: "POST" });
+    if (!response.ok) throw new Error(`Failed to run report: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchReports(
+    page = 1, limit = 20,
+    filterDefinitionId?: number, filterStatus?: string, filterTitle?: string
+): Promise<SearchResults<Report>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterDefinitionId != null) params.set("filterDefinitionId", String(filterDefinitionId));
+    if (filterStatus) params.set("filterStatus", filterStatus);
+    if (filterTitle) params.set("filterTitle", filterTitle);
+    const response = await fetch(`${API}/reports?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch reports: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchReportExecutionLog(reportId: number): Promise<string> {
+    const response = await fetch(`${API}/reports/${reportId}/log`);
+    if (!response.ok) throw new Error(`Failed to fetch report log: ${response.status}`);
+    return response.text();
+}
+
+export async function fetchReport(id: number): Promise<Report> {
+    const response = await fetch(`${API}/reports/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch report: ${response.status}`);
+    return response.json();
+}
+
 // ── Metrics ──────────────────────────────────────────────────────
 
 export interface ProjectMetrics {

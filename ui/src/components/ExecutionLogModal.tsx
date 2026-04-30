@@ -9,7 +9,7 @@ import {
     ModalHeader,
 } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { fetchTaskExecutionLog, fetchActivityLogDetails } from "../config/api";
+import { fetchTaskExecutionLog, fetchActivityLogDetails, fetchReportExecutionLog } from "../config/api";
 
 interface ExecutionLogModalProps {
     isOpen: boolean;
@@ -19,15 +19,18 @@ interface ExecutionLogModalProps {
     taskId?: number | null;
     /** For activity log details (e.g. manager evaluations): the activity entry ID */
     activityId?: number | null;
+    /** For report logs: the report ID */
+    reportId?: number | null;
     onClose: () => void;
 }
 
 /**
- * Modal that displays an execution log. Supports two fetch modes:
+ * Modal that displays an execution log. Supports three fetch modes:
  * - By projectId + taskId (for task execution logs)
  * - By activityId (for manager evaluation logs stored in activity entry details)
+ * - By reportId (for report generation logs)
  */
-export function ExecutionLogModal({ isOpen, projectId, taskId, activityId,
+export function ExecutionLogModal({ isOpen, projectId, taskId, activityId, reportId,
                                      onClose }: ExecutionLogModalProps) {
     const [content, setContent] = useState("");
     const [loading, setLoading] = useState(false);
@@ -39,7 +42,9 @@ export function ExecutionLogModal({ isOpen, projectId, taskId, activityId,
         setContent("");
 
         let fetchPromise: Promise<string>;
-        if (activityId != null) {
+        if (reportId != null) {
+            fetchPromise = fetchReportExecutionLog(reportId);
+        } else if (activityId != null) {
             fetchPromise = fetchActivityLogDetails(activityId);
         } else if (projectId != null && taskId != null) {
             fetchPromise = fetchTaskExecutionLog(projectId, taskId);
@@ -53,16 +58,18 @@ export function ExecutionLogModal({ isOpen, projectId, taskId, activityId,
             .then(setContent)
             .catch((err) => setContent("Error loading log: " + err.message))
             .finally(() => setLoading(false));
-    }, [isOpen, projectId, taskId, activityId]);
+    }, [isOpen, projectId, taskId, activityId, reportId]);
 
     const handleClose = () => {
         onClose();
         setContent("");
     };
 
-    const title = activityId != null
-        ? `Execution Log — Activity #${activityId}`
-        : `Execution Log — Task #${taskId}`;
+    const title = reportId != null
+        ? `Execution Log — Report #${reportId}`
+        : activityId != null
+            ? `Execution Log — Activity #${activityId}`
+            : `Execution Log — Task #${taskId}`;
 
     return (
         <Modal isOpen={isOpen} onClose={handleClose} variant="large">

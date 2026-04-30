@@ -66,6 +66,18 @@ public class ExecutionLogBuilder {
     }
 
     /**
+     * Appends the system prompt section.
+     *
+     * @param systemPrompt the system prompt sent to Claude Code
+     */
+    public void systemPrompt(String systemPrompt) {
+        if (systemPrompt != null && !systemPrompt.isBlank()) {
+            log.append("=== System Prompt ===\n");
+            log.append(systemPrompt).append("\n\n");
+        }
+    }
+
+    /**
      * Appends the allowed tools section as a numbered list.
      *
      * @param tools the list of allowed tool patterns

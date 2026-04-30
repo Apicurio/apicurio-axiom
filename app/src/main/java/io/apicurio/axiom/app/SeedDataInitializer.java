@@ -1,8 +1,11 @@
 package io.apicurio.axiom.app;
 
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
+
+import java.time.Instant;
 import io.apicurio.axiom.core.entities.ActorEntity;
 import io.apicurio.axiom.core.entities.ManagerConfigEntity;
+import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
 import io.apicurio.axiom.core.entities.RepositoryEntity;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import io.apicurio.axiom.manager.ManagerPromptBuilder;
@@ -234,11 +237,12 @@ public class SeedDataInitializer {
 
         LOG.infof("Seeded %d built-in action types", ActionTypeEntity.count());
 
-        // Seed tools, actors, manager config, and test repository
+        // Seed tools, actors, manager config, test repository, and report definitions
         seedTools();
         seedActors();
         seedManagerConfig();
         seedRepository();
+        seedReportDefinitions();
     }
 
     private void seedTools() {
@@ -294,6 +298,32 @@ public class SeedDataInitializer {
                 + "{\"name\":\"head\",\"type\":\"string\",\"description\":\"Branch to merge from\",\"required\":true}]";
         createPr.scriptTemplate = "gh pr create --repo {{repo}} --title \"{{title}}\" --body-file {{body_file}} --head {{head}}";
         createPr.persist();
+
+        // List GitHub Issues tool (for reports)
+        ToolDefinitionEntity listIssues = new ToolDefinitionEntity();
+        listIssues.name = "list_github_issues";
+        listIssues.description = "List GitHub issues with filters for state, labels, and date range. "
+                + "Returns JSON with issue number, title, author, labels, and dates.";
+        listIssues.type = "script";
+        listIssues.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
+                + "{\"name\":\"state\",\"type\":\"string\",\"description\":\"Issue state: open, closed, or all\",\"required\":true},"
+                + "{\"name\":\"limit\",\"type\":\"number\",\"description\":\"Maximum number of issues to return\",\"required\":false}]";
+        listIssues.scriptTemplate = "gh issue list --repo {{repo}} --state {{state}} --limit {{limit}} "
+                + "--json number,title,author,labels,createdAt,updatedAt,state";
+        listIssues.persist();
+
+        // List GitHub PRs tool (for reports)
+        ToolDefinitionEntity listPrs = new ToolDefinitionEntity();
+        listPrs.name = "list_github_prs";
+        listPrs.description = "List GitHub pull requests with filters for state. "
+                + "Returns JSON with PR number, title, author, review status, and dates.";
+        listPrs.type = "script";
+        listPrs.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
+                + "{\"name\":\"state\",\"type\":\"string\",\"description\":\"PR state: open, closed, merged, or all\",\"required\":true},"
+                + "{\"name\":\"limit\",\"type\":\"number\",\"description\":\"Maximum number of PRs to return\",\"required\":false}]";
+        listPrs.scriptTemplate = "gh pr list --repo {{repo}} --state {{state}} --limit {{limit}} "
+                + "--json number,title,author,createdAt,updatedAt,state,reviewDecision,isDraft";
+        listPrs.persist();
 
         LOG.infof("Seeded %d built-in tools", ToolDefinitionEntity.count());
 
@@ -379,6 +409,109 @@ public class SeedDataInitializer {
             "mcp__axiom-tools__post_github_comment",
             "mcp__axiom-tools__create_github_pr"
     );
+
+    private void seedReportDefinitions() {
+        if (ReportDefinitionEntity.count() > 0) {
+            LOG.info("Report definitions already exist, skipping seed data");
+            return;
+        }
+
+        Instant now = Instant.now();
+
+        String reportTools = String.join(",",
+                "Read", "Glob", "Grep",
+                "Bash(ls *)", "Bash(cat *)", "Bash(head *)", "Bash(tail *)",
+                "Bash(find *)", "Bash(wc *)", "Bash(file *)",
+                "Bash(gh issue *)", "Bash(gh pr *)", "Bash(gh api *)",
+                "Bash(gh repo *)", "Bash(date *)",
+                "mcp__axiom-tools__list_github_issues",
+                "mcp__axiom-tools__list_github_prs"
+        );
+
+        ReportDefinitionEntity daily = new ReportDefinitionEntity();
+        daily.name = "Daily GitHub Activity";
+        daily.description = "A daily summary of all issue and PR activity across monitored repositories.";
+        daily.schedule = "daily";
+        daily.scheduleTime = "08:00";
+        daily.timeWindow = "last-24h";
+        daily.enabled = false;
+        daily.allowedTools = reportTools;
+        daily.promptTemplate = """
+                Generate a daily activity report for the following repositories: {{repositories}}
+
+                **Time period:** {{timeWindow}}
+
+                Use the list_github_issues and list_github_prs tools to gather data.
+
+                Include the following sections:
+                1. **Summary** — key metrics (new issues, closed issues, merged PRs, open PRs)
+                2. **New Issues** — table with issue #, title, author, labels
+                3. **Closed Issues** — table with issue #, title, who closed it
+                4. **Pull Requests Merged** — table with PR #, title, author
+                5. **Pull Requests Awaiting Review** — table with PR #, title, author, age
+
+                Format all issue/PR references as clickable markdown links to GitHub.
+                Start the report with a level-1 heading including the date.
+                """;
+        daily.createdOn = now;
+        daily.updatedOn = now;
+        daily.persist();
+
+        ReportDefinitionEntity prsAwaitingReview = new ReportDefinitionEntity();
+        prsAwaitingReview.name = "PRs Awaiting Review";
+        prsAwaitingReview.description = "Lists all open pull requests that are waiting for code review.";
+        prsAwaitingReview.schedule = "daily";
+        prsAwaitingReview.scheduleTime = "09:00";
+        prsAwaitingReview.timeWindow = "last-7d";
+        prsAwaitingReview.enabled = false;
+        prsAwaitingReview.allowedTools = reportTools;
+        prsAwaitingReview.promptTemplate = """
+                Generate a report of pull requests awaiting review for: {{repositories}}
+
+                Use the list_github_prs tool to list all open PRs, then filter for those \
+                that have no approving review (reviewDecision is not "APPROVED").
+
+                Include:
+                1. **Summary** — total open PRs, how many awaiting review, how many drafts
+                2. **PRs Awaiting Review** — table with PR #, title, author, created date, age in days
+                3. **Draft PRs** — table with PR #, title, author
+
+                Format all PR references as clickable markdown links.
+                Sort by age (oldest first) to highlight stale PRs.
+                """;
+        prsAwaitingReview.createdOn = now;
+        prsAwaitingReview.updatedOn = now;
+        prsAwaitingReview.persist();
+
+        ReportDefinitionEntity issuesAwaiting = new ReportDefinitionEntity();
+        issuesAwaiting.name = "Issues Awaiting Response";
+        issuesAwaiting.description = "Lists open issues that may need attention from the development team.";
+        issuesAwaiting.schedule = "weekly";
+        issuesAwaiting.scheduleTime = "08:00";
+        issuesAwaiting.timeWindow = "last-7d";
+        issuesAwaiting.enabled = false;
+        issuesAwaiting.allowedTools = reportTools;
+        issuesAwaiting.promptTemplate = """
+                Generate a report of open issues that may need attention for: {{repositories}}
+
+                Use the list_github_issues tool to list all open issues.
+
+                Include:
+                1. **Summary** — total open issues, new this period, oldest unresolved
+                2. **New Issues (this period)** — table with issue #, title, author, labels, age
+                3. **Oldest Open Issues** — top 10 oldest open issues by creation date
+                4. **Issues by Label** — breakdown of open issue count by label
+
+                Format all issue references as clickable markdown links.
+                Highlight issues older than 30 days as potentially stale.
+                """;
+        issuesAwaiting.createdOn = now;
+        issuesAwaiting.updatedOn = now;
+        issuesAwaiting.persist();
+
+        LOG.infof("Seeded %d report definitions (all disabled by default)",
+                ReportDefinitionEntity.count());
+    }
 
     private void seedActionType(String name, String description, String executionMode,
                                 boolean userTriggerable, boolean emitsEvent, String allowedTools,

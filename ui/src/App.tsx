@@ -42,6 +42,10 @@ import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { ReportsPage } from "./pages/ReportsPage";
+import { ReportDetailPage } from "./pages/ReportDetailPage";
+import { ReportDefinitionsPage } from "./pages/ReportDefinitionsPage";
+import { ReportDefinitionDetailPage } from "./pages/ReportDefinitionDetailPage";
 import { MetricsPage } from "./pages/MetricsPage";
 import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ConfigurationWarning } from "./components/ConfigurationWarning";
@@ -56,7 +60,7 @@ interface Notification {
     read: boolean;
 }
 
-const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/repositories"];
+const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/repositories", "/report-definitions"];
 
 let notificationIdCounter = 0;
 
@@ -185,6 +189,9 @@ export function App() {
                         <NavItem isActive={location.pathname === "/"} onClick={() => navigate("/")}>
                             Dashboard
                         </NavItem>
+                        <NavItem isActive={location.pathname.startsWith("/reports")} onClick={() => navigate("/reports")}>
+                            Reports
+                        </NavItem>
                         <NavItem isActive={location.pathname.startsWith("/projects")} onClick={() => navigate("/projects")}>
                             Projects
                         </NavItem>
@@ -209,6 +216,9 @@ export function App() {
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/repositories")} onClick={() => navigate("/repositories")}>
                                 Repositories
+                            </NavItem>
+                            <NavItem isActive={location.pathname === "/report-definitions"} onClick={() => navigate("/report-definitions")}>
+                                Report Definitions
                             </NavItem>
                         </NavExpandable>
                     </NavList>
@@ -305,6 +315,10 @@ export function App() {
                     <Route path="/tools" element={<ToolsPage />} />
                     <Route path="/tools/:toolId" element={<ToolDetailPage />} />
                     <Route path="/activity" element={<ActivityLogPage />} />
+                    <Route path="/reports" element={<ReportsPage />} />
+                    <Route path="/reports/:reportId" element={<ReportDetailPage />} />
+                    <Route path="/report-definitions" element={<ReportDefinitionsPage />} />
+                    <Route path="/report-definitions/:definitionId" element={<ReportDefinitionDetailPage />} />
                     <Route path="/metrics" element={<MetricsPage />} />
                     <Route path="/repositories" element={<RepositoriesPage />} />
                 </Routes>

@@ -118,6 +118,7 @@ public class ToolAiService {
         // Build command
         ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
         logBuilder.header(0, "tool-ai-edit", Instant.now());
+        logBuilder.systemPrompt(SYSTEM_PROMPT);
         logBuilder.prompt(userPrompt.toString());
 
         ActorContext context = ActorContext.builder()

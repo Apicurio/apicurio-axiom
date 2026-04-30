@@ -60,6 +60,7 @@ public class ClaudeCodeActor implements Actor {
         // Create execution log builder and fill header + prompt + allowed tools sections
         ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
         logBuilder.header(task.id, task.actionType, Instant.now());
+        logBuilder.systemPrompt(context.getSystemPrompt());
         logBuilder.prompt(prompt);
         logBuilder.allowedTools(context.getAllowedTools());
 

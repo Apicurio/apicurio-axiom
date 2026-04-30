@@ -101,6 +101,7 @@ public class ManagerService {
         // Create execution log builder
         ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
         logBuilder.header(0, "manager-evaluate", Instant.now());
+        logBuilder.systemPrompt(systemPrompt);
         logBuilder.prompt(userPrompt);
         logBuilder.allowedTools(List.of("StructuredOutput"));
 
