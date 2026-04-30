@@ -5,7 +5,7 @@ import io.apicurio.axiom.api.beans.NewReportDefinition;
 import io.apicurio.axiom.api.beans.Report;
 import io.apicurio.axiom.api.beans.ReportDefinition;
 import io.apicurio.axiom.api.beans.ReportSearchResults;
-import io.apicurio.axiom.app.ReportExecutionService;
+import io.apicurio.axiom.app.ReportQueueConsumer;
 import io.apicurio.axiom.app.ReportScheduler;
 import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
 import io.apicurio.axiom.core.entities.ReportEntity;
@@ -35,7 +35,7 @@ public class ReportsResourceImpl implements ReportsResource {
     ReportScheduler reportScheduler;
 
     @Inject
-    ReportExecutionService reportExecutionService;
+    ReportQueueConsumer reportQueuePoller;
 
     // ── Report Definitions CRUD ──────────────────────────────────────
 
@@ -98,12 +98,20 @@ public class ReportsResourceImpl implements ReportsResource {
      * {@inheritDoc}
      */
     @Override
-    @Transactional
     public Report runReportDefinition(long definitionId) {
+        // Step 1: create the report (transactional — commits before enqueue)
+        Long reportId = createReportForRun(definitionId);
+
+        // Step 2: enqueue after transaction has committed
+        reportQueuePoller.enqueue(reportId);
+
+        return getReport(reportId);
+    }
+
+    @Transactional
+    Long createReportForRun(long definitionId) {
         ReportDefinitionEntity definition = findDefinitionOrThrow(definitionId);
-        Long reportId = reportScheduler.createReportAndScheduleNext(definition);
-        reportExecutionService.generateReport(definition, reportId);
-        return toReportBean(ReportEntity.findById(reportId));
+        return reportScheduler.createReportAndScheduleNext(definition);
     }
 
     // ── Reports (read-only) ──────────────────────────────────────────
@@ -199,6 +207,13 @@ public class ReportsResourceImpl implements ReportsResource {
         entity.allowedTools = data.getAllowedTools() != null
                 ? String.join(",", data.getAllowedTools()) : null;
         entity.enabled = data.getEnabled() != null ? data.getEnabled() : false;
+
+        // Compute nextRunAt when enabled (or schedule/time changes)
+        if (entity.enabled) {
+            entity.nextRunAt = reportScheduler.computeInitialNextRunAt(entity);
+        } else {
+            entity.nextRunAt = null;
+        }
     }
 
     private ReportDefinition toDefinitionBean(ReportDefinitionEntity entity) {
