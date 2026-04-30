@@ -331,14 +331,21 @@ export interface ToolDefinition {
     id: number;
     name: string;
     description?: string;
-    type: string;
     parameters?: ToolParameter[];
     scriptTemplate?: string;
+}
+
+export interface McpServer {
+    id: number;
+    name: string;
+    description?: string;
     serverCommand?: string;
     serverArgs?: string[];
     serverEnv?: Record<string, string>;
     serverUrl?: string;
 }
+
+export type NewMcpServer = Omit<McpServer, "id">;
 
 export type NewToolDefinition = Omit<ToolDefinition, "id">;
 
@@ -397,6 +404,43 @@ export async function aiEditTool(request: ToolAiEditRequest): Promise<ToolAiEdit
     });
     if (!response.ok) throw new Error(`Failed to AI edit tool: ${response.status}`);
     return response.json();
+}
+
+export async function fetchMcpServers(): Promise<McpServer[]> {
+    const response = await fetch(`${API}/mcp-servers`);
+    if (!response.ok) throw new Error(`Failed to fetch MCP servers: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchMcpServer(id: number): Promise<McpServer> {
+    const response = await fetch(`${API}/mcp-servers/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch MCP server: ${response.status}`);
+    return response.json();
+}
+
+export async function createMcpServer(server: NewMcpServer): Promise<McpServer> {
+    const response = await fetch(`${API}/mcp-servers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(server),
+    });
+    if (!response.ok) throw new Error(`Failed to create MCP server: ${response.status}`);
+    return response.json();
+}
+
+export async function updateMcpServer(id: number, server: NewMcpServer): Promise<McpServer> {
+    const response = await fetch(`${API}/mcp-servers/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(server),
+    });
+    if (!response.ok) throw new Error(`Failed to update MCP server: ${response.status}`);
+    return response.json();
+}
+
+export async function deleteMcpServer(id: number): Promise<void> {
+    const response = await fetch(`${API}/mcp-servers/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete MCP server: ${response.status}`);
 }
 
 export async function fetchActionTypeTools(actionTypeId: number): Promise<ToolDefinition[]> {

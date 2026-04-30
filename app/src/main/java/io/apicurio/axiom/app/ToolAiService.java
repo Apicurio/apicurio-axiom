@@ -175,7 +175,6 @@ public class ToolAiService {
             NewToolDefinition tool = new NewToolDefinition();
             tool.setName(root.path("name").asText(null));
             tool.setDescription(root.path("description").asText(null));
-            tool.setType(NewToolDefinition.Type.fromValue("script"));
             tool.setScriptTemplate(root.path("scriptTemplate").asText(null));
 
             // Parse parameters

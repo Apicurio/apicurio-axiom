@@ -8,9 +8,6 @@ import {
     FlexItem,
     Form,
     FormGroup,
-    FormSelect,
-    FormSelectOption,
-    Label,
     Modal,
     ModalBody,
     ModalFooter,
@@ -36,7 +33,6 @@ export function ToolsPage() {
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newName, setNewName] = useState("");
-    const [newType, setNewType] = useState("script");
 
     const load = useCallback(() => {
         setLoading(true);
@@ -48,7 +44,6 @@ export function ToolsPage() {
     const handleCreate = () => {
         const data: NewToolDefinition = {
             name: newName,
-            type: newType,
         };
         createTool(data)
             .then((created) => {
@@ -73,7 +68,6 @@ export function ToolsPage() {
                 <FlexItem>
                     <Button variant="primary" icon={<PlusCircleIcon />} onClick={() => {
                         setNewName("");
-                        setNewType("script");
                         setIsCreateOpen(true);
                     }}>
                         Create Tool
@@ -91,7 +85,6 @@ export function ToolsPage() {
                         <Thead>
                             <Tr>
                                 <Th>Name</Th>
-                                <Th>Type</Th>
                                 <Th>Description</Th>
                                 <Th />
                             </Tr>
@@ -104,11 +97,6 @@ export function ToolsPage() {
                                     onRowClick={() => navigate(`/tools/${tool.id}`)}
                                 >
                                     <Td>{tool.name}</Td>
-                                    <Td>
-                                        <Label isCompact color={tool.type === "script" ? "blue" : "purple"}>
-                                            {tool.type}
-                                        </Label>
-                                    </Td>
                                     <Td>{tool.description || "—"}</Td>
                                     <Td>
                                         <Button variant="plain" onClick={(e) => handleDelete(e, tool.id)}>
@@ -140,12 +128,6 @@ export function ToolsPage() {
                                     }
                                 }}
                             />
-                        </FormGroup>
-                        <FormGroup label="Type" isRequired fieldId="type">
-                            <FormSelect id="type" value={newType} onChange={(_e, v) => setNewType(v)}>
-                                <FormSelectOption value="script" label="Script — Shell command with parameter substitution" />
-                                <FormSelectOption value="mcp-server" label="MCP Server — External MCP server (stdio or HTTP)" />
-                            </FormSelect>
                         </FormGroup>
                     </Form>
                 </ModalBody>

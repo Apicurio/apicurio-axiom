@@ -129,8 +129,6 @@ export function ToolDetailPage() {
         );
     }
 
-    const isScript = form.type === "script";
-
     return (
         <PageSection>
             <Breadcrumb style={{ marginBottom: "16px" }}>
@@ -155,16 +153,14 @@ export function ToolDetailPage() {
                     >
                         {saving ? "Saving..." : "Save Changes"}
                     </Button>
-                    {isScript && (
-                        <Button
-                            variant={aiPanelOpen ? "secondary" : "tertiary"}
-                            icon={<MagicIcon />}
-                            onClick={() => setAiPanelOpen(!aiPanelOpen)}
-                            style={{ marginLeft: "8px" }}
-                        >
-                            AI Assistant
-                        </Button>
-                    )}
+                    <Button
+                        variant={aiPanelOpen ? "secondary" : "tertiary"}
+                        icon={<MagicIcon />}
+                        onClick={() => setAiPanelOpen(!aiPanelOpen)}
+                        style={{ marginLeft: "8px" }}
+                    >
+                        AI Assistant
+                    </Button>
                 </FlexItem>
             </Flex>
 
@@ -176,35 +172,24 @@ export function ToolDetailPage() {
                                 <InfoTab form={form} updateForm={updateForm} />
                             </TabContent>
                         </Tab>
-                        {!isScript && (
-                            <Tab eventKey={1} title={<TabTitleText>MCP Server Configuration</TabTitleText>}>
-                                <TabContent id="mcp-tab" eventKey={1} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                                    <McpServerTab form={form} updateForm={updateForm} />
-                                </TabContent>
-                            </Tab>
-                        )}
-                        {isScript && (
-                            <Tab eventKey={2} title={<TabTitleText>Parameters ({params.length})</TabTitleText>}>
-                                <TabContent id="params-tab" eventKey={2} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                                    <ParametersTab
-                                        params={params}
-                                        addParam={addParam}
-                                        updateParam={updateParam}
-                                        removeParam={removeParam}
-                                    />
-                                </TabContent>
-                            </Tab>
-                        )}
-                        {isScript && (
-                            <Tab eventKey={3} title={<TabTitleText>Script Template</TabTitleText>}>
-                                <TabContent id="script-tab" eventKey={3} activeKey={activeTab} style={{ marginTop: "24px" }}>
-                                    <ScriptTemplateTab
-                                        value={form.scriptTemplate || ""}
-                                        onChange={(v) => updateForm({ scriptTemplate: v })}
-                                    />
-                                </TabContent>
-                            </Tab>
-                        )}
+                        <Tab eventKey={1} title={<TabTitleText>Parameters ({params.length})</TabTitleText>}>
+                            <TabContent id="params-tab" eventKey={1} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                <ParametersTab
+                                    params={params}
+                                    addParam={addParam}
+                                    updateParam={updateParam}
+                                    removeParam={removeParam}
+                                />
+                            </TabContent>
+                        </Tab>
+                        <Tab eventKey={2} title={<TabTitleText>Script Template</TabTitleText>}>
+                            <TabContent id="script-tab" eventKey={2} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                                <ScriptTemplateTab
+                                    value={form.scriptTemplate || ""}
+                                    onChange={(v) => updateForm({ scriptTemplate: v })}
+                                />
+                            </TabContent>
+                        </Tab>
                     </Tabs>
                 </div>
                 {aiPanelOpen && (
@@ -238,42 +223,6 @@ function InfoTab({ form, updateForm }: {
             <FormGroup label="Description" fieldId="description">
                 <TextArea id="description" value={form.description || ""}
                     onChange={(_e, v) => updateForm({ description: v })} rows={3} />
-            </FormGroup>
-
-            <FormGroup label="Type" isRequired fieldId="type">
-                <FormSelect id="type" value={form.type}
-                    onChange={(_e, v) => updateForm({ type: v })}>
-                    <FormSelectOption value="script"
-                        label="Script — Bash script with parameter substitution" />
-                    <FormSelectOption value="mcp-server"
-                        label="MCP Server — External MCP server" />
-                </FormSelect>
-            </FormGroup>
-        </Form>
-    );
-}
-
-function McpServerTab({ form, updateForm }: {
-    form: NewToolDefinition;
-    updateForm: (updates: Partial<NewToolDefinition>) => void;
-}) {
-    return (
-        <Form style={{ maxWidth: "600px" }}>
-            <p style={{ color: "#6a6e73", marginBottom: "16px" }}>
-                Configure the external MCP server connection. Use either an HTTP URL
-                or a stdio command to connect to the server.
-            </p>
-
-            <FormGroup label="Server URL (HTTP transport)" fieldId="serverUrl">
-                <TextInput id="serverUrl" value={form.serverUrl || ""}
-                    onChange={(_e, v) => updateForm({ serverUrl: v })}
-                    placeholder="https://mcp.example.com/mcp" />
-            </FormGroup>
-
-            <FormGroup label="Server Command (stdio transport)" fieldId="serverCommand">
-                <TextInput id="serverCommand" value={form.serverCommand || ""}
-                    onChange={(_e, v) => updateForm({ serverCommand: v })}
-                    placeholder="e.g. npx, python3, node" />
             </FormGroup>
         </Form>
     );

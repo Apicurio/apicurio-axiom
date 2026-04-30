@@ -94,35 +94,13 @@ public class ToolsResourceImpl implements ToolsResource {
     private void applyFields(ToolDefinitionEntity entity, NewToolDefinition data) {
         entity.name = data.getName();
         entity.description = data.getDescription();
-        entity.type = data.getType().value();
         entity.scriptTemplate = data.getScriptTemplate();
-        entity.serverCommand = data.getServerCommand();
-        entity.serverUrl = data.getServerUrl();
 
-        // Serialize parameters as JSON
         if (data.getParameters() != null) {
             try {
                 entity.parameters = objectMapper.writeValueAsString(data.getParameters());
             } catch (Exception e) {
                 entity.parameters = null;
-            }
-        }
-
-        // Serialize server args as JSON
-        if (data.getServerArgs() != null) {
-            try {
-                entity.serverArgs = objectMapper.writeValueAsString(data.getServerArgs());
-            } catch (Exception e) {
-                entity.serverArgs = null;
-            }
-        }
-
-        // Serialize server env as JSON
-        if (data.getServerEnv() != null) {
-            try {
-                entity.serverEnv = objectMapper.writeValueAsString(data.getServerEnv());
-            } catch (Exception e) {
-                entity.serverEnv = null;
             }
         }
     }
@@ -132,28 +110,13 @@ public class ToolsResourceImpl implements ToolsResource {
         tool.setId(entity.id);
         tool.setName(entity.name);
         tool.setDescription(entity.description);
-        tool.setType(ToolDefinition.Type.fromValue(entity.type));
         tool.setScriptTemplate(entity.scriptTemplate);
-        tool.setServerCommand(entity.serverCommand);
-        tool.setServerUrl(entity.serverUrl);
 
-        // Deserialize parameters from JSON
         if (entity.parameters != null) {
             try {
                 List<ToolParameter> params = objectMapper.readValue(entity.parameters,
                         new TypeReference<List<ToolParameter>>() {});
                 tool.setParameters(params);
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-
-        // Deserialize server args from JSON
-        if (entity.serverArgs != null) {
-            try {
-                List<String> args = objectMapper.readValue(entity.serverArgs,
-                        new TypeReference<List<String>>() {});
-                tool.setServerArgs(args);
             } catch (Exception e) {
                 // ignore
             }

@@ -2,6 +2,7 @@ package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.core.entities.McpServerEntity;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -63,29 +64,24 @@ public class McpConfigGenerator {
      */
     public Path generateMcpConfig(Long taskId, Map<String, String> environment,
                                    List<String> allowedTools) {
-        List<ToolDefinitionEntity> allTools = ToolDefinitionEntity.listAll();
-        if (allTools.isEmpty()) {
-            return null;
-        }
-
         boolean hasRestrictions = allowedTools != null && !allowedTools.isEmpty();
 
         // Filter script tools: include only those whose MCP name is in the allowed list
-        List<ToolDefinitionEntity> scriptTools = allTools.stream()
-                .filter(t -> "script".equals(t.type))
+        List<ToolDefinitionEntity> scriptTools = ToolDefinitionEntity.<ToolDefinitionEntity>listAll()
+                .stream()
                 .filter(t -> !hasRestrictions
                         || allowedTools.contains(AXIOM_TOOLS_PREFIX + t.name))
                 .toList();
 
         // Filter external MCP servers: include only those with at least one
         // allowed tool matching the mcp__<serverName>__ prefix
-        List<ToolDefinitionEntity> mcpServerTools = allTools.stream()
-                .filter(t -> "mcp-server".equals(t.type))
-                .filter(t -> !hasRestrictions
-                        || allowedTools.stream().anyMatch(a -> a.startsWith("mcp__" + t.name + "__")))
+        List<McpServerEntity> mcpServers = McpServerEntity.<McpServerEntity>listAll()
+                .stream()
+                .filter(s -> !hasRestrictions
+                        || allowedTools.stream().anyMatch(a -> a.startsWith("mcp__" + s.name + "__")))
                 .toList();
 
-        if (scriptTools.isEmpty() && mcpServerTools.isEmpty()) {
+        if (scriptTools.isEmpty() && mcpServers.isEmpty()) {
             LOG.debugf("No MCP tools matched allowed list for task %d, skipping MCP config", taskId);
             return null;
         }
@@ -122,7 +118,7 @@ public class McpConfigGenerator {
             }
 
             // Add external MCP servers
-            for (ToolDefinitionEntity mcp : mcpServerTools) {
+            for (McpServerEntity mcp : mcpServers) {
                 if (first) first = false; else configJson.append(",");
                 configJson.append("\"").append(escapeJson(mcp.name)).append("\":{");
 
@@ -149,7 +145,7 @@ public class McpConfigGenerator {
             Path configFile = Files.createTempFile("axiom-mcp-" + taskId + "-", ".json");
             Files.writeString(configFile, configJson.toString());
             LOG.infof("Generated MCP config for task %d: %s (%d script tools, %d MCP servers)",
-                    taskId, configFile, scriptTools.size(), mcpServerTools.size());
+                    taskId, configFile, scriptTools.size(), mcpServers.size());
             return configFile;
 
         } catch (Exception e) {

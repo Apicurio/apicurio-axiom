@@ -256,7 +256,7 @@ public class SeedDataInitializer {
         postComment.name = "post_github_comment";
         postComment.description = "Post a comment on a GitHub issue. The comment body is written "
                 + "to a temp file to avoid shell quoting issues.";
-        postComment.type = "script";
+
         postComment.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
                 + "{\"name\":\"issue_number\",\"type\":\"number\",\"description\":\"Issue number\",\"required\":true},"
                 + "{\"name\":\"body\",\"type\":\"string\",\"description\":\"Comment body (markdown)\",\"required\":true}]";
@@ -269,7 +269,7 @@ public class SeedDataInitializer {
         listLabels.description = "List all available labels in a GitHub repository with their "
                 + "names and descriptions, sorted by name. Use this to discover which labels "
                 + "exist before applying them to an issue.";
-        listLabels.type = "script";
+
         listLabels.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true}]";
         listLabels.scriptTemplate = "gh label list --repo {{repo}} --sort name --json name,description";
         listLabels.persist();
@@ -279,7 +279,7 @@ public class SeedDataInitializer {
         addLabels.name = "apply_github_labels";
         addLabels.description = "Apply one or more labels to a GitHub issue. Only use labels "
                 + "that exist in the repository — use list_github_labels first to check.";
-        addLabels.type = "script";
+
         addLabels.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
                 + "{\"name\":\"issue_number\",\"type\":\"number\",\"description\":\"Issue number\",\"required\":true},"
                 + "{\"name\":\"labels\",\"type\":\"string\",\"description\":\"Comma-separated label names to apply\",\"required\":true}]";
@@ -291,7 +291,7 @@ public class SeedDataInitializer {
         createPr.name = "create_github_pr";
         createPr.description = "Create a pull request on GitHub. The PR body is written "
                 + "to a temp file to avoid shell quoting issues.";
-        createPr.type = "script";
+
         createPr.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
                 + "{\"name\":\"title\",\"type\":\"string\",\"description\":\"PR title\",\"required\":true},"
                 + "{\"name\":\"body\",\"type\":\"string\",\"description\":\"PR description (markdown)\",\"required\":true},"
@@ -304,7 +304,7 @@ public class SeedDataInitializer {
         listIssues.name = "list_github_issues";
         listIssues.description = "List GitHub issues with filters for state, labels, and date range. "
                 + "Returns JSON with issue number, title, author, labels, and dates.";
-        listIssues.type = "script";
+
         listIssues.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
                 + "{\"name\":\"state\",\"type\":\"string\",\"description\":\"Issue state: open, closed, or all\",\"required\":true},"
                 + "{\"name\":\"limit\",\"type\":\"number\",\"description\":\"Maximum number of issues to return\",\"required\":false}]";
@@ -317,7 +317,7 @@ public class SeedDataInitializer {
         listPrs.name = "list_github_prs";
         listPrs.description = "List GitHub pull requests with filters for state. "
                 + "Returns JSON with PR number, title, author, review status, and dates.";
-        listPrs.type = "script";
+
         listPrs.parameters = "[{\"name\":\"repo\",\"type\":\"string\",\"description\":\"Repository in owner/name format\",\"required\":true},"
                 + "{\"name\":\"state\",\"type\":\"string\",\"description\":\"PR state: open, closed, merged, or all\",\"required\":true},"
                 + "{\"name\":\"limit\",\"type\":\"number\",\"description\":\"Maximum number of PRs to return\",\"required\":false}]";

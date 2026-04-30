@@ -1572,6 +1572,53 @@
           }
         }
       ]
+    },
+    "/mcp-servers": {
+      "get": {
+        "tags": ["McpServers"],
+        "summary": "List all MCP servers",
+        "operationId": "listMcpServers",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "type": "array", "items": { "$ref": "#/components/schemas/McpServer" } } } } }
+        }
+      },
+      "post": {
+        "tags": ["McpServers"],
+        "summary": "Register an MCP server",
+        "operationId": "createMcpServer",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewMcpServer" } } }, "required": true },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/McpServer" } } } }
+        }
+      }
+    },
+    "/mcp-servers/{mcpServerId}": {
+      "get": {
+        "tags": ["McpServers"],
+        "summary": "Get an MCP server",
+        "operationId": "getMcpServer",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/McpServer" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["McpServers"],
+        "summary": "Update an MCP server",
+        "operationId": "updateMcpServer",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NewMcpServer" } } }, "required": true },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/McpServer" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["McpServers"],
+        "summary": "Delete an MCP server",
+        "operationId": "deleteMcpServer",
+        "responses": { "204": { "description": "Deleted" }, "404": { "$ref": "#/components/responses/NotFound" } }
+      },
+      "parameters": [{ "name": "mcpServerId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
     }
   },
   "components": {
@@ -2551,106 +2598,49 @@
         }
       },
       "ToolDefinition": {
-        "required": [
-          "id",
-          "name",
-          "type"
-        ],
+        "required": ["id", "name"],
         "type": "object",
         "properties": {
-          "id": {
-            "format": "int64",
-            "type": "integer"
-          },
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "type": {
-            "enum": [
-              "script",
-              "mcp-server"
-            ],
-            "type": "string"
-          },
-          "parameters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ToolParameter"
-            }
-          },
-          "scriptTemplate": {
-            "type": "string"
-          },
-          "serverCommand": {
-            "type": "string"
-          },
-          "serverArgs": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "serverEnv": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "serverUrl": {
-            "type": "string"
-          }
+          "id": { "format": "int64", "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ToolParameter" } },
+          "scriptTemplate": { "type": "string" }
         }
       },
       "NewToolDefinition": {
-        "required": [
-          "name",
-          "type"
-        ],
+        "required": ["name"],
         "type": "object",
         "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "type": {
-            "enum": [
-              "script",
-              "mcp-server"
-            ],
-            "type": "string"
-          },
-          "parameters": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ToolParameter"
-            }
-          },
-          "scriptTemplate": {
-            "type": "string"
-          },
-          "serverCommand": {
-            "type": "string"
-          },
-          "serverArgs": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "serverEnv": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "serverUrl": {
-            "type": "string"
-          }
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "parameters": { "type": "array", "items": { "$ref": "#/components/schemas/ToolParameter" } },
+          "scriptTemplate": { "type": "string" }
+        }
+      },
+      "McpServer": {
+        "required": ["id", "name"],
+        "type": "object",
+        "properties": {
+          "id": { "format": "int64", "type": "integer" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "serverCommand": { "type": "string" },
+          "serverArgs": { "type": "array", "items": { "type": "string" } },
+          "serverEnv": { "type": "object", "additionalProperties": { "type": "string" } },
+          "serverUrl": { "type": "string" }
+        }
+      },
+      "NewMcpServer": {
+        "required": ["name"],
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "serverCommand": { "type": "string" },
+          "serverArgs": { "type": "array", "items": { "type": "string" } },
+          "serverEnv": { "type": "object", "additionalProperties": { "type": "string" } },
+          "serverUrl": { "type": "string" }
         }
       },
       "ToolAiEditRequest": {

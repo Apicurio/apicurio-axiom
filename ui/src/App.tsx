@@ -42,6 +42,8 @@ import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
 import { ToolsPage } from "./pages/ToolsPage";
+import { McpServersPage } from "./pages/McpServersPage";
+import { McpServerDetailPage } from "./pages/McpServerDetailPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { ReportDetailPage } from "./pages/ReportDetailPage";
 import { ReportDefinitionsPage } from "./pages/ReportDefinitionsPage";
@@ -60,7 +62,7 @@ interface Notification {
     read: boolean;
 }
 
-const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/repositories", "/report-definitions"];
+const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/mcp-servers", "/repositories", "/report-definitions"];
 
 let notificationIdCounter = 0;
 
@@ -202,17 +204,20 @@ export function App() {
                             Metrics
                         </NavItem>
                         <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
-                            <NavItem isActive={location.pathname.startsWith("/actors")} onClick={() => navigate("/actors")}>
-                                Actors
-                            </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/manager")} onClick={() => navigate("/manager")}>
                                 Manager
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/actors")} onClick={() => navigate("/actors")}>
+                                Actors
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/action-types")} onClick={() => navigate("/action-types")}>
                                 Action Types
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/tools")} onClick={() => navigate("/tools")}>
                                 Tools
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/mcp-servers")} onClick={() => navigate("/mcp-servers")}>
+                                MCP Servers
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/repositories")} onClick={() => navigate("/repositories")}>
                                 Repositories
@@ -314,6 +319,8 @@ export function App() {
                     <Route path="/action-types/:actionTypeId" element={<ActionTypeDetailPage />} />
                     <Route path="/tools" element={<ToolsPage />} />
                     <Route path="/tools/:toolId" element={<ToolDetailPage />} />
+                    <Route path="/mcp-servers" element={<McpServersPage />} />
+                    <Route path="/mcp-servers/:mcpServerId" element={<McpServerDetailPage />} />
                     <Route path="/activity" element={<ActivityLogPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/reports/:reportId" element={<ReportDetailPage />} />

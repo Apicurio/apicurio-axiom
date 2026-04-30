@@ -49,7 +49,7 @@ class McpServerIntegrationTest {
         ToolDefinitionEntity helloTool = new ToolDefinitionEntity();
         helloTool.name = "hello_world";
         helloTool.description = "Says hello to someone";
-        helloTool.type = "script";
+
         helloTool.scriptTemplate = "echo Hello, {{name}}!";
         helloTool.parameters = "[{\"name\":\"name\",\"type\":\"string\","
                 + "\"description\":\"Who to greet\",\"required\":true}]";
@@ -236,7 +236,6 @@ class McpServerIntegrationTest {
         ToolDefinitionEntity fileTool = new ToolDefinitionEntity();
         fileTool.name = "file_echo";
         fileTool.description = "Echoes content from a file parameter";
-        fileTool.type = "script";
         fileTool.scriptTemplate = "cat {{body_file}}";
         fileTool.parameters = "[{\"name\":\"body\",\"type\":\"string\","
                 + "\"description\":\"Content to echo\",\"required\":true}]";

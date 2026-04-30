@@ -2,6 +2,7 @@ package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.core.entities.McpServerEntity;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -222,11 +223,10 @@ class McpConfigGeneratorTest {
     @Test
     @Transactional
     void testExternalMcpServerStdioInConfig() throws Exception {
-        // Create a temporary external MCP server tool
-        ToolDefinitionEntity mcpTool = new ToolDefinitionEntity();
+        // Create a temporary external MCP server
+        McpServerEntity mcpTool = new McpServerEntity();
         mcpTool.name = "test-external-stdio";
         mcpTool.description = "Test external MCP server (stdio)";
-        mcpTool.type = "mcp-server";
         mcpTool.serverCommand = "npx";
         mcpTool.serverArgs = "[\"-y\", \"@test/mcp-server\"]";
         mcpTool.serverEnv = "{\"API_KEY\": \"test-key\"}";
@@ -259,10 +259,9 @@ class McpConfigGeneratorTest {
     @Test
     @Transactional
     void testExternalMcpServerHttpInConfig() throws Exception {
-        ToolDefinitionEntity mcpTool = new ToolDefinitionEntity();
+        McpServerEntity mcpTool = new McpServerEntity();
         mcpTool.name = "test-external-http";
         mcpTool.description = "Test external MCP server (HTTP)";
-        mcpTool.type = "mcp-server";
         mcpTool.serverUrl = "http://localhost:8080/mcp";
         mcpTool.persist();
 
@@ -303,13 +302,8 @@ class McpConfigGeneratorTest {
                 ToolDefinitionEntity restored = new ToolDefinitionEntity();
                 restored.name = tool.name;
                 restored.description = tool.description;
-                restored.type = tool.type;
                 restored.parameters = tool.parameters;
                 restored.scriptTemplate = tool.scriptTemplate;
-                restored.serverCommand = tool.serverCommand;
-                restored.serverArgs = tool.serverArgs;
-                restored.serverEnv = tool.serverEnv;
-                restored.serverUrl = tool.serverUrl;
                 restored.persist();
             }
         }
@@ -323,10 +317,9 @@ class McpConfigGeneratorTest {
                 .stream().toList();
         ToolDefinitionEntity.deleteAll();
 
-        ToolDefinitionEntity mcpOnly = new ToolDefinitionEntity();
+        McpServerEntity mcpOnly = new McpServerEntity();
         mcpOnly.name = "test-mcp-only";
         mcpOnly.description = "Only MCP server, no script tools";
-        mcpOnly.type = "mcp-server";
         mcpOnly.serverUrl = "http://localhost:9999/mcp";
         mcpOnly.persist();
 
@@ -343,18 +336,13 @@ class McpConfigGeneratorTest {
             assertTrue(servers.has("test-mcp-only"),
                     "Should have the external MCP server");
         } finally {
-            ToolDefinitionEntity.deleteAll();
+            mcpOnly.delete();
             for (ToolDefinitionEntity tool : saved) {
                 ToolDefinitionEntity restored = new ToolDefinitionEntity();
                 restored.name = tool.name;
                 restored.description = tool.description;
-                restored.type = tool.type;
                 restored.parameters = tool.parameters;
                 restored.scriptTemplate = tool.scriptTemplate;
-                restored.serverCommand = tool.serverCommand;
-                restored.serverArgs = tool.serverArgs;
-                restored.serverEnv = tool.serverEnv;
-                restored.serverUrl = tool.serverUrl;
                 restored.persist();
             }
         }
