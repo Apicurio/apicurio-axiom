@@ -1,17 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import {
     Breadcrumb,
     BreadcrumbItem,
     Button,
-    DescriptionList,
-    DescriptionListDescription,
-    DescriptionListGroup,
-    DescriptionListTerm,
     EmptyState,
     EmptyStateBody,
     Flex,
     FlexItem,
+    Form,
+    FormGroup,
+    InputGroup,
+    InputGroupItem,
     Label,
     MenuToggle,
     MenuToggleElement,
@@ -23,6 +23,7 @@ import {
     TabContent,
     TabTitleText,
     Tabs,
+    TextArea,
     TextInput,
     Title,
     Toolbar,
@@ -30,6 +31,7 @@ import {
     ToolbarItem,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import {
@@ -37,6 +39,7 @@ import {
     type Task,
     fetchActor,
     fetchActorTasks,
+    updateActor,
 } from "../config/api";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
 
@@ -56,12 +59,17 @@ const TYPE_COLORS: Record<string, "blue" | "green" | "orange"> = {
 
 export function ActorDetailPage() {
     const { actorId } = useParams<{ actorId: string }>();
-    const navigate = useNavigate();
     const id = Number(actorId);
 
     const [actor, setActor] = useState<Actor | null>(null);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [dirty, setDirty] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
+
+    // Editable form state
+    const [description, setDescription] = useState("");
+    const [capabilities, setCapabilities] = useState<string[]>([]);
 
     // Task history state
     const [tasks, setTasks] = useState<Task[]>([]);
@@ -82,10 +90,32 @@ export function ActorDetailPage() {
         if (!id) return;
         setLoading(true);
         fetchActor(id)
-            .then(setActor)
+            .then((a) => {
+                setActor(a);
+                setDescription(a.description || "");
+                setCapabilities(a.capabilities || []);
+                setDirty(false);
+            })
             .catch(console.error)
             .finally(() => setLoading(false));
     }, [id]);
+
+    const handleSave = () => {
+        if (!actor) return;
+        setSaving(true);
+        updateActor(id, {
+            name: actor.name,
+            type: actor.type,
+            description,
+            capabilities,
+        })
+            .then((updated) => {
+                setActor(updated);
+                setDirty(false);
+            })
+            .catch(console.error)
+            .finally(() => setSaving(false));
+    };
 
     const loadTasks = useCallback(() => {
         if (!id) return;
@@ -144,7 +174,17 @@ export function ActorDetailPage() {
                     <Title headingLevel="h1" size="lg">{actor.name}</Title>
                 </FlexItem>
                 <FlexItem>
-                    <Label color={TYPE_COLORS[actor.type] || "grey"}>{actor.type}</Label>
+                    <Flex alignItems={{ default: "alignItemsCenter" }} spaceItems={{ default: "spaceItemsMd" }}>
+                        <FlexItem>
+                            <Label color={TYPE_COLORS[actor.type] || "grey"}>{actor.type}</Label>
+                        </FlexItem>
+                        <FlexItem>
+                            <Button variant="primary" icon={<SaveIcon />} onClick={handleSave}
+                                isDisabled={!dirty || saving} isLoading={saving}>
+                                {saving ? "Saving..." : "Save Changes"}
+                            </Button>
+                        </FlexItem>
+                    </Flex>
                 </FlexItem>
             </Flex>
 
@@ -152,10 +192,32 @@ export function ActorDetailPage() {
                 <Tab eventKey={0} title={<TabTitleText>Info</TabTitleText>}>
                     <TabContent id="info-tab" eventKey={0} activeKey={activeTab}
                         style={{ marginTop: "24px" }}>
-                        <InfoTab actor={actor} />
+                        <InfoTab
+                            actor={actor}
+                            description={description}
+                            onDescriptionChange={(v) => { setDescription(v); setDirty(true); }}
+                        />
                     </TabContent>
                 </Tab>
-                <Tab eventKey={1} title={<TabTitleText>Task History ({totalCount})</TabTitleText>}>
+                <Tab eventKey={1} title={<TabTitleText>Capabilities ({capabilities.length})</TabTitleText>}>
+                    <TabContent id="capabilities-tab" eventKey={1} activeKey={activeTab}
+                        style={{ marginTop: "24px" }}>
+                        <CapabilitiesTab
+                            capabilities={capabilities}
+                            onAdd={(c) => {
+                                if (c && !capabilities.includes(c)) {
+                                    setCapabilities([...capabilities, c]);
+                                    setDirty(true);
+                                }
+                            }}
+                            onRemove={(c) => {
+                                setCapabilities(capabilities.filter((x) => x !== c));
+                                setDirty(true);
+                            }}
+                        />
+                    </TabContent>
+                </Tab>
+                <Tab eventKey={2} title={<TabTitleText>Task History ({totalCount})</TabTitleText>}>
                     <TabContent id="tasks-tab" eventKey={1} activeKey={activeTab}
                         style={{ marginTop: "16px" }}>
                         <TaskHistoryTab
@@ -189,38 +251,99 @@ export function ActorDetailPage() {
     );
 }
 
-function InfoTab({ actor }: { actor: Actor }) {
+function InfoTab({ actor, description, onDescriptionChange }: {
+    actor: Actor;
+    description: string;
+    onDescriptionChange: (v: string) => void;
+}) {
     return (
-        <DescriptionList isHorizontal style={{ maxWidth: "600px" }}>
-            <DescriptionListGroup>
-                <DescriptionListTerm>Name</DescriptionListTerm>
-                <DescriptionListDescription>{actor.name}</DescriptionListDescription>
-            </DescriptionListGroup>
-            <DescriptionListGroup>
-                <DescriptionListTerm>Type</DescriptionListTerm>
-                <DescriptionListDescription>
-                    <Label color={actor.type === "ai-agent" ? "blue" : "green"}>
-                        {actor.type}
-                    </Label>
-                </DescriptionListDescription>
-            </DescriptionListGroup>
-            <DescriptionListGroup>
-                <DescriptionListTerm>Description</DescriptionListTerm>
-                <DescriptionListDescription>
-                    {actor.description || "—"}
-                </DescriptionListDescription>
-            </DescriptionListGroup>
-            <DescriptionListGroup>
-                <DescriptionListTerm>Capabilities</DescriptionListTerm>
-                <DescriptionListDescription>
-                    {actor.capabilities && actor.capabilities.length > 0
-                        ? actor.capabilities.map((c) => (
-                            <Label key={c} isCompact style={{ marginRight: "4px" }}>{c}</Label>
-                        ))
-                        : "—"}
-                </DescriptionListDescription>
-            </DescriptionListGroup>
-        </DescriptionList>
+        <Form style={{ maxWidth: "600px" }}>
+            <FormGroup label="Name" fieldId="name">
+                <TextInput id="name" value={actor.name} isDisabled />
+            </FormGroup>
+            <FormGroup label="Type" fieldId="type">
+                <TextInput id="type" value={actor.type} isDisabled />
+            </FormGroup>
+            <FormGroup label="Description" fieldId="description">
+                <TextArea id="description" value={description}
+                    onChange={(_e, v) => onDescriptionChange(v)} rows={3} />
+            </FormGroup>
+        </Form>
+    );
+}
+
+function CapabilitiesTab({ capabilities, onAdd, onRemove }: {
+    capabilities: string[];
+    onAdd: (c: string) => void;
+    onRemove: (c: string) => void;
+}) {
+    const [newCap, setNewCap] = useState("");
+
+    const handleAdd = () => {
+        const trimmed = newCap.trim();
+        if (trimmed) {
+            onAdd(trimmed);
+            setNewCap("");
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: "700px" }}>
+            <p style={{ color: "#6a6e73", marginBottom: "16px" }}>
+                Define which action types this actor can perform. Capabilities
+                determine which tasks may be assigned to this actor.
+            </p>
+
+            <InputGroup style={{ marginBottom: "16px" }}>
+                <InputGroupItem isFill>
+                    <TextInput
+                        id="newCapability"
+                        value={newCap}
+                        onChange={(_e, v) => setNewCap(v)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
+                        }}
+                        placeholder="Type a capability name and press Enter or click Add"
+                    />
+                </InputGroupItem>
+                <InputGroupItem>
+                    <Button variant="control" onClick={handleAdd}
+                        isDisabled={!newCap.trim()}>
+                        Add
+                    </Button>
+                </InputGroupItem>
+            </InputGroup>
+
+            {capabilities.length === 0 ? (
+                <EmptyState variant="xs">
+                    <EmptyStateBody>
+                        No capabilities configured.
+                    </EmptyStateBody>
+                </EmptyState>
+            ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {capabilities.map((c) => (
+                        <Flex key={c} alignItems={{ default: "alignItemsCenter" }}
+                            style={{
+                                padding: "8px 12px",
+                                backgroundColor: "var(--pf-t--global--background--color--secondary--default)",
+                                borderRadius: "4px",
+                            }}>
+                            <FlexItem grow={{ default: "grow" }}>
+                                <code style={{ fontSize: "13px" }}>{c}</code>
+                            </FlexItem>
+                            <FlexItem>
+                                <Button variant="plain" size="sm"
+                                    onClick={() => onRemove(c)}
+                                    aria-label={`Remove ${c}`}>
+                                    <TimesIcon />
+                                </Button>
+                            </FlexItem>
+                        </Flex>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 

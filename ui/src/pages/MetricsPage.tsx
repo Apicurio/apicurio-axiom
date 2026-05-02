@@ -40,9 +40,14 @@ export function MetricsPage() {
     const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
 
-    // Filters
+    // Committed filter values (drive the API call)
     const [filterActionType, setFilterActionType] = useState("");
     const [filterInvocationType, setFilterInvocationType] = useState("");
+    const [filterDateFrom, setFilterDateFrom] = useState("");
+    const [filterDateTo, setFilterDateTo] = useState("");
+    // Input values (updated on every keystroke, committed on Enter/blur)
+    const [inputActionType, setInputActionType] = useState("");
+    const [inputInvocationType, setInputInvocationType] = useState("");
 
     // Summary stats
     const [totalCost, setTotalCost] = useState(0);
@@ -59,7 +64,9 @@ export function MetricsPage() {
             page, perPage,
             filterInvocationType || undefined,
             undefined, undefined,
-            filterActionType || undefined
+            filterActionType || undefined,
+            filterDateFrom || undefined,
+            filterDateTo || undefined
         )
             .then((results) => {
                 setRecords(results.items);
@@ -70,16 +77,26 @@ export function MetricsPage() {
             })
             .catch(console.error)
             .finally(() => setLoading(false));
-    }, [page, perPage, filterActionType, filterInvocationType]);
+    }, [page, perPage, filterActionType, filterInvocationType, filterDateFrom, filterDateTo]);
 
     useEffect(() => { loadData(); }, [loadData]);
     useEffect(() => { loadSummary(); }, [loadSummary]);
 
-    const hasActiveFilters = filterActionType || filterInvocationType;
+    const hasActiveFilters = filterActionType || filterInvocationType || filterDateFrom || filterDateTo;
+
+    const applyFilters = () => {
+        setFilterInvocationType(inputInvocationType);
+        setFilterActionType(inputActionType);
+        setPage(1);
+    };
 
     const clearFilters = () => {
+        setInputActionType("");
+        setInputInvocationType("");
         setFilterActionType("");
         setFilterInvocationType("");
+        setFilterDateFrom("");
+        setFilterDateTo("");
         setPage(1);
     };
 
@@ -164,8 +181,10 @@ export function MetricsPage() {
                             type="text"
                             aria-label="Filter by invocation type"
                             placeholder="Type (task/manager)"
-                            value={filterInvocationType}
-                            onChange={(_e, v) => { setFilterInvocationType(v); setPage(1); }}
+                            value={inputInvocationType}
+                            onChange={(_e, v) => setInputInvocationType(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+                            onBlur={applyFilters}
                             style={{ width: "180px" }}
                         />
                     </ToolbarItem>
@@ -174,9 +193,29 @@ export function MetricsPage() {
                             type="text"
                             aria-label="Filter by action type"
                             placeholder="Action type"
-                            value={filterActionType}
-                            onChange={(_e, v) => { setFilterActionType(v); setPage(1); }}
+                            value={inputActionType}
+                            onChange={(_e, v) => setInputActionType(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+                            onBlur={applyFilters}
                             style={{ width: "180px" }}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <TextInput
+                            type="date"
+                            aria-label="From date"
+                            value={filterDateFrom}
+                            onChange={(_e, v) => { setFilterDateFrom(v); setPage(1); }}
+                            style={{ width: "160px" }}
+                        />
+                    </ToolbarItem>
+                    <ToolbarItem>
+                        <TextInput
+                            type="date"
+                            aria-label="To date"
+                            value={filterDateTo}
+                            onChange={(_e, v) => { setFilterDateTo(v); setPage(1); }}
+                            style={{ width: "160px" }}
                         />
                     </ToolbarItem>
                     {hasActiveFilters && (

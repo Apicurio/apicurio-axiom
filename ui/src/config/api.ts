@@ -754,7 +754,8 @@ export interface AiUsageSearchResults extends SearchResults<AiUsage> {
 export async function fetchUsage(
     page = 1, limit = 20,
     filterInvocationType?: string, filterProjectId?: number,
-    filterActorId?: number, filterActionType?: string
+    filterActorId?: number, filterActionType?: string,
+    filterDateFrom?: string, filterDateTo?: string
 ): Promise<AiUsageSearchResults> {
     const params = new URLSearchParams();
     params.set("page", String(page));
@@ -763,6 +764,8 @@ export async function fetchUsage(
     if (filterProjectId != null) params.set("filterProjectId", String(filterProjectId));
     if (filterActorId != null) params.set("filterActorId", String(filterActorId));
     if (filterActionType) params.set("filterActionType", filterActionType);
+    if (filterDateFrom) params.set("filterDateFrom", filterDateFrom);
+    if (filterDateTo) params.set("filterDateTo", filterDateTo);
     const response = await fetch(`${API}/usage?${params}`);
     if (!response.ok) throw new Error(`Failed to fetch usage: ${response.status}`);
     return response.json();

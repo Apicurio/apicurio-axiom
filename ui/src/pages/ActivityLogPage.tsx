@@ -52,11 +52,15 @@ export function ActivityLogPage() {
     const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
 
-    // Filter state
+    // Committed filter values (drive the API call)
     const [filterEventId, setFilterEventId] = useState("");
     const [filterSummary, setFilterSummary] = useState("");
     const [filterProjectId, setFilterProjectId] = useState("");
     const [filterEntryTypes, setFilterEntryTypes] = useState<string[]>([]);
+    // Input values (updated on every keystroke, committed on Enter/blur)
+    const [inputEventId, setInputEventId] = useState("");
+    const [inputSummary, setInputSummary] = useState("");
+    const [inputProjectId, setInputProjectId] = useState("");
     const [isTypeSelectOpen, setIsTypeSelectOpen] = useState(false);
 
     // Execution log modal state
@@ -102,7 +106,17 @@ export function ActivityLogPage() {
 
     const hasActiveFilters = filterEventId || filterSummary || filterProjectId || filterEntryTypes.length > 0;
 
+    const applyFilters = () => {
+        setFilterEventId(inputEventId);
+        setFilterSummary(inputSummary);
+        setFilterProjectId(inputProjectId);
+        setPage(1);
+    };
+
     const clearFilters = () => {
+        setInputEventId("");
+        setInputSummary("");
+        setInputProjectId("");
         setFilterEventId("");
         setFilterSummary("");
         setFilterProjectId("");
@@ -142,8 +156,10 @@ export function ActivityLogPage() {
                             type="text"
                             aria-label="Filter by event ID"
                             placeholder="Event ID"
-                            value={filterEventId}
-                            onChange={(_e, v) => setFilterEventId(v)}
+                            value={inputEventId}
+                            onChange={(_e, v) => setInputEventId(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+                            onBlur={applyFilters}
                             style={{ width: "120px" }}
                         />
                     </ToolbarItem>
@@ -175,8 +191,10 @@ export function ActivityLogPage() {
                             type="text"
                             aria-label="Filter by summary"
                             placeholder="Summary search"
-                            value={filterSummary}
-                            onChange={(_e, v) => setFilterSummary(v)}
+                            value={inputSummary}
+                            onChange={(_e, v) => setInputSummary(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+                            onBlur={applyFilters}
                             style={{ width: "200px" }}
                         />
                     </ToolbarItem>
@@ -185,8 +203,10 @@ export function ActivityLogPage() {
                             type="text"
                             aria-label="Filter by project ID"
                             placeholder="Project ID"
-                            value={filterProjectId}
-                            onChange={(_e, v) => setFilterProjectId(v)}
+                            value={inputProjectId}
+                            onChange={(_e, v) => setInputProjectId(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyFilters(); }}
+                            onBlur={applyFilters}
                             style={{ width: "120px" }}
                         />
                     </ToolbarItem>

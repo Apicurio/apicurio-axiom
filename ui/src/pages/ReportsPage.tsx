@@ -172,7 +172,6 @@ export function ReportsPage() {
                                 <Th>Status</Th>
                                 <Th>Time Range</Th>
                                 <Th>Generated</Th>
-                                <Th>Cost</Th>
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -193,11 +192,6 @@ export function ReportsPage() {
                                     </Td>
                                     <Td style={{ whiteSpace: "nowrap" }}>
                                         {new Date(report.createdOn).toLocaleString()}
-                                    </Td>
-                                    <Td>
-                                        {report.costUsd != null
-                                            ? `$${report.costUsd.toFixed(4)}`
-                                            : "\u2014"}
                                     </Td>
                                 </Tr>
                             ))}

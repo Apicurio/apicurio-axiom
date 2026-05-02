@@ -1027,6 +1027,18 @@
             "name": "filterActionType",
             "in": "query",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "filterDateFrom",
+            "in": "query",
+            "description": "Start date filter (inclusive, ISO-8601 date e.g. 2026-01-15)",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "filterDateTo",
+            "in": "query",
+            "description": "End date filter (inclusive, ISO-8601 date e.g. 2026-01-31)",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {

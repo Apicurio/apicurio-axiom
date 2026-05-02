@@ -21,7 +21,6 @@ import {
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
-import PencilAltIcon from "@patternfly/react-icons/dist/esm/icons/pencil-alt-icon";
 import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import {
     type Actor,
@@ -54,13 +53,6 @@ export function ActorsPage() {
         setEditing(null);
         setForm({ name: "", type: "ai-agent", capabilities: [] });
         setCapabilitiesText("");
-        setIsModalOpen(true);
-    };
-
-    const openEdit = (a: Actor) => {
-        setEditing(a);
-        setForm({ name: a.name, description: a.description, type: a.type, capabilities: a.capabilities });
-        setCapabilitiesText(a.capabilities?.join(", ") || "");
         setIsModalOpen(true);
     };
 
@@ -101,7 +93,6 @@ export function ActorsPage() {
                                     <Td>{a.description || "—"}</Td>
                                     <Td>{a.capabilities?.join(", ") || "—"}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={() => openEdit(a)}><PencilAltIcon /></Button>
                                         <Button variant="plain" onClick={() => handleDelete(a.id)}><TrashIcon /></Button>
                                     </Td>
                                 </Tr>

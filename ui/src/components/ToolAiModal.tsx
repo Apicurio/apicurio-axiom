@@ -7,7 +7,7 @@ import {
     Modal,
     ModalBody,
     ModalFooter,
-    ModalHeader,
+    ModalHeader, Spinner,
     Stack,
     StackItem,
     TextArea,
@@ -219,6 +219,7 @@ export function ToolAiModal({ isOpen, form, params, onApply, onClose }: ToolAiMo
                                         fontSize: "13px",
                                         color: "#6a6e73",
                                     }}>
+                                        <Spinner size="sm" style={{ marginRight: "5px" }} />
                                         Thinking...
                                     </div>
                                 )}

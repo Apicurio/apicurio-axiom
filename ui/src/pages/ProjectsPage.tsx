@@ -59,9 +59,11 @@ export function ProjectsPage() {
     const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
 
-    // Filter state
+    // Committed filter values (drive the API call)
     const [filterName, setFilterName] = useState("");
     const [filterStatus, setFilterStatus] = useState<string[]>([]);
+    // Input value (updated on every keystroke, committed on Enter/blur)
+    const [inputName, setInputName] = useState("");
     const [isStatusSelectOpen, setIsStatusSelectOpen] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,7 +96,13 @@ export function ProjectsPage() {
 
     const hasActiveFilters = filterName || filterStatus.length > 0;
 
+    const applyNameFilter = () => {
+        setFilterName(inputName);
+        setPage(1);
+    };
+
     const clearFilters = () => {
+        setInputName("");
         setFilterName("");
         setFilterStatus([]);
         setPage(1);
@@ -148,8 +156,10 @@ export function ProjectsPage() {
                             type="text"
                             aria-label="Filter by name or issue"
                             placeholder="Filter by name or issue"
-                            value={filterName}
-                            onChange={(_e, v) => setFilterName(v)}
+                            value={inputName}
+                            onChange={(_e, v) => setInputName(v)}
+                            onKeyDown={(e) => { if (e.key === "Enter") applyNameFilter(); }}
+                            onBlur={applyNameFilter}
                             style={{ width: "220px" }}
                         />
                     </ToolbarItem>

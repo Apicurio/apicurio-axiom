@@ -13,6 +13,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -31,12 +34,17 @@ public class UsageResourceImpl implements UsageResource {
     /**
      * {@inheritDoc}
      */
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public AiUsageSearchResults listUsage(BigInteger page, BigInteger limit,
                                            String filterInvocationType,
                                            BigInteger filterProjectId,
                                            BigInteger filterActorId,
-                                           String filterActionType) {
+                                           String filterActionType,
+                                           String filterDateFrom,
+                                           String filterDateTo) {
         int pageNum = page != null ? page.intValue() : 1;
         int pageSize = limit != null ? limit.intValue() : 20;
 
@@ -58,6 +66,18 @@ public class UsageResourceImpl implements UsageResource {
         if (filterActionType != null && !filterActionType.isBlank()) {
             hql.append(" and lower(actionType) like :actionType");
             params.put("actionType", "%" + filterActionType.toLowerCase() + "%");
+        }
+        if (filterDateFrom != null && !filterDateFrom.isBlank()) {
+            Instant fromInstant = LocalDate.parse(filterDateFrom)
+                    .atStartOfDay(ZoneId.systemDefault()).toInstant();
+            hql.append(" and createdOn >= :dateFrom");
+            params.put("dateFrom", fromInstant);
+        }
+        if (filterDateTo != null && !filterDateTo.isBlank()) {
+            Instant toInstant = LocalDate.parse(filterDateTo)
+                    .plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            hql.append(" and createdOn < :dateTo");
+            params.put("dateTo", toInstant);
         }
 
         long totalCount = AiUsageEntity.count(hql.toString(), params);
