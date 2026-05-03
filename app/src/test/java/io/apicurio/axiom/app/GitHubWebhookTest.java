@@ -65,7 +65,7 @@ class GitHubWebhookTest {
                 .get(EVENTS_PATH)
             .then()
                 .statusCode(200)
-                .body("find { it.eventType == 'issue-created' && it.issueRef == 'Apicurio/apicurio-axiom#42' }", notNullValue());
+                .body("items.find { it.eventType == 'issue-created' && it.issueRef == 'Apicurio/apicurio-axiom#42' }", notNullValue());
     }
 
     @Test
@@ -87,7 +87,7 @@ class GitHubWebhookTest {
                 .get(EVENTS_PATH)
             .then()
                 .statusCode(200)
-                .body("find { it.eventType == 'issue-closed' && it.issueRef == 'Apicurio/apicurio-axiom#43' }", notNullValue());
+                .body("items.find { it.eventType == 'issue-closed' && it.issueRef == 'Apicurio/apicurio-axiom#43' }", notNullValue());
     }
 
     @Test
@@ -109,7 +109,7 @@ class GitHubWebhookTest {
                 .get(EVENTS_PATH)
             .then()
                 .statusCode(200)
-                .body("find { it.eventType == 'issue-reopened' }", notNullValue());
+                .body("items.find { it.eventType == 'issue-reopened' }", notNullValue());
     }
 
     @Test
@@ -131,7 +131,7 @@ class GitHubWebhookTest {
                 .get(EVENTS_PATH)
             .then()
                 .statusCode(200)
-                .body("find { it.eventType == 'comment-added' && it.issueRef == 'Apicurio/apicurio-axiom#45' }", notNullValue());
+                .body("items.find { it.eventType == 'comment-added' && it.issueRef == 'Apicurio/apicurio-axiom#45' }", notNullValue());
     }
 
     @Test
@@ -153,7 +153,7 @@ class GitHubWebhookTest {
                 .get(EVENTS_PATH)
             .then()
                 .statusCode(200)
-                .body("find { it.eventType == 'issue-updated' && it.issueRef == 'Apicurio/apicurio-axiom#46' }", notNullValue());
+                .body("items.find { it.eventType == 'issue-updated' && it.issueRef == 'Apicurio/apicurio-axiom#46' }", notNullValue());
     }
 
     // ── Ignored events ────────────────────────────────────────────────

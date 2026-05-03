@@ -19,22 +19,15 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
-import {
-    type AiUsage,
-    type MetricsSummary,
-    fetchUsage,
-    fetchMetricsSummary,
-    formatBytes,
-} from "../config/api";
+import { type AiUsage, fetchUsage } from "../config/api";
 
 const TYPE_COLORS: Record<string, "blue" | "green"> = {
     task: "green",
     manager: "blue",
 };
 
-export function MetricsPage() {
+export function AiUsagePage() {
     const [records, setRecords] = useState<AiUsage[]>([]);
-    const [summary, setSummary] = useState<MetricsSummary | null>(null);
     const [totalCount, setTotalCount] = useState(0);
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
@@ -53,10 +46,6 @@ export function MetricsPage() {
     const [totalCost, setTotalCost] = useState(0);
     const [totalInputTokens, setTotalInputTokens] = useState(0);
     const [totalOutputTokens, setTotalOutputTokens] = useState(0);
-
-    const loadSummary = useCallback(() => {
-        fetchMetricsSummary().then(setSummary).catch(console.error);
-    }, []);
 
     const loadData = useCallback(() => {
         setLoading(true);
@@ -80,7 +69,6 @@ export function MetricsPage() {
     }, [page, perPage, filterActionType, filterInvocationType, filterDateFrom, filterDateTo]);
 
     useEffect(() => { loadData(); }, [loadData]);
-    useEffect(() => { loadSummary(); }, [loadSummary]);
 
     const hasActiveFilters = filterActionType || filterInvocationType || filterDateFrom || filterDateTo;
 
@@ -103,23 +91,10 @@ export function MetricsPage() {
     return (
         <PageSection>
             <Title headingLevel="h1" size="lg" style={{ marginBottom: "16px" }}>
-                Metrics
+                AI Usage
             </Title>
 
-            {/* Summary cards */}
             <Gallery hasGutter minWidths={{ default: "180px" }} style={{ marginBottom: "16px" }}>
-                <GalleryItem>
-                    <Card isCompact>
-                        <CardBody style={{ textAlign: "center", padding: "16px" }}>
-                            <div style={{ fontSize: "24px", fontWeight: "bold" }}>
-                                {summary ? formatBytes(summary.totalDiskUsageBytes) : "—"}
-                            </div>
-                            <div style={{ fontSize: "13px", color: "#6a6e73" }}>
-                                Total Disk Usage
-                            </div>
-                        </CardBody>
-                    </Card>
-                </GalleryItem>
                 <GalleryItem>
                     <Card isCompact>
                         <CardBody style={{ textAlign: "center", padding: "16px" }}>
@@ -127,7 +102,7 @@ export function MetricsPage() {
                                 {totalCount}
                             </div>
                             <div style={{ fontSize: "13px", color: "#6a6e73" }}>
-                                Total AI Invocations
+                                Invocations
                             </div>
                         </CardBody>
                     </Card>
@@ -139,7 +114,7 @@ export function MetricsPage() {
                                 ${totalCost.toFixed(4)}
                             </div>
                             <div style={{ fontSize: "13px", color: "#6a6e73" }}>
-                                Total AI Cost
+                                Cost
                             </div>
                         </CardBody>
                     </Card>
@@ -170,10 +145,6 @@ export function MetricsPage() {
                 </GalleryItem>
             </Gallery>
 
-            {/* AI Usage Detail */}
-            <Title headingLevel="h3" size="md" style={{ marginBottom: "8px" }}>
-                AI Usage Detail
-            </Title>
             <Toolbar clearAllFilters={clearFilters}>
                 <ToolbarContent>
                     <ToolbarItem>

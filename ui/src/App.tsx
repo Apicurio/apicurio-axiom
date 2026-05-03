@@ -38,6 +38,8 @@ import { ActorDetailPage } from "./pages/ActorDetailPage";
 import { ManagerConfigPage } from "./pages/ManagerConfigPage";
 import { ActionTypesPage } from "./pages/ActionTypesPage";
 import { ActivityLogPage } from "./pages/ActivityLogPage";
+import { EventsPage } from "./pages/EventsPage";
+import { ManagerDecisionsPage } from "./pages/ManagerDecisionsPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
@@ -48,7 +50,8 @@ import { ReportsPage } from "./pages/ReportsPage";
 import { ReportDetailPage } from "./pages/ReportDetailPage";
 import { ReportDefinitionsPage } from "./pages/ReportDefinitionsPage";
 import { ReportDefinitionDetailPage } from "./pages/ReportDefinitionDetailPage";
-import { MetricsPage } from "./pages/MetricsPage";
+import { AiUsagePage } from "./pages/AiUsagePage";
+import { DiskUsagePage } from "./pages/DiskUsagePage";
 import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ToolsetsPage } from "./pages/ToolsetsPage";
 import { ToolsetDetailPage } from "./pages/ToolsetDetailPage";
@@ -199,12 +202,29 @@ export function App() {
                         <NavItem isActive={location.pathname.startsWith("/projects")} onClick={() => navigate("/projects")}>
                             Projects
                         </NavItem>
-                        <NavItem isActive={location.pathname === "/activity"} onClick={() => navigate("/activity")}>
-                            Activity Log
-                        </NavItem>
-                        <NavItem isActive={location.pathname === "/metrics"} onClick={() => navigate("/metrics")}>
-                            Metrics
-                        </NavItem>
+                        <NavExpandable title="Logs"
+                            isActive={location.pathname.startsWith("/logs")}
+                            isExpanded={location.pathname.startsWith("/logs")}>
+                            <NavItem isActive={location.pathname === "/logs/activity"} onClick={() => navigate("/logs/activity")}>
+                                All Activity
+                            </NavItem>
+                            <NavItem isActive={location.pathname === "/logs/events"} onClick={() => navigate("/logs/events")}>
+                                Events
+                            </NavItem>
+                            <NavItem isActive={location.pathname === "/logs/manager"} onClick={() => navigate("/logs/manager")}>
+                                Manager Decisions
+                            </NavItem>
+                        </NavExpandable>
+                        <NavExpandable title="Metrics"
+                            isActive={location.pathname.startsWith("/metrics")}
+                            isExpanded={location.pathname.startsWith("/metrics")}>
+                            <NavItem isActive={location.pathname === "/metrics/ai-usage"} onClick={() => navigate("/metrics/ai-usage")}>
+                                AI Usage
+                            </NavItem>
+                            <NavItem isActive={location.pathname === "/metrics/disk-usage"} onClick={() => navigate("/metrics/disk-usage")}>
+                                Disk Usage
+                            </NavItem>
+                        </NavExpandable>
                         <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
                             <NavItem isActive={location.pathname.startsWith("/manager")} onClick={() => navigate("/manager")}>
                                 Manager
@@ -328,12 +348,15 @@ export function App() {
                     <Route path="/toolsets/:toolsetId" element={<ToolsetDetailPage />} />
                     <Route path="/mcp-servers" element={<McpServersPage />} />
                     <Route path="/mcp-servers/:mcpServerId" element={<McpServerDetailPage />} />
-                    <Route path="/activity" element={<ActivityLogPage />} />
+                    <Route path="/logs/activity" element={<ActivityLogPage />} />
+                    <Route path="/logs/events" element={<EventsPage />} />
+                    <Route path="/logs/manager" element={<ManagerDecisionsPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/reports/:reportId" element={<ReportDetailPage />} />
                     <Route path="/report-definitions" element={<ReportDefinitionsPage />} />
                     <Route path="/report-definitions/:definitionId" element={<ReportDefinitionDetailPage />} />
-                    <Route path="/metrics" element={<MetricsPage />} />
+                    <Route path="/metrics/ai-usage" element={<AiUsagePage />} />
+                    <Route path="/metrics/disk-usage" element={<DiskUsagePage />} />
                     <Route path="/repositories" element={<RepositoriesPage />} />
                 </Routes>
             )}

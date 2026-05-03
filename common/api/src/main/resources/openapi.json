@@ -989,13 +989,13 @@
       },
       "parameters": [{ "name": "reportId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
     },
-    "/usage": {
+    "/usage/ai": {
       "get": {
         "tags": [
           "Usage"
         ],
         "summary": "List AI usage records (paginated)",
-        "operationId": "listUsage",
+        "operationId": "listAiUsage",
         "parameters": [
           {
             "name": "page",
@@ -1055,29 +1055,68 @@
         }
       }
     },
-    "/events": {
+    "/usage/disk": {
       "get": {
-        "tags": [
-          "Events"
+        "tags": ["Usage"],
+        "summary": "List disk usage by project (paginated)",
+        "operationId": "listDiskUsage",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          {
+            "name": "filterName",
+            "in": "query",
+            "description": "Filter by project name (substring match)",
+            "schema": { "type": "string" }
+          }
         ],
-        "summary": "List events",
-        "operationId": "listEvents",
         "responses": {
           "200": {
-            "description": "List of events",
+            "description": "Paginated disk usage by project",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Event"
-                  }
-                }
+                "schema": { "$ref": "#/components/schemas/DiskUsageSearchResults" }
               }
             }
           }
         }
       }
+    },
+    "/events": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "List events (paginated)",
+        "operationId": "listEvents",
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "filterSource", "in": "query", "description": "Filter by event source", "schema": { "type": "string" } },
+          { "name": "filterEventType", "in": "query", "description": "Filter by event type", "schema": { "type": "string" } },
+          { "name": "filterRepository", "in": "query", "description": "Filter by repository", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of events",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EventSearchResults" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{eventId}": {
+      "get": {
+        "tags": ["Events"],
+        "summary": "Get a single event by ID",
+        "operationId": "getEvent",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Event" } } } },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
     },
     "/activity": {
       "get": {
@@ -1363,28 +1402,6 @@
           "$ref": "#/components/parameters/ProjectId"
         }
       ]
-    },
-    "/metrics/summary": {
-      "get": {
-        "tags": [
-          "Metrics"
-        ],
-        "summary": "Get aggregate metrics across all projects",
-        "description": "Returns total disk usage, AI cost, and per-project breakdown.",
-        "operationId": "getMetricsSummary",
-        "responses": {
-          "200": {
-            "description": "Aggregate metrics summary",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MetricsSummary"
-                }
-              }
-            }
-          }
-        }
-      }
     },
     "/tools": {
       "get": {
@@ -2291,6 +2308,15 @@
           }
         }
       },
+      "EventSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Event" } },
+          "totalCount": { "format": "int64", "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" }
+        }
+      },
       "ActivityLogEntry": {
         "required": [
           "id",
@@ -2421,29 +2447,23 @@
           "invocationCount": { "format": "int64", "type": "integer" }
         }
       },
-      "MetricsSummary": {
+      "DiskUsageSearchResults": {
         "type": "object",
         "properties": {
-          "totalDiskUsageBytes": { "format": "int64", "type": "integer" },
-          "totalCostUsd": { "format": "double", "type": "number" },
-          "totalInputTokens": { "format": "int64", "type": "integer" },
-          "totalOutputTokens": { "format": "int64", "type": "integer" },
-          "totalInvocations": { "format": "int64", "type": "integer" },
-          "projectCount": { "type": "integer" },
-          "projects": {
-            "type": "array",
-            "items": { "$ref": "#/components/schemas/ProjectMetricsSummary" }
-          }
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/DiskUsageProject" } },
+          "totalCount": { "format": "int64", "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalDiskUsageBytes": { "format": "int64", "type": "integer", "description": "Sum across all matching projects" },
+          "projectCount": { "format": "int64", "type": "integer", "description": "Count of all matching projects" }
         }
       },
-      "ProjectMetricsSummary": {
+      "DiskUsageProject": {
         "type": "object",
         "properties": {
           "projectId": { "format": "int64", "type": "integer" },
           "projectName": { "type": "string" },
-          "diskUsageBytes": { "format": "int64", "type": "integer" },
-          "costUsd": { "format": "double", "type": "number" },
-          "invocationCount": { "format": "int64", "type": "integer" }
+          "diskUsageBytes": { "format": "int64", "type": "integer" }
         }
       },
       "AiUsage": {

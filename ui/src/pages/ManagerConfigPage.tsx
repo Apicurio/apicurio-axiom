@@ -5,41 +5,21 @@ import {
     EmptyStateBody,
     Flex,
     FlexItem,
-    Label,
     PageSection,
-    Pagination,
     Tab,
     TabContent,
     TabTitleText,
     Tabs,
     Title,
-    Toolbar,
-    ToolbarContent,
-    ToolbarItem,
 } from "@patternfly/react-core";
-import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { registerPlaceholderCompletions, MANAGER_PLACEHOLDERS } from "../components/PlaceholderCompletionProvider";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
-import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import {
     type ManagerConfig,
-    type ActivityLogEntry,
     fetchManagerConfig,
     updateManagerConfig,
-    fetchActivityLog,
 } from "../config/api";
-import { ExecutionLogModal } from "../components/ExecutionLogModal";
-
-const MANAGER_ENTRY_TYPES = "manager-evaluated,manager-error,manager-skipped,manager-escalation,manager-no-decision";
-
-const ENTRY_TYPE_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
-    "manager-evaluated": "blue",
-    "manager-error": "red",
-    "manager-skipped": "grey",
-    "manager-escalation": "orange",
-    "manager-no-decision": "grey",
-};
 
 export function ManagerConfigPage() {
     const [config, setConfig] = useState<ManagerConfig>({});
@@ -47,17 +27,6 @@ export function ManagerConfigPage() {
     const [saving, setSaving] = useState(false);
     const [dirty, setDirty] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
-
-    // Event history state
-    const [events, setEvents] = useState<ActivityLogEntry[]>([]);
-    const [eventsTotalCount, setEventsTotalCount] = useState(0);
-    const [eventsPage, setEventsPage] = useState(1);
-    const [eventsPerPage, setEventsPerPage] = useState(20);
-    const [eventsLoading, setEventsLoading] = useState(false);
-
-    // Log modal state
-    const [isLogModalOpen, setIsLogModalOpen] = useState(false);
-    const [logActivityId, setLogActivityId] = useState<number | null>(null);
 
     const loadConfig = useCallback(() => {
         setLoading(true);
@@ -67,19 +36,7 @@ export function ManagerConfigPage() {
             .finally(() => setLoading(false));
     }, []);
 
-    const loadEvents = useCallback(() => {
-        setEventsLoading(true);
-        fetchActivityLog(eventsPage, eventsPerPage, undefined, undefined, undefined, MANAGER_ENTRY_TYPES)
-            .then((results) => {
-                setEvents(results.items);
-                setEventsTotalCount(results.totalCount);
-            })
-            .catch(console.error)
-            .finally(() => setEventsLoading(false));
-    }, [eventsPage, eventsPerPage]);
-
     useEffect(() => { loadConfig(); }, [loadConfig]);
-    useEffect(() => { loadEvents(); }, [loadEvents]);
 
     const handleSave = () => {
         setSaving(true);
@@ -87,11 +44,6 @@ export function ManagerConfigPage() {
             .then((c) => { setConfig(c); setDirty(false); })
             .catch(console.error)
             .finally(() => setSaving(false));
-    };
-
-    const handleViewLog = (activityId: number) => {
-        setLogActivityId(activityId);
-        setIsLogModalOpen(true);
     };
 
     if (loading) {
@@ -168,98 +120,7 @@ export function ManagerConfigPage() {
                         />
                     </TabContent>
                 </Tab>
-                <Tab eventKey={2} title={<TabTitleText>Event History ({eventsTotalCount})</TabTitleText>}>
-                    <TabContent id="events-tab" eventKey={2} activeKey={activeTab}
-                        style={{ marginTop: "16px" }}>
-                        <Toolbar>
-                            <ToolbarContent>
-                                <ToolbarItem>
-                                    <Button variant="plain" aria-label="Refresh" onClick={loadEvents}>
-                                        <SyncAltIcon />
-                                    </Button>
-                                </ToolbarItem>
-                                <ToolbarItem variant="pagination" align={{ default: "alignEnd" }}>
-                                    <Pagination
-                                        itemCount={eventsTotalCount}
-                                        page={eventsPage}
-                                        perPage={eventsPerPage}
-                                        onSetPage={(_e, p) => setEventsPage(p)}
-                                        onPerPageSelect={(_e, pp) => { setEventsPerPage(pp); setEventsPage(1); }}
-                                        isCompact
-                                    />
-                                </ToolbarItem>
-                            </ToolbarContent>
-                        </Toolbar>
-
-                        {eventsLoading ? (
-                            <EmptyState>
-                                <EmptyStateBody>Loading event history...</EmptyStateBody>
-                            </EmptyState>
-                        ) : events.length === 0 ? (
-                            <EmptyState>
-                                <EmptyStateBody>
-                                    No manager evaluations yet. Events will appear here
-                                    as the Manager processes incoming events.
-                                </EmptyStateBody>
-                            </EmptyState>
-                        ) : (
-                            <Table aria-label="Manager Event History" variant="compact">
-                                <Thead>
-                                    <Tr>
-                                        <Th>Time</Th>
-                                        <Th>Event</Th>
-                                        <Th>Type</Th>
-                                        <Th>Summary</Th>
-                                        <Th />
-                                    </Tr>
-                                </Thead>
-                                <Tbody>
-                                    {events.map((entry) => (
-                                        <Tr key={entry.id}>
-                                            <Td style={{ whiteSpace: "nowrap" }}>
-                                                {new Date(entry.createdOn).toLocaleString()}
-                                            </Td>
-                                            <Td>
-                                                {entry.eventId ? (
-                                                    <Label isCompact color="blue">
-                                                        #{entry.eventId}
-                                                    </Label>
-                                                ) : "—"}
-                                            </Td>
-                                            <Td>
-                                                <Label isCompact
-                                                    color={ENTRY_TYPE_COLORS[entry.entryType] || "grey"}>
-                                                    {entry.entryType}
-                                                </Label>
-                                            </Td>
-                                            <Td>
-                                                {entry.summary && entry.summary.length > 120
-                                                    ? entry.summary.substring(0, 117) + "..."
-                                                    : entry.summary}
-                                            </Td>
-                                            <Td>
-                                                {(entry.entryType === "manager-evaluated"
-                                                        || entry.entryType === "manager-error") && (
-                                                    <Button variant="link" isInline
-                                                        onClick={() => handleViewLog(entry.id)}>
-                                                        View Log
-                                                    </Button>
-                                                )}
-                                            </Td>
-                                        </Tr>
-                                    ))}
-                                </Tbody>
-                            </Table>
-                        )}
-                    </TabContent>
-                </Tab>
             </Tabs>
-
-            <ExecutionLogModal
-                isOpen={isLogModalOpen}
-                activityId={logActivityId}
-                onClose={() => setIsLogModalOpen(false)}
-            />
         </PageSection>
     );
 }

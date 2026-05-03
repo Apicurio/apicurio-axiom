@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
     Alert,
-    Button,
     Card,
     CardBody,
     CardFooter,
@@ -31,6 +30,7 @@ import {
     fetchActors,
     fetchRepositories,
     fetchTools,
+    fetchReportDefinitions,
 } from "../config/api";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
@@ -77,7 +77,7 @@ export function DashboardPage() {
     const [requirements, setRequirements] = useState<SetupRequirement[]>([]);
     const [setupChecked, setSetupChecked] = useState(false);
     const [configCounts, setConfigCounts] = useState({
-        actors: 0, actionTypes: 0, tools: 0, repositories: 0,
+        actors: 0, actionTypes: 0, tools: 0, repositories: 0, reportDefinitions: 0,
     });
 
     const loadData = useCallback(() => {
@@ -89,8 +89,9 @@ export function DashboardPage() {
             fetchActors(),
             fetchActionTypes(),
             fetchTools(),
+            fetchReportDefinitions(),
         ])
-            .then(([p, a, repos, actors, actionTypes, tools]) => {
+            .then(([p, a, repos, actors, actionTypes, tools, reportDefs]) => {
                 setProjects(p.items);
                 setRecentActivity(a.items);
                 setConfigCounts({
@@ -98,6 +99,7 @@ export function DashboardPage() {
                     actionTypes: actionTypes.length,
                     tools: tools.length,
                     repositories: repos.length,
+                    reportDefinitions: reportDefs.length,
                 });
 
                 setRequirements([
@@ -202,35 +204,35 @@ export function DashboardPage() {
     }
 
     return (
-        <PageSection>
+        <PageSection style={{ height: "100vh" }}>
             <Title headingLevel="h1" size="lg" style={{ marginBottom: "16px" }}>
                 Dashboard
             </Title>
 
-            {/* Row 1: Aggregate status cards */}
-            <Gallery hasGutter minWidths={{ default: "150px" }} style={{ marginBottom: "16px" }}>
-                <GalleryItem>
-                    <StatusCard label="Total Projects" count={projects.length} />
-                </GalleryItem>
-                {["InProgress", "Idle", "Created", "Completed"].map((status) => (
-                    <GalleryItem key={status}>
-                        <StatusCard
-                            label={STATUS_LABELS[status] || status}
-                            count={statusCounts[status] || 0}
-                            color={STATUS_COLORS[status]}
-                        />
-                    </GalleryItem>
-                ))}
-            </Gallery>
+            <Grid hasGutter={true}>
+                <GridItem span={8}>
+                    {/* Gallery of Project Stats */}
+                    <Gallery hasGutter minWidths={{ default: "150px" }} style={{ marginBottom: "16px" }}>
+                        <GalleryItem>
+                            <StatusCard label="Total Projects" count={projects.length} />
+                        </GalleryItem>
+                        {["InProgress", "Idle", "Created", "Completed"].map((status) => (
+                            <GalleryItem key={status}>
+                                <StatusCard
+                                    label={STATUS_LABELS[status] || status}
+                                    count={statusCounts[status] || 0}
+                                    color={STATUS_COLORS[status]}
+                                />
+                            </GalleryItem>
+                        ))}
+                    </Gallery>
 
-            {/* Row 2: Active projects + Recent activity */}
-            <Grid hasGutter>
-                <GridItem span={7}>
-                    <Card isFullHeight>
+                    { /* Active Projects */ }
+                    <Card>
                         <CardHeader>
                             <CardTitle>Active Projects</CardTitle>
                         </CardHeader>
-                        <CardBody>
+                        <CardBody isFilled={false}>
                             {loading ? (
                                 <EmptyState variant="xs">
                                     <EmptyStateBody>Loading...</EmptyStateBody>
@@ -262,7 +264,7 @@ export function DashboardPage() {
                                                 </Td>
                                                 <Td>
                                                     <Label isCompact
-                                                        color={STATUS_COLORS[project.status] || "grey"}>
+                                                           color={STATUS_COLORS[project.status] || "grey"}>
                                                         {STATUS_LABELS[project.status] || project.status}
                                                     </Label>
                                                 </Td>
@@ -284,9 +286,39 @@ export function DashboardPage() {
                             </CardFooter>
                         )}
                     </Card>
-                </GridItem>
 
-                <GridItem span={5}>
+                    {/* Configuration summary */}
+                    <Card style={{ marginTop: "16px" }}>
+                        <CardHeader>
+                            <CardTitle>Configuration</CardTitle>
+                        </CardHeader>
+                        <CardBody>
+                            <Gallery hasGutter minWidths={{ default: "140px" }}>
+                                <GalleryItem>
+                                    <ConfigCard label="Repositories" count={configCounts.repositories}
+                                                path="/repositories" />
+                                </GalleryItem>
+                                <GalleryItem>
+                                    <ConfigCard label="Actors" count={configCounts.actors}
+                                                path="/actors" />
+                                </GalleryItem>
+                                <GalleryItem>
+                                    <ConfigCard label="Action Types" count={configCounts.actionTypes}
+                                                path="/action-types" />
+                                </GalleryItem>
+                                <GalleryItem>
+                                    <ConfigCard label="Tools" count={configCounts.tools}
+                                                path="/tools" />
+                                </GalleryItem>
+                                <GalleryItem>
+                                    <ConfigCard label="Report Definitions" count={configCounts.reportDefinitions}
+                                                path="/report-definitions" />
+                                </GalleryItem>
+                            </Gallery>
+                        </CardBody>
+                    </Card>
+                </GridItem>
+                <GridItem span={4}>
                     <Card isFullHeight>
                         <CardHeader>
                             <CardTitle>Recent Activity</CardTitle>
@@ -310,7 +342,7 @@ export function DashboardPage() {
                                                 marginBottom: "4px",
                                             }}>
                                                 <Label isCompact
-                                                    color={ENTRY_TYPE_COLORS[entry.entryType] || "grey"}>
+                                                       color={ENTRY_TYPE_COLORS[entry.entryType] || "grey"}>
                                                     {entry.entryType}
                                                 </Label>
                                                 <span style={{ fontSize: "12px", color: "#6a6e73" }}>
@@ -328,7 +360,7 @@ export function DashboardPage() {
                             )}
                         </CardBody>
                         <CardFooter>
-                            <Link to="/activity">
+                            <Link to="/logs/activity">
                                 View full activity log <ArrowRightIcon />
                             </Link>
                         </CardFooter>
@@ -336,32 +368,6 @@ export function DashboardPage() {
                 </GridItem>
             </Grid>
 
-            {/* Row 3: Configuration summary */}
-            <Card style={{ marginTop: "16px" }}>
-                <CardHeader>
-                    <CardTitle>Configuration</CardTitle>
-                </CardHeader>
-                <CardBody>
-                    <Gallery hasGutter minWidths={{ default: "140px" }}>
-                        <GalleryItem>
-                            <ConfigCard label="Repositories" count={configCounts.repositories}
-                                path="/repositories" />
-                        </GalleryItem>
-                        <GalleryItem>
-                            <ConfigCard label="Actors" count={configCounts.actors}
-                                path="/actors" />
-                        </GalleryItem>
-                        <GalleryItem>
-                            <ConfigCard label="Action Types" count={configCounts.actionTypes}
-                                path="/action-types" />
-                        </GalleryItem>
-                        <GalleryItem>
-                            <ConfigCard label="Tools" count={configCounts.tools}
-                                path="/tools" />
-                        </GalleryItem>
-                    </Gallery>
-                </CardBody>
-            </Card>
         </PageSection>
     );
 }

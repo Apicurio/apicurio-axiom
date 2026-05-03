@@ -689,33 +689,9 @@ export interface ProjectMetrics {
     invocationCount: number;
 }
 
-export interface ProjectMetricsSummary {
-    projectId: number;
-    projectName: string;
-    diskUsageBytes: number;
-    costUsd: number;
-    invocationCount: number;
-}
-
-export interface MetricsSummary {
-    totalDiskUsageBytes: number;
-    totalCostUsd: number;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    totalInvocations: number;
-    projectCount: number;
-    projects: ProjectMetricsSummary[];
-}
-
 export async function fetchProjectMetrics(projectId: number): Promise<ProjectMetrics> {
     const response = await fetch(`${API}/projects/${projectId}/metrics`);
     if (!response.ok) throw new Error(`Failed to fetch project metrics: ${response.status}`);
-    return response.json();
-}
-
-export async function fetchMetricsSummary(): Promise<MetricsSummary> {
-    const response = await fetch(`${API}/metrics/summary`);
-    if (!response.ok) throw new Error(`Failed to fetch metrics summary: ${response.status}`);
     return response.json();
 }
 
@@ -766,8 +742,33 @@ export async function fetchUsage(
     if (filterActionType) params.set("filterActionType", filterActionType);
     if (filterDateFrom) params.set("filterDateFrom", filterDateFrom);
     if (filterDateTo) params.set("filterDateTo", filterDateTo);
-    const response = await fetch(`${API}/usage?${params}`);
+    const response = await fetch(`${API}/usage/ai?${params}`);
     if (!response.ok) throw new Error(`Failed to fetch usage: ${response.status}`);
+    return response.json();
+}
+
+// ── Disk Usage ──────────────────────────────────────────────────
+
+export interface DiskUsageProject {
+    projectId: number;
+    projectName: string;
+    diskUsageBytes: number;
+}
+
+export interface DiskUsageSearchResults extends SearchResults<DiskUsageProject> {
+    totalDiskUsageBytes: number;
+    projectCount: number;
+}
+
+export async function fetchDiskUsage(
+    page = 1, limit = 20, filterName?: string
+): Promise<DiskUsageSearchResults> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterName) params.set("filterName", filterName);
+    const response = await fetch(`${API}/usage/disk?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch disk usage: ${response.status}`);
     return response.json();
 }
 
@@ -781,12 +782,34 @@ export interface AxiomEvent {
     repository?: string;
     projectId?: number;
     taskId?: number;
+    payload?: string;
     receivedAt: string;
+}
+
+export async function fetchEvent(id: number): Promise<AxiomEvent> {
+    const response = await fetch(`${API}/events/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch event: ${response.status}`);
+    return response.json();
 }
 
 export async function fetchProjectEvents(projectId: number): Promise<AxiomEvent[]> {
     const response = await fetch(`${API}/projects/${projectId}/events`);
     if (!response.ok) throw new Error(`Failed to fetch project events: ${response.status}`);
+    return response.json();
+}
+
+export async function fetchEvents(
+    page = 1, limit = 20,
+    filterSource?: string, filterEventType?: string, filterRepository?: string
+): Promise<SearchResults<AxiomEvent>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterSource) params.set("filterSource", filterSource);
+    if (filterEventType) params.set("filterEventType", filterEventType);
+    if (filterRepository) params.set("filterRepository", filterRepository);
+    const response = await fetch(`${API}/events?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch events: ${response.status}`);
     return response.json();
 }
 

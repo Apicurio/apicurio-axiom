@@ -147,7 +147,7 @@ export function ActivityLogPage() {
 
     return (
         <PageSection>
-            <Title headingLevel="h1" size="lg">Activity Log</Title>
+            <Title headingLevel="h1" size="lg">All Activity</Title>
 
             <Toolbar clearAllFilters={clearFilters} style={{ marginTop: "16px" }}>
                 <ToolbarContent>

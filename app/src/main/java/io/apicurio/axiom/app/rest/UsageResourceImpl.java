@@ -3,7 +3,10 @@ package io.apicurio.axiom.app.rest;
 import io.apicurio.axiom.api.UsageResource;
 import io.apicurio.axiom.api.beans.AiUsage;
 import io.apicurio.axiom.api.beans.AiUsageSearchResults;
+import io.apicurio.axiom.api.beans.DiskUsageProject;
+import io.apicurio.axiom.api.beans.DiskUsageSearchResults;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
+import io.apicurio.axiom.core.entities.ProjectEntity;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -22,7 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Implementation of the AI Usage REST API.
+ * Implementation of the Usage REST API, providing both AI usage
+ * and disk usage endpoints.
  */
 @ApplicationScoped
 @RunOnVirtualThread
@@ -34,11 +38,8 @@ public class UsageResourceImpl implements UsageResource {
     /**
      * {@inheritDoc}
      */
-    /**
-     * {@inheritDoc}
-     */
     @Override
-    public AiUsageSearchResults listUsage(BigInteger page, BigInteger limit,
+    public AiUsageSearchResults listAiUsage(BigInteger page, BigInteger limit,
                                            String filterInvocationType,
                                            BigInteger filterProjectId,
                                            BigInteger filterActorId,
@@ -109,6 +110,59 @@ public class UsageResourceImpl implements UsageResource {
         results.setTotalInputTokens(((Number) aggregates[1]).longValue());
         results.setTotalOutputTokens(((Number) aggregates[2]).longValue());
         return results;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public DiskUsageSearchResults listDiskUsage(BigInteger page, BigInteger limit,
+                                                 String filterName) {
+        int pageNum = page != null ? page.intValue() : 1;
+        int pageSize = limit != null ? limit.intValue() : 20;
+
+        StringBuilder hql = new StringBuilder("1=1");
+        Map<String, Object> params = new HashMap<>();
+
+        if (filterName != null && !filterName.isBlank()) {
+            hql.append(" and lower(name) like :name");
+            params.put("name", "%" + filterName.toLowerCase() + "%");
+        }
+
+        long totalCount = ProjectEntity.count(hql.toString(), params);
+
+        List<DiskUsageProject> items = ProjectEntity.<ProjectEntity>find(
+                        hql.toString(), Sort.ascending("name"), params)
+                .page(Page.of(pageNum - 1, pageSize))
+                .list()
+                .stream()
+                .map(this::toDiskUsageBean)
+                .toList();
+
+        String aggregateHql = "SELECT COALESCE(SUM(diskUsageBytes), 0) "
+                + "FROM ProjectEntity WHERE " + hql;
+        Query aggregateQuery = entityManager.createQuery(aggregateHql);
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            aggregateQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+        long totalDiskUsageBytes = ((Number) aggregateQuery.getSingleResult()).longValue();
+
+        DiskUsageSearchResults results = new DiskUsageSearchResults();
+        results.setItems(items);
+        results.setTotalCount(totalCount);
+        results.setPage(pageNum);
+        results.setLimit(pageSize);
+        results.setTotalDiskUsageBytes(totalDiskUsageBytes);
+        results.setProjectCount(totalCount);
+        return results;
+    }
+
+    private DiskUsageProject toDiskUsageBean(ProjectEntity entity) {
+        DiskUsageProject project = new DiskUsageProject();
+        project.setProjectId(entity.id);
+        project.setProjectName(entity.name);
+        project.setDiskUsageBytes(entity.diskUsageBytes != null ? entity.diskUsageBytes : 0L);
+        return project;
     }
 
     private AiUsage toBean(AiUsageEntity entity) {
