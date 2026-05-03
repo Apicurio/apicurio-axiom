@@ -226,29 +226,29 @@ export function App() {
                             </NavItem>
                         </NavExpandable>
                         <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
-                            <NavItem isActive={location.pathname.startsWith("/manager")} onClick={() => navigate("/manager")}>
-                                Manager
+                            <NavItem isActive={location.pathname.startsWith("/action-types")} onClick={() => navigate("/action-types")}>
+                                Action Types
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/actors")} onClick={() => navigate("/actors")}>
                                 Actors
                             </NavItem>
-                            <NavItem isActive={location.pathname.startsWith("/action-types")} onClick={() => navigate("/action-types")}>
-                                Action Types
+                            <NavItem isActive={location.pathname.startsWith("/manager")} onClick={() => navigate("/manager")}>
+                                Manager
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/mcp-servers")} onClick={() => navigate("/mcp-servers")}>
+                                MCP Servers
+                            </NavItem>
+                            <NavItem isActive={location.pathname === "/report-definitions"} onClick={() => navigate("/report-definitions")}>
+                                Report Definitions
+                            </NavItem>
+                            <NavItem isActive={location.pathname.startsWith("/repositories")} onClick={() => navigate("/repositories")}>
+                                Repositories
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/tools") && !location.pathname.startsWith("/toolsets")} onClick={() => navigate("/tools")}>
                                 Tools
                             </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/toolsets")} onClick={() => navigate("/toolsets")}>
                                 Toolsets
-                            </NavItem>
-                            <NavItem isActive={location.pathname.startsWith("/mcp-servers")} onClick={() => navigate("/mcp-servers")}>
-                                MCP Servers
-                            </NavItem>
-                            <NavItem isActive={location.pathname.startsWith("/repositories")} onClick={() => navigate("/repositories")}>
-                                Repositories
-                            </NavItem>
-                            <NavItem isActive={location.pathname === "/report-definitions"} onClick={() => navigate("/report-definitions")}>
-                                Report Definitions
                             </NavItem>
                         </NavExpandable>
                     </NavList>

@@ -10,6 +10,7 @@ import io.apicurio.axiom.api.beans.ToolDefinition;
 import io.apicurio.axiom.api.beans.ToolParameter;
 import io.apicurio.axiom.app.ToolAiService;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -35,7 +36,7 @@ public class ToolsResourceImpl implements ToolsResource {
 
     @Override
     public Response listTools() {
-        List<ToolDefinition> tools = ToolDefinitionEntity.<ToolDefinitionEntity>listAll()
+        List<ToolDefinition> tools = ToolDefinitionEntity.<ToolDefinitionEntity>listAll(Sort.ascending("name"))
                 .stream()
                 .map(this::toBean)
                 .toList();

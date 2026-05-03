@@ -5,6 +5,7 @@ import io.apicurio.axiom.api.beans.ActionType;
 import io.apicurio.axiom.api.beans.NewActionType;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -26,7 +27,7 @@ public class ActionResourceImpl implements ActionResource {
      */
     @Override
     public List<ActionType> listActionTypes() {
-        return ActionTypeEntity.<ActionTypeEntity>listAll()
+        return ActionTypeEntity.<ActionTypeEntity>listAll(Sort.ascending("name"))
                 .stream()
                 .map(this::toBean)
                 .toList();
