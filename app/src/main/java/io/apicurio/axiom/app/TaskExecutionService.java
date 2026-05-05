@@ -150,28 +150,23 @@ public class TaskExecutionService {
     }
 
     /**
-     * Resolves the Actor implementation for a task.
+     * Resolves the Actor implementation for a task. Uses the actor entity
+     * resolved by {@link #resolveActorEntity} to find the matching CDI bean.
      */
     private Actor resolveActor(TaskEntity task) {
-        // If an actor is explicitly assigned, find its type
-        if (task.assignedActor != null) {
-            ActorEntity actorEntity = ActorEntity.findById(task.assignedActor);
-            if (actorEntity != null) {
-                return findActorByType(actorEntity.type);
-            }
+        ActorEntity actorEntity = resolveActorEntity(task);
+        if (actorEntity != null) {
+            return findActorByType(actorEntity.type);
         }
-
-        // Default to the first available AI agent actor
-        for (Actor actor : actors) {
-            if ("claude-code".equals(actor.getType())) {
-                return actor;
-            }
-        }
-
-        // Fall back to any available actor
-        return actors.stream().findFirst().orElse(null);
+        return null;
     }
 
+    /**
+     * Resolves the ActorEntity for a task. Priority:
+     * 1. Explicitly assigned actor (if set on the task)
+     * 2. First actor whose capabilities include the task's action type
+     * 3. First AI agent actor (fallback when no capabilities match)
+     */
     private ActorEntity resolveActorEntity(TaskEntity task) {
         if (task.assignedActor != null) {
             ActorEntity actorEntity = ActorEntity.findById(task.assignedActor);
@@ -179,13 +174,31 @@ public class TaskExecutionService {
                 return actorEntity;
             }
         }
-        // No explicit assignment — pick the first matching actor entity by type
-        return ActorEntity.find("type", "ai-agent").firstResult();
+
+        // Find an actor whose capabilities include this action type
+        List<ActorEntity> allActors = ActorEntity.listAll();
+        for (ActorEntity actor : allActors) {
+            if (actor.capabilities != null && !actor.capabilities.isBlank()) {
+                List<String> caps = java.util.Arrays.stream(actor.capabilities.split(","))
+                        .map(String::trim)
+                        .toList();
+                if (caps.contains(task.actionType)) {
+                    return actor;
+                }
+            }
+        }
+
+        // Fallback: first AI agent actor regardless of capabilities
+        LOG.warnf("No actor with capability '%s' found, falling back to first ai-agent",
+                task.actionType);
+        return ActorEntity.<ActorEntity>find("type", "ai-agent").firstResult();
     }
 
     private Actor findActorByType(String type) {
+        // Map entity types to actor implementation types
+        String implType = "ai-agent".equals(type) ? "claude-code" : type;
         for (Actor actor : actors) {
-            if (actor.getType().equals(type)) {
+            if (actor.getType().equals(implType)) {
                 return actor;
             }
         }

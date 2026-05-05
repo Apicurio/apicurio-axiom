@@ -159,6 +159,30 @@ public class ProjectsResourceImpl implements ProjectsResource {
         entity.delete();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public Project closeProject(long projectId) {
+        ProjectEntity entity = findProjectOrThrow(projectId);
+        entity.status = "Completed";
+        entity.updatedOn = Instant.now();
+        return toProjectBean(entity);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public Project reopenProject(long projectId) {
+        ProjectEntity entity = findProjectOrThrow(projectId);
+        entity.status = "InProgress";
+        entity.updatedOn = Instant.now();
+        return toProjectBean(entity);
+    }
+
     // ── Tasks ─────────────────────────────────────────────────────────
 
     /**
@@ -261,6 +285,42 @@ public class ProjectsResourceImpl implements ProjectsResource {
     }
 
     // ── Task Response ──────────────────────────────────────────────────
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public Task cancelTask(long projectId, long taskId) {
+        findProjectOrThrow(projectId);
+
+        TaskEntity task = TaskEntity.findById(taskId);
+        if (task == null || task.projectId != projectId) {
+            throw new WebApplicationException("Task not found: " + taskId, 404);
+        }
+        if ("Completed".equals(task.status) || "Failed".equals(task.status)) {
+            throw new WebApplicationException(
+                    "Task is already " + task.status + " and cannot be cancelled", 409);
+        }
+
+        task.status = "Failed";
+        task.output = "Cancelled by user";
+        task.completedOn = Instant.now();
+
+        // Reset project status if no other active tasks remain
+        long activeTasks = TaskEntity.count(
+                "projectId = ?1 and id != ?2 and (status = 'InProgress' or status = 'AwaitingInput')",
+                projectId, taskId);
+        if (activeTasks == 0) {
+            ProjectEntity project = ProjectEntity.findById(projectId);
+            if (project != null && "InProgress".equals(project.status)) {
+                project.status = "Idle";
+                project.updatedOn = Instant.now();
+            }
+        }
+
+        return toTaskBean(task);
+    }
 
     /**
      * {@inheritDoc}

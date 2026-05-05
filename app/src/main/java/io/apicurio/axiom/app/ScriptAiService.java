@@ -60,8 +60,10 @@ public class ScriptAiService {
             - AXIOM_TASK_ID — same as {{taskId}}
 
             Common Axiom REST API endpoints the script can call:
-            - PUT {{apiBaseUrl}}/projects/{{projectId}} — update project (status, description, etc.)
             - GET {{apiBaseUrl}}/projects/{{projectId}} — get project details
+            - PUT {{apiBaseUrl}}/projects/{{projectId}} — update project (status, description, etc.)
+            - POST {{apiBaseUrl}}/projects/{{projectId}}/close — close/complete a project
+            - POST {{apiBaseUrl}}/projects/{{projectId}}/reopen — reopen a closed project
             - POST {{apiBaseUrl}}/projects/{{projectId}}/tasks — create a task
             - GET {{apiBaseUrl}}/projects/{{projectId}}/thread — get project thread
 

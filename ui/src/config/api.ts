@@ -159,6 +159,29 @@ export async function deleteProject(id: number): Promise<void> {
 
 // ── Tasks ─────────────────────────────────────────────────────────
 
+export async function fetchAllTasks(
+    page = 1, limit = 20,
+    filterActionType?: string, filterStatus?: string, filterProjectId?: number
+): Promise<SearchResults<Task>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    if (filterActionType) params.set("filterActionType", filterActionType);
+    if (filterStatus) params.set("filterStatus", filterStatus);
+    if (filterProjectId != null) params.set("filterProjectId", String(filterProjectId));
+    const response = await fetch(`${API}/tasks?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch tasks: ${response.status}`);
+    return response.json();
+}
+
+export async function cancelTask(projectId: number, taskId: number): Promise<Task> {
+    const response = await fetch(`${API}/projects/${projectId}/tasks/${taskId}/cancel`, {
+        method: "POST",
+    });
+    if (!response.ok) throw new Error(`Failed to cancel task: ${response.status}`);
+    return response.json();
+}
+
 export async function fetchProjectTasks(projectId: number): Promise<Task[]> {
     const response = await fetch(`${API}/projects/${projectId}/tasks`);
     if (!response.ok) throw new Error(`Failed to fetch tasks: ${response.status}`);

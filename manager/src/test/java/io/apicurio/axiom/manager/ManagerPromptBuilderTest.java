@@ -93,7 +93,7 @@ class ManagerPromptBuilderTest {
         assertTrue(prompt.contains("Apicurio/axiom#42"));
         assertTrue(prompt.contains("\"action\":\"opened\""));
         assertTrue(prompt.contains("analyze"));
-        assertTrue(prompt.contains("No existing project"));
+        assertTrue(prompt.contains("no existing Axiom project"));
     }
 
     @Test

@@ -127,6 +127,11 @@
                 <artifactId>apicurio-axiom-notifications-telegram</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.apicurio</groupId>
+                <artifactId>apicurio-axiom-ui-bundle</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -172,4 +177,13 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <profiles>
+        <profile>
+            <id>ui</id>
+            <modules>
+                <module>ui-bundle</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

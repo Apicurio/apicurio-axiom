@@ -123,7 +123,7 @@ export function ProjectDetailPage() {
         fetchActionTypes()
             .then((types) => {
                 const triggerable = types.filter(
-                    (t) => t.userTriggerable && t.executionMode === "actor"
+                    (t) => t.userTriggerable
                 );
                 setActionTypes(triggerable);
                 if (triggerable.length > 0) {

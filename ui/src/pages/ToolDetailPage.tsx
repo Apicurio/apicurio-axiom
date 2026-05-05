@@ -41,7 +41,7 @@ export function ToolDetailPage() {
     const id = Number(toolId);
 
     const [tool, setTool] = useState<ToolDefinition | null>(null);
-    const [form, setForm] = useState<NewToolDefinition>({ name: "", type: "script" });
+    const [form, setForm] = useState<NewToolDefinition>({ name: "" });
     const [params, setParams] = useState<ToolParameter[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -67,10 +67,8 @@ export function ToolDetailPage() {
             .then((t) => {
                 setTool(t);
                 setForm({
-                    name: t.name, description: t.description, type: t.type,
+                    name: t.name, description: t.description,
                     scriptTemplate: t.scriptTemplate,
-                    serverCommand: t.serverCommand, serverUrl: t.serverUrl,
-                    serverArgs: t.serverArgs, serverEnv: t.serverEnv,
                 });
                 setParams(t.parameters || []);
                 setDirty(false);

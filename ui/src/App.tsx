@@ -40,6 +40,7 @@ import { ActionTypesPage } from "./pages/ActionTypesPage";
 import { ActivityLogPage } from "./pages/ActivityLogPage";
 import { EventsPage } from "./pages/EventsPage";
 import { ManagerDecisionsPage } from "./pages/ManagerDecisionsPage";
+import { TasksPage } from "./pages/TasksPage";
 import { RepositoriesPage } from "./pages/RepositoriesPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { ActionTypeDetailPage } from "./pages/ActionTypeDetailPage";
@@ -214,6 +215,9 @@ export function App() {
                             <NavItem isActive={location.pathname === "/logs/manager"} onClick={() => navigate("/logs/manager")}>
                                 Manager Decisions
                             </NavItem>
+                            <NavItem isActive={location.pathname === "/logs/tasks"} onClick={() => navigate("/logs/tasks")}>
+                                Tasks
+                            </NavItem>
                         </NavExpandable>
                         <NavExpandable title="Metrics"
                             isActive={location.pathname.startsWith("/metrics")}
@@ -351,6 +355,7 @@ export function App() {
                     <Route path="/logs/activity" element={<ActivityLogPage />} />
                     <Route path="/logs/events" element={<EventsPage />} />
                     <Route path="/logs/manager" element={<ManagerDecisionsPage />} />
+                    <Route path="/logs/tasks" element={<TasksPage />} />
                     <Route path="/reports" element={<ReportsPage />} />
                     <Route path="/reports/:reportId" element={<ReportDetailPage />} />
                     <Route path="/report-definitions" element={<ReportDefinitionsPage />} />

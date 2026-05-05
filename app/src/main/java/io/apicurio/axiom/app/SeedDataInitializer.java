@@ -231,9 +231,7 @@ public class SeedDataInitializer {
                 "script", true, false, null, null,
                 """
                 #!/bin/bash
-                curl -s -X PUT "{{apiBaseUrl}}/projects/{{projectId}}" \
-                  -H "Content-Type: application/json" \
-                  -d '{"status": "Completed"}'
+                curl -s -X POST "{{apiBaseUrl}}/projects/{{projectId}}/close"
                 """);
 
         seedActionType("reopen-project",
@@ -243,9 +241,7 @@ public class SeedDataInitializer {
                 "script", true, false, null, null,
                 """
                 #!/bin/bash
-                curl -s -X PUT "{{apiBaseUrl}}/projects/{{projectId}}" \
-                  -H "Content-Type: application/json" \
-                  -d '{"status": "InProgress"}'
+                curl -s -X POST "{{apiBaseUrl}}/projects/{{projectId}}/reopen"
                 """);
 
         LOG.infof("Seeded %d built-in action types", ActionTypeEntity.count());

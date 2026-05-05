@@ -10,8 +10,6 @@ import {
     FlexItem,
     Form,
     FormGroup,
-    InputGroup,
-    InputGroupItem,
     Label,
     MenuToggle,
     MenuToggleElement,
@@ -28,7 +26,7 @@ import {
     Title,
     Toolbar,
     ToolbarContent,
-    ToolbarItem,
+    ToolbarItem, HelperText, HelperTextItem,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
@@ -36,12 +34,15 @@ import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import {
     type Actor,
+    type ActionType,
     type Task,
     fetchActor,
     fetchActorTasks,
+    fetchActionTypes,
     updateActor,
 } from "../config/api";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
+import { TypeaheadAddInput, type TypeaheadAddSuggestion } from "../components/TypeaheadAddInput";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
     Pending: "blue",
@@ -277,42 +278,33 @@ function CapabilitiesTab({ capabilities, onAdd, onRemove }: {
     onAdd: (c: string) => void;
     onRemove: (c: string) => void;
 }) {
-    const [newCap, setNewCap] = useState("");
+    const [actionTypes, setActionTypes] = useState<ActionType[]>([]);
 
-    const handleAdd = () => {
-        const trimmed = newCap.trim();
-        if (trimmed) {
-            onAdd(trimmed);
-            setNewCap("");
-        }
-    };
+    useEffect(() => {
+        fetchActionTypes().then(setActionTypes).catch(console.error);
+    }, []);
+
+    const suggestions: TypeaheadAddSuggestion[] = actionTypes.map((at) => ({
+        value: at.name,
+    }));
 
     return (
         <div style={{ maxWidth: "700px" }}>
-            <p style={{ color: "#6a6e73", marginBottom: "16px" }}>
-                Define which action types this actor can perform. Capabilities
-                determine which tasks may be assigned to this actor.
-            </p>
+            <HelperText>
+                <HelperTextItem>
+                    Define which action types this actor can perform. Capabilities
+                    determine which tasks may be assigned to this actor.
+                </HelperTextItem>
+            </HelperText>
 
-            <InputGroup style={{ marginBottom: "16px" }}>
-                <InputGroupItem isFill>
-                    <TextInput
-                        id="newCapability"
-                        value={newCap}
-                        onChange={(_e, v) => setNewCap(v)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") { e.preventDefault(); handleAdd(); }
-                        }}
-                        placeholder="Type a capability name and press Enter or click Add"
-                    />
-                </InputGroupItem>
-                <InputGroupItem>
-                    <Button variant="control" onClick={handleAdd}
-                        isDisabled={!newCap.trim()}>
-                        Add
-                    </Button>
-                </InputGroupItem>
-            </InputGroup>
+            <div style={{ marginBottom: "16px" }}>
+                <TypeaheadAddInput
+                    onAdd={onAdd}
+                    suggestions={suggestions}
+                    existingItems={capabilities}
+                    placeholder="Type an action type name and press Enter"
+                />
+            </div>
 
             {capabilities.length === 0 ? (
                 <EmptyState variant="xs">
