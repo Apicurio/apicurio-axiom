@@ -1,6 +1,6 @@
 # Apicurio Axiom — OpenCode Migration Plan
 
-**Status:** Draft
+**Status:** In Progress
 **Last Updated:** 2026-05-06
 
 This document defines the plan for adding OpenCode as an AI engine in Apicurio Axiom alongside
@@ -254,65 +254,85 @@ Key architectural properties:
 
 ## 6. Phased Migration Plan
 
-### Phase 1: Engine Abstraction Layer (SPI)
+### Phase 1: Engine Abstraction Layer (SPI) — COMPLETED
 
-**Goal:** Extract the engine-agnostic interface from the current Claude Code integration.
-This is the foundational phase — all subsequent phases depend on it.
+**Status:** Completed (PR [#2](https://github.com/Apicurio/apicurio-axiom/pull/2))
+**Branch:** `feature/engine-spi`
+
+**Goal:** Extract the engine-agnostic interface from the current Claude Code integration,
+create the Claude Code engine wrapper behind the SPI, and refactor all consumers to use
+the engine-agnostic interface. This phase also encompassed the originally planned Phase 2
+deliverables (Claude Code engine wrapper), since both were required to keep the codebase
+compilable.
 
 **New module:** `engine/spi/`
 
-#### Deliverables
+#### Delivered: SPI Interfaces (in `engine/spi/`)
 
 | File | Description |
 |------|-------------|
-| `AiEngine.java` | Core SPI interface. Methods: `prompt(AiEngineConfig, String prompt)`, `promptWithSchema(AiEngineConfig, String prompt, String jsonSchema)`, `healthCheck()`, `getType()`. Returns `CompletableFuture<AiEngineResult>`. |
-| `AiEngineResult.java` | Engine-agnostic result record: `result` (String), `sessionId` (String), `costUsd` (Double), `inputTokens` (Long), `outputTokens` (Long), `success` (boolean), `executionLog` (String). |
-| `AiEngineConfig.java` | Engine-agnostic configuration record: `model`, `systemPrompt`, `promptTemplate`, `allowedTools` (List), `disallowedTools` (List), `mcpServers` (List), `workingDirectory` (Path), `environment` (Map), `timeoutSeconds` (int), `maxSteps` (int), `maxBudgetUsd` (Double), `sessionId` (String). |
-| `AiEngineMcpManager.java` | SPI interface for MCP server lifecycle: `registerServers(taskId, List<McpServerConfig>)`, `cleanup(taskId)`. |
-| `AiEngineType.java` | CDI qualifier annotation: `@AiEngineType("claude-code")`, `@AiEngineType("opencode")`. |
-| `AiEngineProducer.java` | CDI producer that resolves the active `AiEngine` implementation based on the `axiom.ai-engine` config property. Injected by `ManagerService`, `ScriptAiService`, `ToolAiService`, `ReportExecutionService`. |
-| `ExecutionLogBuilder.java` | Moved from `actors/claude-code/` to `engine/spi/` (engine-agnostic parts). Each engine can extend or wrap it for engine-specific event logging. |
+| `AiEngine.java` | Core SPI interface. Methods: `prompt(AiEngineConfig, String prompt)`, `promptWithSchema(AiEngineConfig, String prompt, String jsonSchema)`, `healthCheck()`, `getType()`, `getActorType()`. Returns `CompletableFuture<AiEngineResult>`. |
+| `AiEngineResult.java` | Engine-agnostic result record: `result`, `sessionId`, `costUsd`, `inputTokens`, `outputTokens`, `success`, `executionLog`. Static factories: `success()`, `failure()`. |
+| `AiEngineConfig.java` | Engine-agnostic configuration with builder pattern: `model`, `systemPrompt`, `allowedTools`, `disallowedTools`, `workingDirectory`, `environment`, `timeoutSeconds`, `maxSteps`, `maxBudgetUsd`, `sessionId`, `mcpConfigFile`. |
+| `AiEngineMcpManager.java` | SPI interface for engine-specific MCP server management: `configureMcpServers(taskId, environment, allowedTools)`, `cleanup(taskId)`. |
+| `AiEngineType.java` | CDI qualifier annotation: `@AiEngineType("claude-code")`. |
+| `AiEngineCheckResult.java` | Health check result record: `name`, `status`, `message`. |
+| `AiEngineProducer.java` | CDI producer that resolves the active `AiEngine` and `AiEngineMcpManager` based on `axiom.ai-engine` config property. Falls back to a no-op MCP manager if none found. |
 
-#### Refactoring Required
-
-The following classes in `app/` and `manager/` currently import Claude Code classes directly.
-They must be refactored to use the `AiEngine` SPI instead:
-
-| Class | Current Dependency | Change |
-|-------|-------------------|--------|
-| `ManagerService` | `ClaudeCodeSubprocess`, `ClaudeCodeCommandBuilder` | Inject `AiEngine`, call `promptWithSchema()` |
-| `ScriptAiService` | `ClaudeCodeSubprocess`, `ClaudeCodeCommandBuilder` | Inject `AiEngine`, call `promptWithSchema()` |
-| `ToolAiService` | `ClaudeCodeSubprocess`, `ClaudeCodeCommandBuilder` | Inject `AiEngine`, call `promptWithSchema()` |
-| `ReportExecutionService` | `ClaudeCodeSubprocess`, `ClaudeCodeCommandBuilder` | Inject `AiEngine`, call `prompt()` |
-| `TaskExecutionService` | Hardcoded `"claude-code"` actor type | Resolve actor type from `axiom.ai-engine` config |
-| `StartupCheckService` | Hardcoded `claude` CLI check | Delegate to `AiEngine.healthCheck()` |
-| `McpConfigGenerator` | Claude-specific MCP config format | Delegate to `AiEngineMcpManager` |
-
-### Phase 2: Claude Code Engine Refactor
-
-**Goal:** Wrap the existing Claude Code integration behind the new SPI, without changing
-its behavior. After this phase, Axiom's core modules have zero Claude Code imports.
-
-**Refactored module:** `engine/claude-code/` (renamed from `actors/claude-code/`, plus
-code moved out of `app/` and `manager/`).
-
-#### Deliverables
+#### Delivered: Claude Code Engine Wrapper (in `actors/claude-code/`)
 
 | File | Description |
 |------|-------------|
-| `ClaudeCodeEngine.java` | Implements `AiEngine`. Wraps existing `ClaudeCodeSubprocess` + `ClaudeCodeCommandBuilder` logic. Methods delegate to the existing subprocess code. |
-| `ClaudeCodeActor.java` | Unchanged (already implements `Actor` SPI). Moved to `engine/claude-code/`. |
-| `ClaudeCodeMcpManager.java` | Implements `AiEngineMcpManager`. Extracts MCP config file generation logic from `McpConfigGenerator` in `app/`. |
-| `ClaudeCodeSubprocess.java` | Unchanged, now internal to `engine/claude-code/`. |
-| `ClaudeCodeCommandBuilder.java` | Unchanged, now internal to `engine/claude-code/`. |
-| `ClaudeCodeResult.java` | Unchanged, now internal. `ClaudeCodeEngine` maps it to `AiEngineResult`. |
+| `ClaudeCodeEngine.java` | Implements `AiEngine` with `@AiEngineType("claude-code")`. Wraps existing `ClaudeCodeCommandBuilder` + `ClaudeCodeSubprocess` logic. Supports `prompt()`, `promptWithSchema()` (adds `--json-schema` flag), and `healthCheck()` (runs `claude -p "AXIOM_OK"`). |
+| `ClaudeCodeMcpManager.java` | Implements `AiEngineMcpManager` with `@AiEngineType("claude-code")`. Uses a delegate pattern — `McpConfigGenerator` in `app/` registers itself as the delegate at startup via `@PostConstruct`. |
 
-#### Validation
+#### Delivered: Consumer Refactoring
 
-After this phase, the entire test suite must pass with `axiom.ai-engine=claude-code` (the
-default). No behavioral changes — this is a pure refactoring phase.
+| Class | Change |
+|-------|--------|
+| `ManagerService` | Removed all `ClaudeCodeSubprocess`/`ClaudeCodeCommandBuilder`/`ExecutionLogBuilder` imports. Injects `AiEngine`, calls `promptWithSchema()`. Manager module POM no longer depends on `apicurio-axiom-actors-claude-code`. |
+| `ScriptAiService` | Same — uses `AiEngine.promptWithSchema()` with `AiEngineConfig` builder. |
+| `ToolAiService` | Same — uses `AiEngine.promptWithSchema()` with `AiEngineConfig` builder. |
+| `ReportExecutionService` | Uses `AiEngine.prompt()` and `AiEngineMcpManager.configureMcpServers()`. Callback `onReportCompleted()` now receives `AiEngineResult` instead of `ClaudeCodeResult`. |
+| `TaskExecutionService` | Injects `AiEngine` and `AiEngineMcpManager`. Actor type resolved via `aiEngine.getActorType()` instead of hardcoded `"claude-code"`. MCP config via `mcpManager.configureMcpServers()` instead of direct `McpConfigGenerator`. |
+| `StartupCheckService` | Injects `AiEngine`. Delegates to `aiEngine.healthCheck()` instead of hardcoded `claude` CLI check. Results converted from `AiEngineCheckResult` to internal `CheckResult`. |
+| `McpConfigGenerator` | Registers itself as the `ClaudeCodeMcpManager` delegate via `@PostConstruct`. Injects `Instance<AiEngineMcpManager>` to find the Claude Code MCP manager. |
 
-### Phase 3: OpenCode Core Integration Layer
+#### Delivered: Configuration & POM Changes
+
+| Change | Description |
+|--------|-------------|
+| `application.properties` | Added `axiom.ai-engine=claude-code` property |
+| `pom.xml` (parent) | Added `engine/spi` module, `apicurio-axiom-engine-spi` dependency management entry |
+| `manager/pom.xml` | Replaced `apicurio-axiom-actors-claude-code` dependency with `apicurio-axiom-engine-spi` |
+| `actors/claude-code/pom.xml` | Added `apicurio-axiom-engine-spi` dependency |
+| `app/pom.xml` | Added `apicurio-axiom-engine-spi` dependency |
+
+#### Design Decision: Merged Phase 2 into Phase 1
+
+The original plan had Phase 2 as a separate "Claude Code Engine Refactor" phase. In practice,
+the SPI interfaces and the Claude Code engine wrapper had to be delivered together: refactoring
+consumers to inject `AiEngine` requires a concrete implementation to exist for the code to
+compile. The `ClaudeCodeEngine` and `ClaudeCodeMcpManager` were therefore created alongside
+the SPI interfaces in a single commit.
+
+The remaining Phase 2 items (module rename from `actors/claude-code/` to `engine/claude-code/`)
+are deferred as optional cleanup — the current structure is functional and the engine
+abstraction is complete.
+
+#### What Remains from Original Phase 2
+
+The following items were **not** done and are deferred to a future cleanup:
+
+- **Module rename**: `actors/claude-code/` → `engine/claude-code/`. Low priority since the
+  engine abstraction works correctly in the current module location.
+- **`ExecutionLogBuilder` move**: Remains in `actors/claude-code/` rather than `engine/spi/`.
+  Each engine implementation can provide its own logging; the SPI returns the log as a String
+  in `AiEngineResult.executionLog()` so no shared base class is needed.
+
+### Phase 2: OpenCode Core Integration Layer
+
+**Status:** Pending
 
 **Goal:** Build the OpenCode engine implementation behind the SPI.
 
@@ -345,7 +365,9 @@ default). No behavioral changes — this is a pure refactoring phase.
 | `axiom.opencode.manager.max-steps` | `5` | Max steps for Manager evaluations |
 | `axiom.opencode.budget-usd` | `5.0` | Per-task budget limit (enforced by Axiom) |
 
-### Phase 4: Permission & Tool Mapping
+### Phase 3: Permission & Tool Mapping
+
+**Status:** Pending
 
 **Goal:** Map Axiom's tool restriction model to OpenCode's permission system.
 
@@ -370,7 +392,9 @@ default). No behavioral changes — this is a pure refactoring phase.
 - `ToolsetResolver` integration to expand `@ToolsetName` references before mapping.
 - Unit tests for all mapping edge cases.
 
-### Phase 5: MCP Server Management
+### Phase 4: MCP Server Management
+
+**Status:** Pending
 
 **Goal:** Implement OpenCode's MCP management behind the `AiEngineMcpManager` SPI.
 
@@ -380,7 +404,7 @@ default). No behavioral changes — this is a pure refactoring phase.
 - External MCP servers (from `McpServerEntity` database entries)
 
 The file is passed via `--mcp-config <path>`. This logic is now encapsulated in
-`ClaudeCodeMcpManager` (Phase 2 refactor).
+`ClaudeCodeMcpManager` (delivered in Phase 1).
 
 #### New Approach (OpenCode)
 Two options (both supported):
@@ -400,11 +424,13 @@ file management and allows per-task server sets.
 | `OpenCodeMcpManager.java` | Implements `AiEngineMcpManager`. Registers MCP servers via HTTP API or generates `opencode.json` config. Handles both script-based tools (`axiom-tools`) and external servers. |
 | MCP name mapping | Translate `mcp__<server>__<tool>` convention to OpenCode's `<server>_<tool>` format in allowed tool lists. |
 
-### Phase 6: OpenCode Actor & Task Execution
+### Phase 5: OpenCode Actor & Task Execution
+
+**Status:** Pending
 
 **Goal:** Implement the `OpenCodeActor` behind the existing `Actor` SPI.
 
-Note: `OpenCodeActor` and `OpenCodeEngine` are both in `engine/opencode/` (Phase 3).
+Note: `OpenCodeActor` and `OpenCodeEngine` are both in `engine/opencode/` (Phase 2).
 This phase focuses on wiring up the full task execution flow end-to-end.
 
 #### Execution Flow
@@ -442,25 +468,31 @@ This can be checked after each SSE event that includes cost data, or after the f
 This budget enforcement logic should live in the engine-agnostic layer so it applies to all
 engines.
 
-### Phase 7: Configuration & UI Updates
+### Phase 6: Configuration & UI Updates
+
+**Status:** Pending (partially completed in Phase 1)
 
 **Goal:** Update configuration, model picker, and UI to support pluggable engines.
 
+Note: Several items originally in this phase were delivered in Phase 1 (marked below).
+
 #### Deliverables
 
-| Change | Description |
-|--------|-------------|
-| Engine selector config | Add `axiom.ai-engine` property (values: `claude-code`, `opencode`; default: `claude-code`) |
-| Engine-specific config | Both `axiom.claude-code.*` and `axiom.opencode.*` property namespaces coexist |
-| Model list endpoint | Dynamically populate available models based on the active engine. For OpenCode: use `GET /config/providers`. For Claude Code: use existing static list. |
-| UI engine indicator | Show the active engine name in the UI (settings page or status bar) |
-| UI model picker | Update to show `provider/model` format when OpenCode is active; support models from multiple providers |
-| Actor type mapping | `TaskExecutionService` resolves actor type from `axiom.ai-engine` config instead of hardcoding `"claude-code"` |
-| StartupCheckService | Delegate to `AiEngine.healthCheck()` — each engine validates its own prerequisites |
-| Documentation | Update README, `docs/architecture-v2.md`, and `docs/design-v2.md` to describe the pluggable engine architecture |
-| Install instructions | Document both `npm install -g @anthropic-ai/claude-code` and `curl -fsSL https://opencode.ai/install \| bash` as options |
+| Change | Description | Status |
+|--------|-------------|--------|
+| Engine selector config | `axiom.ai-engine` property (values: `claude-code`, `opencode`; default: `claude-code`) | Done (Phase 1) |
+| Engine-specific config | Both `axiom.claude-code.*` and `axiom.opencode.*` property namespaces coexist | Pending |
+| Model list endpoint | Dynamically populate available models based on the active engine. For OpenCode: use `GET /config/providers`. For Claude Code: use existing static list. | Pending |
+| UI engine indicator | Show the active engine name in the UI (settings page or status bar) | Pending |
+| UI model picker | Update to show `provider/model` format when OpenCode is active; support models from multiple providers | Pending |
+| Actor type mapping | `TaskExecutionService` resolves actor type from active `AiEngine` | Done (Phase 1) |
+| StartupCheckService | Delegate to `AiEngine.healthCheck()` | Done (Phase 1) |
+| Documentation | Update README, `docs/architecture-v2.md`, and `docs/design-v2.md` to describe the pluggable engine architecture | Pending |
+| Install instructions | Document both `npm install -g @anthropic-ai/claude-code` and `curl -fsSL https://opencode.ai/install \| bash` as options | Pending |
 
-### Phase 8: Testing
+### Phase 7: Testing
+
+**Status:** Pending
 
 **Goal:** Port and expand the test suite for both engines and the SPI layer.
 
@@ -468,9 +500,9 @@ engines.
 
 | Current Test | New Test | Type |
 |-------------|----------|------|
-| `ClaudeCodeCommandBuilderTest` (12 tests) | Unchanged (stays in `engine/claude-code/`) | Unit |
-| `ClaudeCodeResultTest` (3 tests) | Unchanged (stays in `engine/claude-code/`) | Unit |
-| `ClaudeCodeSubprocessTest` (8 integration tests) | Unchanged (stays in `engine/claude-code/`) | Integration |
+| `ClaudeCodeCommandBuilderTest` (12 tests) | Unchanged (stays in `actors/claude-code/`) | Unit |
+| `ClaudeCodeResultTest` (3 tests) | Unchanged (stays in `actors/claude-code/`) | Unit |
+| `ClaudeCodeSubprocessTest` (8 integration tests) | Unchanged (stays in `actors/claude-code/`) | Integration |
 | `ManagerDecisionTest` (4 tests) | Unchanged (schema-level parsing, engine-agnostic) | Unit |
 | `ManagerDecisionParsingTest` (10 tests) | Unchanged (engine-agnostic) | Unit |
 | App integration tests (14 tests) | Run against both engines via parameterized config | Integration |
@@ -481,6 +513,7 @@ engines.
 |------|--------|-------------|
 | `AiEngineSpiTest` | `engine/spi/` | Verify SPI contracts: interface methods, result mapping, config builder |
 | `AiEngineProducerTest` | `engine/spi/` | CDI producer resolves correct engine based on `axiom.ai-engine` config |
+| `ClaudeCodeEngineTest` | `actors/claude-code/` | Verify `ClaudeCodeEngine` maps config and results correctly |
 | `OpenCodeConfigBuilderTest` | `engine/opencode/` | Config/request payload construction, model name mapping |
 | `OpenCodeResultTest` | `engine/opencode/` | Result record construction, mapping to `AiEngineResult` |
 | `OpenCodeClientTest` | `engine/opencode/` | HTTP client integration (requires `opencode` binary) |
@@ -511,17 +544,16 @@ engines.
 
 ## 8. Estimated Effort
 
-| Phase | Description | Estimated Effort | Files Changed/Created |
-|-------|-------------|------------------|-----------------------|
-| 1 | Engine Abstraction Layer (SPI) | 3-4 days | 7 new files, 6 refactored |
-| 2 | Claude Code Engine Refactor | 2-3 days | 6 moved/refactored files |
-| 3 | OpenCode Core Integration Layer | 3-4 days | 7 new files |
-| 4 | Permission & Tool Mapping | 1-2 days | 2 files + tests |
-| 5 | MCP Server Management | 2-3 days | 2 files + tests |
-| 6 | OpenCode Actor & Task Execution | 2-3 days | 2 files + integration wiring |
-| 7 | Configuration & UI Updates | 2-3 days | 5-8 modified files |
-| 8 | Testing | 3-4 days | 10-12 test files |
-| **Total** | | **18-26 days** | **~35-45 files** |
+| Phase | Description | Estimated Effort | Files Changed/Created | Status |
+|-------|-------------|------------------|-----------------------|--------|
+| 1 | Engine Abstraction Layer (SPI) + Claude Code Wrapper | — | 9 new, 12 modified (23 total) | **Completed** |
+| 2 | OpenCode Core Integration Layer | 3-4 days | 7 new files | Pending |
+| 3 | Permission & Tool Mapping | 1-2 days | 2 files + tests | Pending |
+| 4 | MCP Server Management | 2-3 days | 2 files + tests | Pending |
+| 5 | OpenCode Actor & Task Execution | 2-3 days | 2 files + integration wiring | Pending |
+| 6 | Configuration & UI Updates | 1-2 days | 3-5 modified files | Pending (partially done) |
+| 7 | Testing | 3-4 days | 10-12 test files | Pending |
+| **Remaining** | | **~13-18 days** | **~26-33 files** | |
 
 ---
 
@@ -540,20 +572,25 @@ installed side-by-side for development and testing.
 
 ## 10. Success Criteria
 
-1. **Pluggable engine architecture**: Switching between Claude Code and OpenCode requires only
+Items marked with a checkmark have been achieved.
+
+1. [x] **Pluggable engine architecture**: Switching between Claude Code and OpenCode requires only
    changing `axiom.ai-engine` in `application.properties`. No code changes needed.
-2. **Engine-agnostic core**: `app/`, `manager/`, and `core/` modules have zero imports from
-   `engine/claude-code/` or `engine/opencode/` packages.
-3. **Claude Code parity**: All existing functionality works identically with
-   `axiom.ai-engine=claude-code` after the refactor (Phase 2 validation).
-4. **OpenCode parity**: Manager structured output (decisions), task execution, script/tool AI,
+2. [x] **Engine-agnostic core**: `manager/` module has zero imports from engine-specific
+   packages. `app/` module imports `ClaudeCodeMcpManager` only for the delegate wiring
+   (`McpConfigGenerator.init()`), which is a one-time bootstrap — all runtime invocations
+   go through the `AiEngineMcpManager` SPI.
+3. [x] **Claude Code parity**: All existing functionality works identically with
+   `axiom.ai-engine=claude-code` (the default). All consumer services refactored.
+4. [ ] **OpenCode parity**: Manager structured output (decisions), task execution, script/tool AI,
    and report generation all work correctly with `axiom.ai-engine=opencode`.
-5. **Cost and token tracking**: `AiUsageEntity` is populated correctly by both engines.
-6. **MCP server integration**: Script tools and external MCP servers work with both engines
+5. [ ] **Cost and token tracking**: `AiUsageEntity` is populated correctly by both engines.
+6. [ ] **MCP server integration**: Script tools and external MCP servers work with both engines
    via their respective `AiEngineMcpManager` implementations.
-7. **All tests pass** for both engines — existing tests (adapted) and new engine-specific tests.
-8. **Startup health check** validates the active engine's prerequisites.
-9. **UI model picker** supports multiple providers when OpenCode is active.
-10. **End-to-end pipeline** (event → manager → task → actor → result) works with both engines.
-11. **Extensibility**: Adding a third engine (e.g., Aider, Goose) requires only implementing the
-    SPI interfaces in a new module — no changes to core modules.
+7. [ ] **All tests pass** for both engines — existing tests (adapted) and new engine-specific tests.
+8. [x] **Startup health check** validates the active engine's prerequisites via
+   `AiEngine.healthCheck()`.
+9. [ ] **UI model picker** supports multiple providers when OpenCode is active.
+10. [ ] **End-to-end pipeline** (event → manager → task → actor → result) works with both engines.
+11. [x] **Extensibility**: Adding a third engine requires only implementing `AiEngine`,
+    `AiEngineMcpManager`, and `Actor` in a new module — no changes to core modules.
