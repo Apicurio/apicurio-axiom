@@ -23,6 +23,7 @@
     <modules>
         <module>common/api</module>
         <module>core</module>
+        <module>engine/spi</module>
         <module>manager</module>
         <module>actors/spi</module>
         <module>actors/claude-code</module>
@@ -80,6 +81,11 @@
             <dependency>
                 <groupId>io.apicurio</groupId>
                 <artifactId>apicurio-axiom-manager</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.apicurio</groupId>
+                <artifactId>apicurio-axiom-engine-spi</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

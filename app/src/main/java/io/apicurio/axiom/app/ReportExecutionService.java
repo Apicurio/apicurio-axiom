@@ -1,16 +1,15 @@
 package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeCommandBuilder;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeResult;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeSubprocess;
-import io.apicurio.axiom.actors.claudecode.ExecutionLogBuilder;
-import io.apicurio.axiom.actors.spi.ActorContext;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
 import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
 import io.apicurio.axiom.core.entities.ReportEntity;
 import io.apicurio.axiom.core.entities.RepositoryEntity;
 import io.apicurio.axiom.core.services.ToolsetResolver;
+import io.apicurio.axiom.engine.spi.AiEngine;
+import io.apicurio.axiom.engine.spi.AiEngineConfig;
+import io.apicurio.axiom.engine.spi.AiEngineMcpManager;
+import io.apicurio.axiom.engine.spi.AiEngineResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -18,7 +17,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.nio.file.Path;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -28,7 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Executes report generation by invoking Claude Code with a prompt template,
+ * Executes report generation by invoking the AI engine with a prompt template,
  * read-only tools, and GitHub MCP tools. Stores the generated markdown content
  * in the ReportEntity.
  */
@@ -41,7 +39,10 @@ public class ReportExecutionService {
     ObjectMapper objectMapper;
 
     @Inject
-    McpConfigGenerator mcpConfigGenerator;
+    AiEngine aiEngine;
+
+    @Inject
+    AiEngineMcpManager mcpManager;
 
     @Inject
     ToolsetResolver toolsetResolver;
@@ -107,44 +108,25 @@ public class ReportExecutionService {
         // Resolve allowed tools from the definition, falling back to defaults
         List<String> allowedTools = resolveAllowedTools(definition);
 
-        // Build execution log
-        ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
-        logBuilder.header(reportId, "generate-report", now);
-        logBuilder.systemPrompt(SYSTEM_PROMPT);
-        logBuilder.prompt(prompt);
-        logBuilder.allowedTools(allowedTools);
-
-        // Build command
-        ActorContext context = ActorContext.builder()
-                .systemPrompt(SYSTEM_PROMPT)
-                .allowedTools(allowedTools)
-                .build();
-
-        ClaudeCodeCommandBuilder cmdBuilder = ClaudeCodeCommandBuilder
-                .fromContext(prompt, context)
-                .streamJson(true)
-                .maxTurns(30);
-
-        model.ifPresent(cmdBuilder::model);
-
         // Generate MCP config with report-related tools
         Map<String, String> env = buildEnvironment();
-        Path mcpConfig = mcpConfigGenerator.generateMcpConfig(reportId, env, allowedTools);
-        if (mcpConfig != null) {
-            cmdBuilder.mcpConfigFile(mcpConfig);
-        }
+        Path mcpConfig = mcpManager.configureMcpServers(reportId, env, allowedTools);
 
-        List<String> command = cmdBuilder.build();
-
-        ClaudeCodeSubprocess subprocess = new ClaudeCodeSubprocess(
-                command, null, env,
-                Duration.ofSeconds(timeoutSeconds), null, logBuilder
-        );
+        // Build engine-agnostic config
+        AiEngineConfig engineConfig = AiEngineConfig.builder()
+                .systemPrompt(SYSTEM_PROMPT)
+                .allowedTools(allowedTools)
+                .timeoutSeconds(timeoutSeconds)
+                .maxSteps(30)
+                .model(model.orElse(null))
+                .environment(env)
+                .mcpConfigFile(mcpConfig)
+                .build();
 
         // Mark as generating
         markGenerating(reportId, rangeStart, rangeEnd);
 
-        subprocess.execute()
+        aiEngine.prompt(engineConfig, prompt)
                 .thenAccept(result -> onReportCompleted(reportId, definition.id, result))
                 .exceptionally(throwable -> {
                     LOG.errorf(throwable, "Report %d generation failed unexpectedly", reportId);
@@ -164,11 +146,11 @@ public class ReportExecutionService {
     }
 
     @Transactional
-    void onReportCompleted(Long reportId, Long definitionId, ClaudeCodeResult result) {
+    void onReportCompleted(Long reportId, Long definitionId, AiEngineResult result) {
         ReportEntity report = ReportEntity.findById(reportId);
         if (report == null) return;
 
-        if (result.isSuccess()) {
+        if (result.success()) {
             report.status = "Completed";
             report.content = result.result();
             report.title = extractTitle(result.result());
@@ -177,18 +159,18 @@ public class ReportExecutionService {
             report.content = "Report generation failed: " + result.result();
         }
         report.executionLog = result.executionLog();
-        report.costUsd = result.totalCostUsd();
+        report.costUsd = result.costUsd();
         report.completedOn = Instant.now();
 
         LOG.infof("Report %d %s (cost: $%s)",
                 reportId, report.status,
-                result.totalCostUsd() != null ? String.format("%.4f", result.totalCostUsd()) : "n/a");
+                result.costUsd() != null ? String.format("%.4f", result.costUsd()) : "n/a");
 
         // Record AI usage
         AiUsageEntity usage = new AiUsageEntity();
         usage.invocationType = "report";
         usage.actionType = "generate-report";
-        usage.costUsd = result.totalCostUsd();
+        usage.costUsd = result.costUsd();
         usage.inputTokens = result.inputTokens();
         usage.outputTokens = result.outputTokens();
         usage.createdOn = Instant.now();

@@ -11,37 +11,22 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>apicurio-axiom-actors-claude-code</artifactId>
-    <name>Apicurio Axiom - Actors - Claude Code</name>
-    <description>Claude Code CLI subprocess actor implementation</description>
+    <artifactId>apicurio-axiom-engine-spi</artifactId>
+    <name>Apicurio Axiom - Engine SPI</name>
+    <description>Pluggable AI engine abstraction layer</description>
 
     <dependencies>
-        <dependency>
-            <groupId>io.apicurio</groupId>
-            <artifactId>apicurio-axiom-actors-spi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.apicurio</groupId>
-            <artifactId>apicurio-axiom-engine-spi</artifactId>
-        </dependency>
         <dependency>
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.microprofile.config</groupId>
             <artifactId>microprofile-config-api</artifactId>
         </dependency>
-
-        <!-- Test -->
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <scope>test</scope>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
         </dependency>
     </dependencies>
 

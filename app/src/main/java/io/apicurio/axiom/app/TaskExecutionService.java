@@ -15,6 +15,8 @@ import io.apicurio.axiom.core.entities.ThreadEntryEntity;
 import io.apicurio.axiom.core.events.SseEvent;
 import io.apicurio.axiom.core.services.ToolsetResolver;
 import io.apicurio.axiom.core.services.WorkspaceService;
+import io.apicurio.axiom.engine.spi.AiEngine;
+import io.apicurio.axiom.engine.spi.AiEngineMcpManager;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.inject.Instance;
@@ -44,6 +46,12 @@ public class TaskExecutionService {
     Instance<Actor> actors;
 
     @Inject
+    AiEngine aiEngine;
+
+    @Inject
+    AiEngineMcpManager mcpManager;
+
+    @Inject
     WorkspaceService workspaceService;
 
     @Inject
@@ -51,9 +59,6 @@ public class TaskExecutionService {
 
     @Inject
     Event<SseEvent> sseEvents;
-
-    @Inject
-    McpConfigGenerator mcpConfigGenerator;
 
     @Inject
     ScriptExecutionService scriptExecutionService;
@@ -127,7 +132,7 @@ public class TaskExecutionService {
 
         // Generate MCP config filtered to only the tools allowed by this action type
         List<String> allowedTools = getToolsFromActionType(task.actionType);
-        Path mcpConfig = mcpConfigGenerator.generateMcpConfig(task.id, env, allowedTools);
+        Path mcpConfig = mcpManager.configureMcpServers(task.id, env, allowedTools);
 
         ActorContext context = ActorContext.builder()
                 .workingDirectory(workspace)
@@ -195,8 +200,8 @@ public class TaskExecutionService {
     }
 
     private Actor findActorByType(String type) {
-        // Map entity types to actor implementation types
-        String implType = "ai-agent".equals(type) ? "claude-code" : type;
+        // Map entity types to actor implementation types using the active AI engine
+        String implType = "ai-agent".equals(type) ? aiEngine.getActorType() : type;
         for (Actor actor : actors) {
             if (actor.getType().equals(implType)) {
                 return actor;

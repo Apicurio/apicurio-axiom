@@ -2,11 +2,6 @@ package io.apicurio.axiom.manager;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeCommandBuilder;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeResult;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeSubprocess;
-import io.apicurio.axiom.actors.claudecode.ExecutionLogBuilder;
-import io.apicurio.axiom.actors.spi.ActorContext;
 import io.apicurio.axiom.core.entities.ActionTypeEntity;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
@@ -15,24 +10,25 @@ import io.apicurio.axiom.core.entities.EventEntity;
 import io.apicurio.axiom.core.entities.ManagerConfigEntity;
 import io.apicurio.axiom.core.entities.ProjectEntity;
 import io.apicurio.axiom.core.entities.TaskEntity;
+import io.apicurio.axiom.engine.spi.AiEngine;
+import io.apicurio.axiom.engine.spi.AiEngineConfig;
+import io.apicurio.axiom.engine.spi.AiEngineResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
  * Service that invokes the AI Manager to evaluate events and produce decisions.
- * Launches Claude Code as a subprocess with a configurable system prompt and
- * prompt template containing the event, project context, action types, and actors.
+ * Uses the pluggable {@link AiEngine} SPI to invoke the configured AI engine
+ * with a structured JSON schema for decision output.
  */
 @ApplicationScoped
 public class ManagerService {
@@ -41,6 +37,9 @@ public class ManagerService {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    AiEngine aiEngine;
 
     @ConfigProperty(name = "axiom.manager.confidence-threshold", defaultValue = "0.7")
     double confidenceThreshold;
@@ -98,50 +97,25 @@ public class ManagerService {
                 promptTemplate, event, actionTypes, actors, project, recentTasks);
         String jsonSchema = ManagerPromptBuilder.getResponseJsonSchema();
 
-        // Create execution log builder
-        ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
-        logBuilder.header(0, "manager-evaluate", Instant.now());
-        logBuilder.systemPrompt(systemPrompt);
-        logBuilder.prompt(userPrompt);
-        logBuilder.allowedTools(List.of("StructuredOutput"));
-
-        // Build command — Manager needs no tools, just reasoning
-        ActorContext context = ActorContext.builder()
+        // Build engine-agnostic config
+        AiEngineConfig engineConfig = AiEngineConfig.builder()
                 .systemPrompt(systemPrompt)
                 .allowedTools(List.of("StructuredOutput"))
+                .timeoutSeconds(timeoutSeconds)
+                .maxSteps(maxTurns)
+                .model(model.orElse(null))
                 .build();
 
-        ClaudeCodeCommandBuilder cmdBuilder = ClaudeCodeCommandBuilder
-                .fromContext(userPrompt, context)
-                .streamJson(true)
-                .maxTurns(maxTurns);
-
-        model.ifPresent(cmdBuilder::model);
-
-        List<String> command = cmdBuilder.build();
-
-        // Add json-schema flag
-        command.add("--json-schema");
-        command.add(jsonSchema);
-
-        // Execute
-        ClaudeCodeSubprocess subprocess = new ClaudeCodeSubprocess(
-                command, null, Map.of(),
-                Duration.ofSeconds(timeoutSeconds), null,
-                logBuilder
-        );
-
         try {
-            ClaudeCodeResult result = subprocess.execute().join();
+            AiEngineResult result = aiEngine.promptWithSchema(engineConfig, userPrompt, jsonSchema).join();
             String executionLog = result.executionLog();
 
             // Record AI usage for this Manager evaluation
             recordAiUsage(event.id, project != null ? project.id : null,
-                    result.totalCostUsd(), result.inputTokens(), result.outputTokens());
+                    result.costUsd(), result.inputTokens(), result.outputTokens());
 
-            if (!result.isSuccess()) {
-                LOG.errorf("Manager subprocess failed (exit %d): %s",
-                        result.exitCode(), result.result());
+            if (!result.success()) {
+                LOG.errorf("Manager AI engine failed: %s", result.result());
                 logManagerActivity(event.id, "manager-error",
                         "Manager failed to evaluate event: " + result.result(),
                         executionLog);

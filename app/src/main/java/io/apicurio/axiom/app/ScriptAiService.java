@@ -2,28 +2,24 @@ package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeCommandBuilder;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeResult;
-import io.apicurio.axiom.actors.claudecode.ClaudeCodeSubprocess;
-import io.apicurio.axiom.actors.claudecode.ExecutionLogBuilder;
-import io.apicurio.axiom.actors.spi.ActorContext;
 import io.apicurio.axiom.api.beans.ScriptAiEditRequest;
 import io.apicurio.axiom.api.beans.ScriptAiEditResponse;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
+import io.apicurio.axiom.engine.spi.AiEngine;
+import io.apicurio.axiom.engine.spi.AiEngineConfig;
+import io.apicurio.axiom.engine.spi.AiEngineResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 /**
- * Service that invokes Claude Code to generate or update bash script
+ * Service that invokes the AI engine to generate or update bash script
  * templates for script-mode action types.
  */
 @ApplicationScoped
@@ -33,6 +29,9 @@ public class ScriptAiService {
 
     @Inject
     ObjectMapper objectMapper;
+
+    @Inject
+    AiEngine aiEngine;
 
     @ConfigProperty(name = "axiom.manager.model")
     Optional<String> model;
@@ -111,39 +110,22 @@ public class ScriptAiService {
         userPrompt.append(request.getMessage()).append("\n\n");
         userPrompt.append("Generate the script as structured JSON output.");
 
-        ExecutionLogBuilder logBuilder = new ExecutionLogBuilder();
-        logBuilder.header(0, "script-ai-edit", Instant.now());
-        logBuilder.systemPrompt(SYSTEM_PROMPT);
-        logBuilder.prompt(userPrompt.toString());
-
-        ActorContext context = ActorContext.builder()
+        AiEngineConfig engineConfig = AiEngineConfig.builder()
                 .systemPrompt(SYSTEM_PROMPT)
                 .allowedTools(List.of("StructuredOutput"))
+                .timeoutSeconds(60)
+                .maxSteps(3)
+                .model(model.orElse(null))
                 .build();
 
-        ClaudeCodeCommandBuilder cmdBuilder = ClaudeCodeCommandBuilder
-                .fromContext(userPrompt.toString(), context)
-                .streamJson(true)
-                .maxTurns(3);
-
-        model.ifPresent(cmdBuilder::model);
-
-        List<String> command = cmdBuilder.build();
-        command.add("--json-schema");
-        command.add(RESPONSE_SCHEMA);
-
-        ClaudeCodeSubprocess subprocess = new ClaudeCodeSubprocess(
-                command, null, Map.of(),
-                Duration.ofSeconds(60), null, logBuilder
-        );
-
         try {
-            ClaudeCodeResult result = subprocess.execute().join();
+            AiEngineResult result = aiEngine.promptWithSchema(engineConfig, userPrompt.toString(),
+                    RESPONSE_SCHEMA).join();
 
-            recordAiUsage(result.totalCostUsd(), result.inputTokens(), result.outputTokens());
+            recordAiUsage(result.costUsd(), result.inputTokens(), result.outputTokens());
 
-            if (!result.isSuccess()) {
-                LOG.errorf("Script AI edit failed (exit %d): %s", result.exitCode(), result.result());
+            if (!result.success()) {
+                LOG.errorf("Script AI edit failed: %s", result.result());
                 ScriptAiEditResponse response = new ScriptAiEditResponse();
                 response.setExplanation("Sorry, I encountered an error: " + result.result());
                 return response;

@@ -2,9 +2,14 @@ package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.actors.claudecode.ClaudeCodeMcpManager;
 import io.apicurio.axiom.core.entities.McpServerEntity;
 import io.apicurio.axiom.core.entities.ToolDefinitionEntity;
+import io.apicurio.axiom.engine.spi.AiEngineMcpManager;
+import io.apicurio.axiom.engine.spi.AiEngineType;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
@@ -18,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Generates MCP configuration files for Claude Code subprocesses.
+ * Generates MCP configuration files for AI engine subprocesses.
  *
  * <p>For each task execution, this generator:</p>
  * <ol>
@@ -26,13 +31,18 @@ import java.util.Map;
  *   <li>For "script" tools: writes a per-task tools JSON file and references the
  *       pre-built server in the MCP config</li>
  *   <li>For "mcp-server" tools: includes them directly in the config</li>
- *   <li>Writes the --mcp-config JSON file</li>
+ *   <li>Writes the MCP config JSON file</li>
  * </ol>
  *
  * <p>The MCP server project is a Node.js application bundled as a classpath resource
  * at {@code templates/axiom-mcp-server/}. On first use it is copied to
  * {@code ~/.axiom/mcp-server/} and {@code npm install} is run once to resolve
  * dependencies. Subsequent invocations reuse the installed project.</p>
+ *
+ * <p>This class also implements {@link io.apicurio.axiom.engine.spi.AiEngineMcpManager}
+ * for the Claude Code engine, via the {@link io.apicurio.axiom.actors.claudecode.ClaudeCodeMcpManager}
+ * delegate pattern. On initialization, it registers itself as the MCP config delegate
+ * for the active Claude Code engine.</p>
  */
 @ApplicationScoped
 public class McpConfigGenerator {
@@ -45,8 +55,26 @@ public class McpConfigGenerator {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    Instance<AiEngineMcpManager> mcpManagers;
+
     /** Lazily resolved path to the installed MCP server project directory. */
     private volatile Path mcpServerDir;
+
+    /**
+     * Registers this McpConfigGenerator as the delegate for the ClaudeCodeMcpManager,
+     * if the Claude Code engine is available on the classpath.
+     */
+    @PostConstruct
+    void init() {
+        for (AiEngineMcpManager manager : mcpManagers) {
+            if (manager instanceof ClaudeCodeMcpManager claudeMcpManager) {
+                claudeMcpManager.setDelegate(this::generateMcpConfig);
+                LOG.info("Registered McpConfigGenerator as ClaudeCodeMcpManager delegate");
+                break;
+            }
+        }
+    }
 
     /** Prefix used by Claude Code for tools provided by the axiom-tools MCP server. */
     private static final String AXIOM_TOOLS_PREFIX = "mcp__axiom-tools__";

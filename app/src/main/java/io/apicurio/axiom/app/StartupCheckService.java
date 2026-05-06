@@ -1,8 +1,11 @@
 package io.apicurio.axiom.app;
 
+import io.apicurio.axiom.engine.spi.AiEngine;
+import io.apicurio.axiom.engine.spi.AiEngineCheckResult;
 import io.quarkus.runtime.StartupEvent;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
+import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
 import java.util.ArrayList;
@@ -19,6 +22,9 @@ public class StartupCheckService {
 
     private static final Logger LOG = Logger.getLogger(StartupCheckService.class);
 
+    @Inject
+    AiEngine aiEngine;
+
     private final List<CheckResult> results = new ArrayList<>();
 
     /**
@@ -30,7 +36,7 @@ public class StartupCheckService {
         LOG.info("Running startup configuration checks...");
         checkGitHubToken();
         checkNodeJs();
-        checkClaudeCodeCli();
+        checkAiEngine();
 
         long errors = results.stream().filter(r -> "error".equals(r.status())).count();
         long warnings = results.stream().filter(r -> "warning".equals(r.status())).count();
@@ -140,57 +146,19 @@ public class StartupCheckService {
         }
     }
 
-    private void checkClaudeCodeCli() {
-        try {
-            ProcessBuilder pb = new ProcessBuilder("claude", "-p", "Reply with exactly: AXIOM_OK",
-                    "--bare", "--output-format", "text", "--max-turns", "1");
-            pb.redirectErrorStream(true);
-            Process process = pb.start();
-
-            boolean completed = process.waitFor(30, TimeUnit.SECONDS);
-            if (!completed) {
-                process.destroyForcibly();
-                results.add(new CheckResult(
-                        "Claude Code CLI",
-                        "error",
-                        "Claude Code CLI check timed out after 30 seconds. "
-                                + "Ensure that the 'claude' command is on your PATH and that "
-                                + "your Anthropic API key is configured correctly."
-                ));
-                LOG.warn("Startup check FAILED: Claude Code CLI timed out");
-                return;
-            }
-
-            String output = new String(process.getInputStream().readAllBytes());
-            int exitCode = process.exitValue();
-
-            if (exitCode == 0 && output.contains("AXIOM_OK")) {
-                results.add(new CheckResult(
-                        "Claude Code CLI",
-                        "ok",
-                        "Claude Code CLI is available and working."
-                ));
-                LOG.info("Startup check OK: Claude Code CLI is working");
+    private void checkAiEngine() {
+        LOG.infof("Checking AI engine: %s", aiEngine.getType());
+        List<AiEngineCheckResult> engineResults = aiEngine.healthCheck();
+        for (AiEngineCheckResult engineResult : engineResults) {
+            results.add(new CheckResult(engineResult.name(), engineResult.status(),
+                    engineResult.message()));
+            if ("ok".equals(engineResult.status())) {
+                LOG.infof("Startup check OK: %s", engineResult.name());
             } else {
-                results.add(new CheckResult(
-                        "Claude Code CLI",
-                        "error",
-                        "Claude Code CLI returned exit code " + exitCode + ". "
-                                + "Ensure that the 'claude' command is installed, on your PATH, "
-                                + "and that ANTHROPIC_API_KEY is set in your environment. "
-                                + "Install Claude Code: npm install -g @anthropic-ai/claude-code"
-                ));
-                LOG.warnf("Startup check FAILED: Claude Code CLI exit code %d, output: %s",
-                        exitCode, output.substring(0, Math.min(output.length(), 200)));
+                LOG.warnf("Startup check %s: %s — %s",
+                        engineResult.status().toUpperCase(), engineResult.name(),
+                        engineResult.message());
             }
-        } catch (Exception e) {
-            results.add(new CheckResult(
-                    "Claude Code CLI",
-                    "error",
-                    "Claude Code CLI is not available: " + e.getMessage() + ". "
-                            + "Install Claude Code: npm install -g @anthropic-ai/claude-code"
-            ));
-            LOG.warnf("Startup check FAILED: Claude Code CLI not found: %s", e.getMessage());
         }
     }
 
