@@ -4,9 +4,6 @@ import {
     EmptyState,
     EmptyStateBody,
     Label,
-    Modal,
-    ModalBody,
-    ModalHeader,
     PageSection,
     Pagination,
     TextInput,
@@ -16,11 +13,11 @@ import {
     ToolbarItem,
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
-import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import { type ActivityLogEntry, type AxiomEvent, fetchActivityLog, fetchEvent } from "../config/api";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
+import { EventDetailModal } from "../components/EventDetailModal";
 
 const MANAGER_ENTRY_TYPES = "manager-evaluated,manager-error,manager-skipped,manager-escalation,manager-no-decision";
 
@@ -92,15 +89,6 @@ export function ManagerDecisionsPage() {
         fetchEvent(eventId)
             .then(setSelectedEvent)
             .catch(console.error);
-    };
-
-    const formatPayload = (payload?: string): string => {
-        if (!payload) return "";
-        try {
-            return JSON.stringify(JSON.parse(payload), null, 2);
-        } catch {
-            return payload;
-        }
     };
 
     const handleViewLog = (activityId: number) => {
@@ -245,30 +233,10 @@ export function ManagerDecisionsPage() {
                 onClose={() => setIsLogModalOpen(false)}
             />
 
-            <Modal isOpen={selectedEvent !== null}
+            <EventDetailModal
+                event={selectedEvent}
                 onClose={() => setSelectedEvent(null)}
-                variant="large"
-                aria-label="Event payload">
-                <ModalHeader
-                    title={selectedEvent
-                        ? `${selectedEvent.source} / ${selectedEvent.eventType}`
-                        : "Event Payload"}
-                    description={selectedEvent
-                        ? `Event #${selectedEvent.id} — ${new Date(selectedEvent.receivedAt).toLocaleString()}`
-                        : undefined}
-                />
-                <ModalBody>
-                    {selectedEvent && (
-                        <CodeEditor
-                            code={formatPayload(selectedEvent.payload)}
-                            language={Language.json}
-                            height="500px"
-                            isReadOnly
-                            isLineNumbersVisible
-                        />
-                    )}
-                </ModalBody>
-            </Modal>
+            />
         </PageSection>
     );
 }
