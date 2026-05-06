@@ -426,37 +426,41 @@ which includes the allowed tools in the request body.
 before the tool list reaches the engine. The permission mapper only needs to handle the
 four resolved tool name formats — it never sees `@ToolsetName` references.
 
-### Phase 4: MCP Server Management
+### Phase 4: MCP Server Management — COMPLETED
 
-**Status:** Pending
+**Status:** Completed (same PR [#2](https://github.com/Apicurio/apicurio-axiom/pull/2))
+**Branch:** `feature/engine-spi`
 
 **Goal:** Implement OpenCode's MCP management behind the `AiEngineMcpManager` SPI.
 
-#### Current Approach (Claude Code)
-`McpConfigGenerator` writes a per-task JSON file containing:
-- `axiom-tools` server (bundled Node.js MCP server for script-based tools)
-- External MCP servers (from `McpServerEntity` database entries)
+#### Approach: Dynamic Registration via `POST /mcp`
 
-The file is passed via `--mcp-config <path>`. This logic is now encapsulated in
-`ClaudeCodeMcpManager` (delivered in Phase 1).
+OpenCode manages MCP servers at the server level (not per-task config files). The
+`OpenCodeMcpManager` registers servers dynamically via the OpenCode server's HTTP API
+when a task first requires them. Registered servers persist for the lifetime of the
+OpenCode server process and are tracked to avoid re-registration on subsequent tasks.
 
-#### New Approach (OpenCode)
-Two options (both supported):
+#### Delivered
 
-**Option A — Static config per workspace:**
-Generate an `opencode.json` in each project workspace directory with the MCP servers
-configured. Regenerate when MCP server configuration changes.
+| File | Change |
+|------|--------|
+| `OpenCodeMcpManager.java` | Full implementation replacing the Phase 2 stub. Uses a `McpServerProvider` delegate pattern (same approach as `ClaudeCodeMcpManager`). `McpConfigGenerator` in `app/` provides `McpServerConfig` records; this class registers them via `OpenCodeClient.addMcpServer()`. Tracks registered servers in a `ConcurrentHashMap` to skip re-registration. Supports both local (stdio) and remote (HTTP) MCP servers. |
+| `OpenCodeMcpManager.McpServerConfig` | Record type for MCP server configuration: `name`, `type` (local/remote), `command` (List), `environment` (Map), `url` (String). Static factories: `local()`, `remote()`. |
+| `OpenCodeMcpManager.McpServerProvider` | Functional interface for the delegate: `getMcpServers(taskId, environment, allowedTools)`. |
+| `McpConfigGenerator.java` | Extended with `getMcpServersForOpenCode()` method that queries `ToolDefinitionEntity` and `McpServerEntity`, filters by allowed tools, and returns `McpServerConfig` records. Registers itself as the delegate for both `ClaudeCodeMcpManager` and `OpenCodeMcpManager` in `@PostConstruct`. |
 
-**Option B — Dynamic registration (preferred):**
-Use `POST /mcp` to register MCP servers dynamically when a task starts. This avoids
-file management and allows per-task server sets.
+#### Design Decision: Delegate Pattern (not direct DB access)
 
-#### Deliverables
+`OpenCodeMcpManager` lives in `engine/opencode/` which does not depend on `core/` (where
+the JPA entities are). The `McpServerProvider` delegate pattern allows `McpConfigGenerator`
+in the `app/` module (which has DB access) to provide the MCP server configurations
+without coupling the engine module to the data layer. This is the same pattern used by
+`ClaudeCodeMcpManager`.
 
-| File | Description |
-|------|-------------|
-| `OpenCodeMcpManager.java` | Implements `AiEngineMcpManager`. Registers MCP servers via HTTP API or generates `opencode.json` config. Handles both script-based tools (`axiom-tools`) and external servers. |
-| MCP name mapping | Translate `mcp__<server>__<tool>` convention to OpenCode's `<server>_<tool>` format in allowed tool lists. |
+#### MCP tool name mapping
+
+Delivered in Phase 3 via `OpenCodePermissionMapper.mapMcpToolName()`:
+`mcp__serverName__toolName` → `serverName_toolName`.
 
 ### Phase 5: OpenCode Actor & Task Execution — COMPLETED (merged into Phase 2)
 
@@ -565,11 +569,11 @@ Note: Several items originally in this phase were delivered in Phase 1 (marked b
 | 1 | Engine Abstraction Layer (SPI) + Claude Code Wrapper | — | 9 new, 12 modified (23 total) | **Completed** |
 | 2 | OpenCode Core Integration Layer | — | 5 new, 3 modified (8 total) | **Completed** |
 | 3 | Permission & Tool Mapping | — | 1 new + 1 test + 2 modified (4 total) | **Completed** |
-| 4 | MCP Server Management | 2-3 days | 2 files + tests | Pending |
+| 4 | MCP Server Management | — | 1 rewritten + 1 modified (2 total) | **Completed** |
 | 5 | OpenCode Actor & Task Execution | — | — | **Completed** (merged into Phase 2) |
 | 6 | Configuration & UI Updates | 1-2 days | 3-5 modified files | Pending (partially done) |
 | 7 | Testing | 3-4 days | 10-12 test files | Pending (20 tests delivered in Phase 3) |
-| **Remaining** | | **~6-9 days** | **~15-20 files** | |
+| **Remaining** | | **~4-6 days** | **~13-17 files** | |
 
 ---
 
@@ -602,8 +606,9 @@ Items marked with a checkmark have been achieved.
    and report generation all work correctly with `axiom.ai-engine=opencode`.
    Engine implementation complete; pending end-to-end validation with live OpenCode server.
 5. [ ] **Cost and token tracking**: `AiUsageEntity` is populated correctly by both engines.
-6. [ ] **MCP server integration**: Script tools and external MCP servers work with both engines
-   via their respective `AiEngineMcpManager` implementations.
+6. [x] **MCP server integration**: Script tools and external MCP servers work with both engines
+   via their respective `AiEngineMcpManager` implementations. Claude Code uses per-task
+   config files; OpenCode uses dynamic `POST /mcp` registration.
 7. [ ] **All tests pass** for both engines — existing tests (adapted) and new engine-specific tests.
 8. [x] **Startup health check** validates the active engine's prerequisites via
    `AiEngine.healthCheck()`.
