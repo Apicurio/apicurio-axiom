@@ -7,6 +7,8 @@ import {
     FlexItem,
     Form,
     FormGroup,
+    HelperText,
+    HelperTextItem,
     Modal,
     ModalBody,
     ModalFooter,
@@ -140,8 +142,8 @@ export function SecretsPage() {
                 <ModalHeader title={editing ? "Update Secret" : "Add Secret"} />
                 <ModalBody>
                     <Form>
-                        <FormGroup label="Name" isRequired fieldId="name"
-                            helperText="The environment variable name (e.g. GH_TOKEN, JIRA_API_TOKEN)">
+                        <FormGroup label="Name" isRequired fieldId="name">
+                            <HelperText><HelperTextItem>The environment variable name (e.g. GH_TOKEN, JIRA_API_TOKEN)</HelperTextItem></HelperText>
                             <TextInput id="name" isRequired value={formName}
                                 onChange={(_e, v) => setFormName(v)}
                                 isDisabled={editing !== null} />
@@ -151,10 +153,10 @@ export function SecretsPage() {
                                 onChange={(_e, v) => setFormDescription(v)}
                                 placeholder="What this secret is used for" />
                         </FormGroup>
-                        <FormGroup label="Value" isRequired fieldId="value"
-                            helperText={editing
+                        <FormGroup label="Value" isRequired fieldId="value">
+                            <HelperText><HelperTextItem>{editing
                                 ? "Enter the new value. The previous value cannot be displayed."
-                                : "The secret value (will be encrypted at rest)"}>
+                                : "The secret value (will be encrypted at rest)"}</HelperTextItem></HelperText>
                             <TextInput id="value" type="password" isRequired value={formValue}
                                 onChange={(_e, v) => setFormValue(v)}
                                 placeholder={editing ? "Enter new value" : "Enter secret value"} />

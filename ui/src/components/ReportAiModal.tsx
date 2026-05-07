@@ -20,7 +20,6 @@ import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import PaperPlaneIcon from "@patternfly/react-icons/dist/esm/icons/paper-plane-icon";
-import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import { aiEditReportPrompt } from "../config/api";
 
 interface ChatMessage {
