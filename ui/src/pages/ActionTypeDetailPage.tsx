@@ -13,6 +13,7 @@ import {
     FormGroup,
     FormSelect,
     FormSelectOption,
+    FormSelectOptionGroup,
     PageSection,
     Tab,
     TabContent,
@@ -266,9 +267,34 @@ function InfoTab({ form, updateForm, availableModels }: {
                         onChange={(_e, v) => updateForm({ model: v || undefined })}
                     >
                         <FormSelectOption value="" label="Global default" />
-                        {availableModels.map((m) => (
-                            <FormSelectOption key={m} value={m} label={m} />
-                        ))}
+                        {(() => {
+                            // Group models by provider if they use provider/model format
+                            const hasProviders = availableModels.some((m) => m.includes("/"));
+                            if (hasProviders) {
+                                const groups: Record<string, string[]> = {};
+                                for (const m of availableModels) {
+                                    if (m.includes("/")) {
+                                        const [provider] = m.split("/", 2);
+                                        const key = provider.charAt(0).toUpperCase() + provider.slice(1);
+                                        if (!groups[key]) groups[key] = [];
+                                        groups[key].push(m);
+                                    } else {
+                                        if (!groups["Other"]) groups["Other"] = [];
+                                        groups["Other"].push(m);
+                                    }
+                                }
+                                return Object.entries(groups).map(([provider, models]) => (
+                                    <FormSelectOptionGroup key={provider} label={provider}>
+                                        {models.map((m) => (
+                                            <FormSelectOption key={m} value={m} label={m.split("/").pop() || m} />
+                                        ))}
+                                    </FormSelectOptionGroup>
+                                ));
+                            }
+                            return availableModels.map((m) => (
+                                <FormSelectOption key={m} value={m} label={m} />
+                            ));
+                        })()}
                     </FormSelect>
                 </FormGroup>
             )}

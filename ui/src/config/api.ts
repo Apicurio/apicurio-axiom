@@ -31,6 +31,7 @@ export interface StartupCheck {
 
 export interface SystemConfig {
     version: string;
+    engine?: string;
     features: Record<string, boolean>;
     checks?: StartupCheck[];
 }

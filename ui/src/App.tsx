@@ -57,6 +57,7 @@ import { ToolDetailPage } from "./pages/ToolDetailPage";
 import { ToolsetsPage } from "./pages/ToolsetsPage";
 import { ToolsetDetailPage } from "./pages/ToolsetDetailPage";
 import { ConfigurationWarning } from "./components/ConfigurationWarning";
+import { EngineSettingsPage } from "./pages/EngineSettingsPage";
 import { type StartupCheck, fetchSystemHealth, fetchSystemConfig } from "./config/api";
 import { sseClient, type AxiomSseEvent } from "./config/sse";
 
@@ -68,7 +69,7 @@ interface Notification {
     read: boolean;
 }
 
-const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/toolsets", "/mcp-servers", "/repositories", "/report-definitions"];
+const CONFIG_PATHS = ["/actors", "/manager", "/action-types", "/tools", "/toolsets", "/mcp-servers", "/repositories", "/report-definitions", "/engine"];
 
 let notificationIdCounter = 0;
 
@@ -79,6 +80,7 @@ export function App() {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [backendStatus, setBackendStatus] = useState<string>("checking...");
     const [startupChecks, setStartupChecks] = useState<StartupCheck[] | null>(null);
+    const [engineName, setEngineName] = useState<string | undefined>(undefined);
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
@@ -109,6 +111,9 @@ export function App() {
             .then((config) => {
                 if (config.checks) {
                     setStartupChecks(config.checks);
+                }
+                if (config.engine) {
+                    setEngineName(config.engine);
                 }
             })
             .catch(console.error);
@@ -160,7 +165,25 @@ export function App() {
             <MastheadContent>
                 <Toolbar>
                     <ToolbarContent>
-                        <ToolbarItem align={{ default: "alignEnd" }}>
+                        {engineName && (
+                            <ToolbarItem align={{ default: "alignEnd" }}>
+                                <Button
+                                    variant="plain"
+                                    onClick={() => navigate("/engine")}
+                                    style={{
+                                        fontSize: "12px",
+                                        padding: "4px 10px",
+                                        border: "1px solid var(--pf-t--global--border--color--default)",
+                                        borderRadius: "12px",
+                                        color: "var(--pf-t--global--text--color--subtle)",
+                                    }}
+                                    title="AI Engine — click to view settings"
+                                >
+                                    {engineName === "opencode" ? "OpenCode" : engineName === "claude-code" ? "Claude Code" : engineName}
+                                </Button>
+                            </ToolbarItem>
+                        )}
+                        <ToolbarItem>
                             <NotificationBadge
                                 variant={unreadCount > 0 ? "unread" : "read"}
                                 onClick={() => setIsDrawerOpen(!isDrawerOpen)}
@@ -230,6 +253,9 @@ export function App() {
                             </NavItem>
                         </NavExpandable>
                         <NavExpandable title="Configuration" isActive={isConfigActive} isExpanded={isConfigActive}>
+                            <NavItem isActive={location.pathname.startsWith("/engine")} onClick={() => navigate("/engine")}>
+                                AI Engine
+                            </NavItem>
                             <NavItem isActive={location.pathname.startsWith("/action-types")} onClick={() => navigate("/action-types")}>
                                 Action Types
                             </NavItem>
@@ -341,6 +367,7 @@ export function App() {
                     <Route path="/" element={<DashboardPage />} />
                     <Route path="/projects" element={<ProjectsPage />} />
                     <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+                    <Route path="/engine" element={<EngineSettingsPage />} />
                     <Route path="/actors" element={<ActorsPage />} />
                     <Route path="/actors/:actorId" element={<ActorDetailPage />} />
                     <Route path="/manager" element={<ManagerConfigPage />} />
