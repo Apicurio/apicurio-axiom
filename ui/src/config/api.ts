@@ -661,6 +661,30 @@ export interface Report {
     completedOn?: string;
 }
 
+export interface ReportAiEditRequest {
+    message: string;
+    currentPromptTemplate?: string;
+    currentAllowedTools?: string[];
+    reportName?: string;
+    reportDescription?: string;
+}
+
+export interface ReportAiEditResponse {
+    promptTemplate?: string;
+    allowedTools?: string[];
+    explanation?: string;
+}
+
+export async function aiEditReportPrompt(request: ReportAiEditRequest): Promise<ReportAiEditResponse> {
+    const response = await fetch(`${API}/reports/ai-edit-prompt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error(`Failed to AI edit report prompt: ${response.status}`);
+    return response.json();
+}
+
 export async function fetchReportDefinitions(): Promise<ReportDefinition[]> {
     const response = await fetch(`${API}/reports/definitions`);
     if (!response.ok) throw new Error(`Failed to fetch report definitions: ${response.status}`);

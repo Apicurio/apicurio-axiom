@@ -29,7 +29,9 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { registerPlaceholderCompletions, REPORT_PLACEHOLDERS } from "../components/PlaceholderCompletionProvider";
 import { AddToolInput } from "../components/AddToolInput";
+import { ReportAiModal } from "../components/ReportAiModal";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
+import MagicIcon from "@patternfly/react-icons/dist/esm/icons/magic-icon";
 import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import {
@@ -56,6 +58,7 @@ export function ReportDefinitionDetailPage() {
     const [dirty, setDirty] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
 
+    const [aiModalOpen, setAiModalOpen] = useState(false);
     const [repos, setRepos] = useState<string[]>([]);
     const [tools, setTools] = useState<string[]>([]);
 
@@ -173,12 +176,31 @@ export function ReportDefinitionDetailPage() {
                         style={{ marginRight: "8px" }}>
                         Run Now
                     </Button>
+                    <Button variant="secondary" icon={<MagicIcon />}
+                            onClick={() => setAiModalOpen(true)}
+                            style={{ marginRight: "8px" }}>
+                        AI Assistant
+                    </Button>
                     <Button variant="primary" icon={<SaveIcon />} onClick={handleSave}
                         isDisabled={!dirty || !form.name || saving} isLoading={saving}>
                         {saving ? "Saving..." : "Save Changes"}
                     </Button>
                 </FlexItem>
             </Flex>
+
+            <ReportAiModal
+                isOpen={aiModalOpen}
+                promptTemplate={form.promptTemplate || ""}
+                allowedTools={tools}
+                reportName={form.name}
+                reportDescription={form.description}
+                onApply={(prompt, newTools) => {
+                    updateForm({ promptTemplate: prompt });
+                    setTools(newTools);
+                    setDirty(true);
+                }}
+                onClose={() => setAiModalOpen(false)}
+            />
 
             <Tabs activeKey={activeTab} onSelect={(_e, k) => setActiveTab(k as number)}>
                 <Tab eventKey={0} title={<TabTitleText>Info</TabTitleText>}>

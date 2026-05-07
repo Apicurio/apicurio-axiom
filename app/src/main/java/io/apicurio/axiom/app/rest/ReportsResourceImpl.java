@@ -3,8 +3,11 @@ package io.apicurio.axiom.app.rest;
 import io.apicurio.axiom.api.ReportsResource;
 import io.apicurio.axiom.api.beans.NewReportDefinition;
 import io.apicurio.axiom.api.beans.Report;
+import io.apicurio.axiom.api.beans.ReportAiEditRequest;
+import io.apicurio.axiom.api.beans.ReportAiEditResponse;
 import io.apicurio.axiom.api.beans.ReportDefinition;
 import io.apicurio.axiom.api.beans.ReportSearchResults;
+import io.apicurio.axiom.app.ReportAiService;
 import io.apicurio.axiom.app.ReportQueueConsumer;
 import io.apicurio.axiom.app.ReportScheduler;
 import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
@@ -36,6 +39,17 @@ public class ReportsResourceImpl implements ReportsResource {
 
     @Inject
     ReportQueueConsumer reportQueuePoller;
+
+    @Inject
+    ReportAiService reportAiService;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ReportAiEditResponse aiEditReportPrompt(ReportAiEditRequest data) {
+        return reportAiService.editReportPrompt(data);
+    }
 
     // ── Report Definitions CRUD ──────────────────────────────────────
 

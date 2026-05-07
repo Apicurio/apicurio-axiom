@@ -991,6 +991,21 @@
       },
       "parameters": [{ "name": "definitionId", "in": "path", "required": true, "schema": { "format": "int64", "type": "integer" } }]
     },
+    "/reports/ai-edit-prompt": {
+      "post": {
+        "tags": ["Reports"],
+        "summary": "AI-assisted report prompt editing",
+        "description": "Invokes Claude Code to generate or update a report definition's prompt template and allowed tools.",
+        "operationId": "aiEditReportPrompt",
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportAiEditRequest" } } },
+          "required": true
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ReportAiEditResponse" } } } }
+        }
+      }
+    },
     "/reports": {
       "get": {
         "tags": ["Reports"],
@@ -2850,6 +2865,25 @@
           "name": { "type": "string" },
           "description": { "type": "string" },
           "tools": { "description": "List of tool strings in this toolset", "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "ReportAiEditRequest": {
+        "required": ["message"],
+        "type": "object",
+        "properties": {
+          "message": { "description": "The user's instruction for creating or modifying the report prompt", "type": "string" },
+          "currentPromptTemplate": { "description": "The current prompt template, if any", "type": "string" },
+          "currentAllowedTools": { "description": "The current allowed tools list", "type": "array", "items": { "type": "string" } },
+          "reportName": { "description": "The report definition name for context", "type": "string" },
+          "reportDescription": { "description": "The report definition description for context", "type": "string" }
+        }
+      },
+      "ReportAiEditResponse": {
+        "type": "object",
+        "properties": {
+          "promptTemplate": { "description": "The generated or updated prompt template", "type": "string" },
+          "allowedTools": { "description": "Recommended allowed tools for this report", "type": "array", "items": { "type": "string" } },
+          "explanation": { "description": "AI's explanation of what was generated or changed", "type": "string" }
         }
       },
       "ScriptAiEditRequest": {
