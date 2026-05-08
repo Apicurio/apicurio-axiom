@@ -85,11 +85,19 @@ export function ActionTypeDetailPage() {
 
     useEffect(() => { loadData(); }, [loadData]);
     useEffect(() => {
-        fetchModels().then(setAvailableModels).catch(console.error);
         fetchEngines().then(setAvailableEngines).catch(console.error);
     }, []);
 
+    // Refetch models when the selected engine changes
+    useEffect(() => {
+        fetchModels(form.engine).then(setAvailableModels).catch(console.error);
+    }, [form.engine]);
+
     const updateForm = (updates: Partial<NewActionType>) => {
+        // Clear the model when the engine changes (models differ per engine)
+        if (updates.engine !== undefined && updates.engine !== form.engine) {
+            updates = { ...updates, model: undefined };
+        }
         setForm((prev) => ({ ...prev, ...updates }));
         setDirty(true);
     };
