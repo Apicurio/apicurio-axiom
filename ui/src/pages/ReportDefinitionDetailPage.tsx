@@ -12,7 +12,6 @@ import {
     FormGroup,
     FormSelect,
     FormSelectOption,
-    Label,
     PageSection,
     Switch,
     Tab,
@@ -23,7 +22,6 @@ import {
     TextInput,
     Title, Alert,
 } from "@patternfly/react-core";
-import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { registerPlaceholderCompletions, REPORT_PLACEHOLDERS } from "../components/PlaceholderCompletionProvider";
 import { AddToolInput } from "../components/AddToolInput";
@@ -36,11 +34,9 @@ import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-i
 import {
     type ReportDefinition,
     type NewReportDefinition,
-    type Report,
     fetchReportDefinition,
     updateReportDefinition,
     runReportDefinition,
-    fetchReports,
 } from "../config/api";
 
 export function ReportDefinitionDetailPage() {
@@ -61,18 +57,11 @@ export function ReportDefinitionDetailPage() {
     const [tools, setTools] = useState<string[]>([]);
     const [envVars, setEnvVars] = useState<Record<string, string>>({});
 
-    // Generated reports for this definition
-    const [reports, setReports] = useState<Report[]>([]);
-    const [reportsTotalCount, setReportsTotalCount] = useState(0);
-
     const loadData = useCallback(() => {
         if (!id) return;
         setLoading(true);
-        Promise.all([
-            fetchReportDefinition(id),
-            fetchReports(1, 10, id),
-        ])
-            .then(([def, rpts]) => {
+        fetchReportDefinition(id)
+            .then((def) => {
                 setDefinition(def);
                 setForm({
                     name: def.name, description: def.description,
@@ -82,8 +71,6 @@ export function ReportDefinitionDetailPage() {
                 });
                 setTools(def.allowedTools || []);
                 setEnvVars(def.environment || {});
-                setReports(rpts.items);
-                setReportsTotalCount(rpts.totalCount);
                 setDirty(false);
             })
             .catch(console.error)
@@ -204,19 +191,10 @@ export function ReportDefinitionDetailPage() {
                         />
                     </TabContent>
                 </Tab>
-                <Tab eventKey={2} title={<TabTitleText>Prompt Template</TabTitleText>}>
-                    <TabContent id="prompt-tab" eventKey={2} activeKey={activeTab}
-                        style={{ marginTop: "24px" }}>
-                        <PromptTemplateTab
-                            value={form.promptTemplate}
-                            onChange={(v) => updateForm({ promptTemplate: v })}
-                        />
-                    </TabContent>
-                </Tab>
-                <Tab eventKey={3} title={<TabTitleText>
+                <Tab eventKey={2} title={<TabTitleText>
                     Environment{Object.keys(envVars).length > 0 ? ` (${Object.keys(envVars).length})` : ""}
                 </TabTitleText>}>
-                    <TabContent id="env-tab" eventKey={3} activeKey={activeTab}
+                    <TabContent id="env-tab" eventKey={2} activeKey={activeTab}
                         style={{ marginTop: "24px" }}>
                         <EnvironmentTab
                             envVars={envVars}
@@ -224,12 +202,13 @@ export function ReportDefinitionDetailPage() {
                         />
                     </TabContent>
                 </Tab>
-                <Tab eventKey={4} title={<TabTitleText>
-                    Generated Reports ({reportsTotalCount})
-                </TabTitleText>}>
-                    <TabContent id="reports-tab" eventKey={4} activeKey={activeTab}
+                <Tab eventKey={3} title={<TabTitleText>Prompt Template</TabTitleText>}>
+                    <TabContent id="prompt-tab" eventKey={3} activeKey={activeTab}
                         style={{ marginTop: "24px" }}>
-                        <GeneratedReportsTab reports={reports} />
+                        <PromptTemplateTab
+                            value={form.promptTemplate}
+                            onChange={(v) => updateForm({ promptTemplate: v })}
+                        />
                     </TabContent>
                 </Tab>
             </Tabs>
@@ -473,56 +452,3 @@ function EnvironmentTab({ envVars, onChange }: {
     );
 }
 
-const STATUS_COLORS: Record<string, "blue" | "green" | "grey" | "red"> = {
-    Pending: "blue",
-    Generating: "blue",
-    Completed: "green",
-    Failed: "red",
-};
-
-function GeneratedReportsTab({ reports }: { reports: Report[] }) {
-    if (reports.length === 0) {
-        return (
-            <EmptyState>
-                <EmptyStateBody>No reports generated yet. Click "Run Now" to generate one.</EmptyStateBody>
-            </EmptyState>
-        );
-    }
-
-    return (
-        <Table aria-label="Generated Reports" variant="compact">
-            <Thead>
-                <Tr>
-                    <Th>Title</Th>
-                    <Th>Status</Th>
-                    <Th>Time Range</Th>
-                    <Th>Generated</Th>
-                </Tr>
-            </Thead>
-            <Tbody>
-                {reports.map((report) => (
-                    <Tr key={report.id} isClickable>
-                        <Td>
-                            <Link to={`/reports/${report.id}`}>
-                                {report.title || `Report #${report.id}`}
-                            </Link>
-                        </Td>
-                        <Td>
-                            <Label isCompact color={STATUS_COLORS[report.status] || "grey"}>
-                                {report.status}
-                            </Label>
-                        </Td>
-                        <Td>
-                            {report.timeRangeStart && report.timeRangeEnd
-                                ? `${new Date(report.timeRangeStart).toLocaleDateString()} — ${new Date(report.timeRangeEnd).toLocaleDateString()}`
-                                : "—"}
-                        </Td>
-                        <Td style={{ whiteSpace: "nowrap" }}>
-                            {new Date(report.createdOn).toLocaleString()}
-                        </Td>
-                    </Tr>
-                ))}
-            </Tbody>
-        </Table>
-    );
-}
