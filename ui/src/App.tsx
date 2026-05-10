@@ -182,7 +182,7 @@ export function App() {
                 left: 0,
                 right: 0,
                 height: "3px",
-                background: "linear-gradient(90deg, #0066cc, #7c3aed, #06b6d4)",
+                background: "linear-gradient(90deg, #0b2545, #1b6b93, #4fc0d0)",
             }} />
         </Masthead>
     );
