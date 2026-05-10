@@ -99,7 +99,8 @@ export function ToolsPage() {
                                     <Td>{tool.name}</Td>
                                     <Td>{tool.description || "—"}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={(e) => handleDelete(e, tool.id)}>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, tool.id)}>
                                             <TrashIcon />
                                         </Button>
                                     </Td>

@@ -93,7 +93,8 @@ export function ActorsPage() {
                                     <Td>{a.description || "—"}</Td>
                                     <Td>{a.capabilities?.join(", ") || "—"}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={() => handleDelete(a.id)}><TrashIcon /></Button>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={() => handleDelete(a.id)}><TrashIcon /></Button>
                                     </Td>
                                 </Tr>
                             ))}

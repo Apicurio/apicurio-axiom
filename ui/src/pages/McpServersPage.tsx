@@ -102,7 +102,8 @@ export function McpServersPage() {
                                         </Label>
                                     </Td>
                                     <Td>
-                                        <Button variant="plain" onClick={(e) => handleDelete(e, s.id)}>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, s.id)}>
                                             <TrashIcon />
                                         </Button>
                                     </Td>

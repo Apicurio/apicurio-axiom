@@ -132,7 +132,8 @@ export function ActionTypesPage() {
                                         ? (at.promptTemplate ? "Configured" : "—")
                                         : (at.scriptTemplate ? "Configured" : "—")}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={(e) => handleDelete(e, at.id)}>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, at.id)}>
                                             <TrashIcon />
                                         </Button>
                                     </Td>

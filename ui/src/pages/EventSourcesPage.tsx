@@ -212,7 +212,8 @@ export function EventSourcesPage() {
                                     </Td>
                                     <Td>{s.pollInterval != null ? `${s.pollInterval}s` : "—"}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }}>
                                             <TrashIcon />
                                         </Button>
                                     </Td>

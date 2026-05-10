@@ -122,12 +122,12 @@ export function SecretsPage() {
                                     <Td>{s.description || "—"}</Td>
                                     <Td style={{ color: "#6a6e73" }}>••••••••</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={() => openEdit(s)}
-                                            aria-label="Edit">
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={() => openEdit(s)} aria-label="Edit">
                                             <PencilAltIcon />
                                         </Button>
-                                        <Button variant="plain" onClick={(e) => handleDelete(e, s.id)}
-                                            aria-label="Delete">
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, s.id)} aria-label="Delete">
                                             <TrashIcon />
                                         </Button>
                                     </Td>

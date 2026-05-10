@@ -97,7 +97,8 @@ export function ToolsetsPage() {
                                     <Td>{ts.description || "—"}</Td>
                                     <Td>{ts.tools.length}</Td>
                                     <Td>
-                                        <Button variant="plain" onClick={(e) => handleDelete(e, ts.id)}>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, ts.id)}>
                                             <TrashIcon />
                                         </Button>
                                     </Td>
