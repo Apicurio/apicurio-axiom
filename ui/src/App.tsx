@@ -6,12 +6,10 @@ import {
     MastheadBrand,
     MastheadContent,
     MastheadMain,
-    MastheadToggle,
     Nav,
     NavExpandable,
     NavItem,
     NavList,
-    NotificationBadge,
     NotificationDrawer,
     NotificationDrawerBody,
     NotificationDrawerHeader,
@@ -22,14 +20,10 @@ import {
     Page,
     PageSidebar,
     PageSidebarBody,
-    PageToggleButton,
     Toolbar,
     ToolbarContent,
     ToolbarItem,
 } from "@patternfly/react-core";
-import BarsIcon from "@patternfly/react-icons/dist/esm/icons/bars-icon";
-import CheckCircleIcon from "@patternfly/react-icons/dist/esm/icons/check-circle-icon";
-import ExclamationCircleIcon from "@patternfly/react-icons/dist/esm/icons/exclamation-circle-icon";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -77,7 +71,6 @@ let notificationIdCounter = 0;
 export function App() {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [backendStatus, setBackendStatus] = useState<string>("checking...");
     const [startupChecks, setStartupChecks] = useState<StartupCheck[] | null>(null);
@@ -145,22 +138,18 @@ export function App() {
     };
 
     const masthead = (
-        <Masthead>
+        <Masthead style={{
+            position: "relative",
+            borderBottom: "none",
+            boxShadow: "none",
+            background: "white",
+            marginBottom: "6px",
+        }}>
             <MastheadMain>
-                <MastheadToggle>
-                    <PageToggleButton
-                        variant="plain"
-                        aria-label="Global navigation"
-                        isSidebarOpen={isSidebarOpen}
-                        onSidebarToggle={() => setIsSidebarOpen(!isSidebarOpen)}
-                    >
-                        <BarsIcon />
-                    </PageToggleButton>
-                </MastheadToggle>
                 <MastheadBrand>
-                    <span style={{ fontSize: "18px", fontWeight: "bold" }}>
-                        Apicurio Axiom
-                    </span>
+                    <img src="/logo.png" alt="Apicurio Axiom"
+                        style={{ height: "42px", padding: "0", cursor: "pointer" }}
+                        onClick={() => navigate("/")} />
                 </MastheadBrand>
             </MastheadMain>
             <MastheadContent>
@@ -184,28 +173,17 @@ export function App() {
                                 </Button>
                             </ToolbarItem>
                         )}
-                        <ToolbarItem>
-                            <NotificationBadge
-                                variant={unreadCount > 0 ? "unread" : "read"}
-                                onClick={() => setIsDrawerOpen(!isDrawerOpen)}
-                                aria-label="Notifications"
-                                count={unreadCount}
-                            >
-                            </NotificationBadge>
-                        </ToolbarItem>
-                        <ToolbarItem>
-                            <Button
-                                variant="plain"
-                                aria-label={`API: ${backendStatus}`}
-                                title={`API: ${backendStatus}`}
-                                style={{ color: backendStatus === "UP" ? "var(--pf-t--global--color--status--success--default)" : "var(--pf-t--global--color--status--danger--default)" }}
-                            >
-                                {backendStatus === "UP" ? <CheckCircleIcon /> : <ExclamationCircleIcon />}
-                            </Button>
-                        </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
             </MastheadContent>
+            <div style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "linear-gradient(90deg, #0066cc, #7c3aed, #06b6d4)",
+            }} />
         </Masthead>
     );
 
@@ -214,7 +192,7 @@ export function App() {
     );
 
     const sidebar = (
-        <PageSidebar isSidebarOpen={isSidebarOpen}>
+        <PageSidebar>
             <PageSidebarBody>
                 <Nav>
                     <NavList>
