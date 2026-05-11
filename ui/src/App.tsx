@@ -72,7 +72,6 @@ export function App() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const [backendStatus, setBackendStatus] = useState<string>("checking...");
     const [startupChecks, setStartupChecks] = useState<StartupCheck[] | null>(null);
     const [engineName, setEngineName] = useState<string | undefined>(undefined);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -94,12 +93,8 @@ export function App() {
 
     useEffect(() => {
         fetchSystemHealth()
-            .then((health) => {
-                setBackendStatus(health.status);
-                // Only connect SSE after confirming the backend is reachable
-                sseClient.connect();
-            })
-            .catch(() => setBackendStatus("DOWN"));
+            .then(() => sseClient.connect())
+            .catch(console.error);
 
         fetchSystemConfig()
             .then((config) => {

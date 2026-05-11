@@ -8,6 +8,8 @@ import {
     Form,
     FormGroup,
     FormSelect,
+    HelperText,
+    HelperTextItem,
     FormSelectOption,
     Modal,
     ModalBody,
@@ -242,20 +244,20 @@ export function EventSourcesPage() {
                         </FormGroup>
 
                         {form.sourceType === "github" && (
-                            <FormGroup label="Repository URL" isRequired fieldId="ghUrl"
-                                helperText="Full URL to the GitHub repository (e.g. https://github.com/Apicurio/apicurio-axiom)">
+                            <FormGroup label="Repository URL" isRequired fieldId="ghUrl">
                                 <TextInput id="ghUrl" isRequired value={ghUrl}
                                     onChange={(_e, v) => setGhUrl(v)}
                                     placeholder="https://github.com/owner/repo" />
+                                <HelperText><HelperTextItem>Full URL to the GitHub repository (e.g. https://github.com/Apicurio/apicurio-axiom)</HelperTextItem></HelperText>
                             </FormGroup>
                         )}
 
                         {form.sourceType === "jira" && (
-                            <FormGroup label="Project URL" isRequired fieldId="jiraUrl"
-                                helperText="Full URL to the Jira project (e.g. https://issues.redhat.com/projects/APICURIO or https://jira.example.com/jira/software/c/projects/KEY)">
+                            <FormGroup label="Project URL" isRequired fieldId="jiraUrl">
                                 <TextInput id="jiraUrl" isRequired value={jiraUrl}
                                     onChange={(_e, v) => setJiraUrl(v)}
                                     placeholder="https://jira.example.com/projects/MYPROJECT" />
+                                <HelperText><HelperTextItem>Full URL to the Jira project (e.g. https://issues.redhat.com/projects/APICURIO or https://jira.example.com/jira/software/c/projects/KEY)</HelperTextItem></HelperText>
                             </FormGroup>
                         )}
 
@@ -270,8 +272,7 @@ export function EventSourcesPage() {
                                 onChange={(_e, v) => setForm({ ...form, pollInterval: v ? parseInt(v) : undefined })}
                                 placeholder="60" />
                         </FormGroup>
-                        <FormGroup label="Authentication Secret" fieldId="secretName"
-                            helperText="Select a secret from the Secrets store for API authentication. If not set, falls back to the default provider secret (e.g. GH_TOKEN).">
+                        <FormGroup label="Authentication Secret" fieldId="secretName">
                             <FormSelect id="secretName"
                                 value={form.secretName || ""}
                                 onChange={(_e, v) => setForm({ ...form, secretName: v || undefined })}>
@@ -280,6 +281,7 @@ export function EventSourcesPage() {
                                     <FormSelectOption key={s.name} value={s.name} label={s.name} />
                                 ))}
                             </FormSelect>
+                            <HelperText><HelperTextItem>Select a secret from the Secrets store for API authentication. If not set, falls back to the default provider secret (e.g. GH_TOKEN).</HelperTextItem></HelperText>
                         </FormGroup>
                     </Form>
                 </ModalBody>
