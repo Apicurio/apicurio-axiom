@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import {
+    AboutModal,
     Button,
     Masthead,
     MastheadBrand,
@@ -23,7 +24,9 @@ import {
     Toolbar,
     ToolbarContent,
     ToolbarItem,
+    Content,
 } from "@patternfly/react-core";
+import QuestionCircleIcon from "@patternfly/react-icons/dist/esm/icons/question-circle-icon";
 
 import { DashboardPage } from "./pages/DashboardPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
@@ -72,8 +75,10 @@ export function App() {
     const navigate = useNavigate();
     const location = useLocation();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isAboutOpen, setIsAboutOpen] = useState(false);
     const [startupChecks, setStartupChecks] = useState<StartupCheck[] | null>(null);
     const [engineName, setEngineName] = useState<string | undefined>(undefined);
+    const [appVersion, setAppVersion] = useState<string>("");
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     const unreadCount = notifications.filter((n) => !n.read).length;
@@ -103,6 +108,9 @@ export function App() {
                 }
                 if (config.engine) {
                     setEngineName(config.engine);
+                }
+                if (config.version) {
+                    setAppVersion(config.version);
                 }
             })
             .catch(console.error);
@@ -150,24 +158,12 @@ export function App() {
             <MastheadContent>
                 <Toolbar>
                     <ToolbarContent>
-                        {engineName && (
-                            <ToolbarItem align={{ default: "alignEnd" }}>
-                                <Button
-                                    variant="plain"
-                                    onClick={() => navigate("/engine")}
-                                    style={{
-                                        fontSize: "12px",
-                                        padding: "4px 10px",
-                                        border: "1px solid var(--pf-t--global--border--color--default)",
-                                        borderRadius: "12px",
-                                        color: "var(--pf-t--global--text--color--subtle)",
-                                    }}
-                                    title="AI Engine — click to view settings"
-                                >
-                                    {engineName === "opencode" ? "OpenCode" : engineName === "claude-code" ? "Claude Code" : engineName}
-                                </Button>
-                            </ToolbarItem>
-                        )}
+                        <ToolbarItem align={{ default: "alignEnd" }}>
+                            <Button variant="plain" aria-label="About"
+                                onClick={() => setIsAboutOpen(true)}>
+                                <QuestionCircleIcon />
+                            </Button>
+                        </ToolbarItem>
                     </ToolbarContent>
                 </Toolbar>
             </MastheadContent>
@@ -370,6 +366,34 @@ export function App() {
                     <Route path="/secrets" element={<SecretsPage />} />
                 </Routes>
             )}
+
+            <AboutModal
+                isOpen={isAboutOpen}
+                onClose={() => setIsAboutOpen(false)}
+                brandImageSrc="/logo.png"
+                brandImageAlt="Apicurio Axiom"
+                trademark="Copyright &copy; 2025-2026"
+            >
+                <Content component="dl">
+                    <dt>Version</dt>
+                    <dd>{appVersion || "—"}</dd>
+                    <dt>AI Engine</dt>
+                    <dd>
+                        {engineName === "opencode" ? "OpenCode"
+                            : engineName === "claude-code" ? "Claude Code"
+                            : engineName || "—"}
+                    </dd>
+                    <dt>License</dt>
+                    <dd>Apache License 2.0</dd>
+                    <dt>Source</dt>
+                    <dd>
+                        <a href="https://github.com/Apicurio/apicurio-axiom"
+                            target="_blank" rel="noopener noreferrer">
+                            github.com/Apicurio/apicurio-axiom
+                        </a>
+                    </dd>
+                </Content>
+            </AboutModal>
         </Page>
     );
 }
