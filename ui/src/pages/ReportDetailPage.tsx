@@ -19,7 +19,7 @@ import {
     ModalBody,
     ModalFooter,
     ModalHeader,
-    PageSection,
+    PageSection, Spinner,
     Title,
 } from "@patternfly/react-core";
 import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
@@ -27,6 +27,7 @@ import { type Report, fetchReport, deleteReport } from "../config/api";
 import { sseClient, type AxiomSseEvent } from "../config/sse";
 import { RenderedReport } from "../components/RenderedReport";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
+import {If} from "../components/If.tsx";
 
 export function ReportDetailPage() {
     const { reportId } = useParams<{ reportId: string }>();
@@ -164,9 +165,14 @@ export function ReportDetailPage() {
             ) : (
                 <EmptyState>
                     <EmptyStateBody>
-                        {report.status === "Generating"
-                            ? "Report is being generated..."
-                            : "No content available."}
+                        <If condition={report.status === "Generating"}>
+                            <Spinner size="md" />
+                            &nbsp;
+                            <span><em>Report is being generated...</em></span>
+                        </If>
+                        <If condition={report.status != "Generating"}>
+                            <span>No content available.</span>
+                        </If>
                     </EmptyStateBody>
                 </EmptyState>
             )}
