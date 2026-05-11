@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
+import io.apicurio.axiom.core.events.SseEvent;
 import io.apicurio.axiom.core.entities.EventSourceEntity;
 import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
 import io.apicurio.axiom.core.entities.ReportEntity;
@@ -15,6 +16,7 @@ import io.apicurio.axiom.engine.spi.AiEngine;
 import io.apicurio.axiom.engine.spi.AiEngineConfig;
 import io.apicurio.axiom.engine.spi.AiEngineResult;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -38,6 +40,9 @@ import java.util.Optional;
 public class ReportExecutionService {
 
     private static final Logger LOG = Logger.getLogger(ReportExecutionService.class);
+
+    @Inject
+    Event<SseEvent> sseEvents;
 
     @Inject
     ObjectMapper objectMapper;
@@ -214,6 +219,7 @@ public class ReportExecutionService {
             summary += String.format(" — $%.4f", result.costUsd());
         }
         logActivity("report-" + statusText, summary);
+        sseEvents.fire(SseEvent.reportUpdated(reportId, report.status));
     }
 
     @Transactional
@@ -228,6 +234,7 @@ public class ReportExecutionService {
             ReportDefinitionEntity def = ReportDefinitionEntity.findById(report.definitionId);
             String defName = def != null ? def.name : "Report #" + reportId;
             logActivity("report-failed", "Report failed: " + defName + " — " + reason);
+            sseEvents.fire(SseEvent.reportUpdated(reportId, "Failed"));
         }
     }
 

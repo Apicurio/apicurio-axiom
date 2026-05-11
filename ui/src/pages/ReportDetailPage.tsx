@@ -24,6 +24,7 @@ import {
 } from "@patternfly/react-core";
 import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import { type Report, fetchReport, deleteReport } from "../config/api";
+import { sseClient, type AxiomSseEvent } from "../config/sse";
 import { RenderedReport } from "../components/RenderedReport";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
 
@@ -53,6 +54,18 @@ export function ReportDetailPage() {
     }, [id]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    useEffect(() => {
+        const unsubscribe = sseClient.subscribe((event: AxiomSseEvent) => {
+            if (event.type === "report-updated") {
+                const data = event.data as { reportId?: number };
+                if (data.reportId === id) {
+                    loadData();
+                }
+            }
+        });
+        return unsubscribe;
+    }, [id, loadData]);
 
     if (loading) {
         return (

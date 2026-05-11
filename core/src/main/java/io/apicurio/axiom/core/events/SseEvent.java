@@ -80,6 +80,19 @@ public record SseEvent(
                         + "\",\"summary\":\"" + escapeJson(summary) + "\"}");
     }
 
+    /**
+     * Creates a report-updated event.
+     *
+     * @param reportId the report that changed
+     * @param status the new report status
+     * @return a new SSE event
+     */
+    public static SseEvent reportUpdated(Long reportId, String status) {
+        return new SseEvent("report-updated",
+                "{\"reportId\":" + reportId
+                        + ",\"status\":\"" + status + "\"}");
+    }
+
     private static String escapeJson(String s) {
         if (s == null) return "";
         return s.replace("\\", "\\\\")
