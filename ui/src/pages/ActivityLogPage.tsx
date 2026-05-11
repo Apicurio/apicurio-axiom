@@ -40,6 +40,9 @@ const ENTRY_TYPE_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "
     "manager-error": "red",
     "pipeline-error": "red",
     "task-awaiting-input": "orange",
+    "report-generating": "blue",
+    "report-completed": "green",
+    "report-failed": "red",
 };
 
 const ALL_ENTRY_TYPES = Object.keys(ENTRY_TYPE_COLORS);

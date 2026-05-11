@@ -39,6 +39,9 @@ public class ReportEntity extends PanacheEntity {
     @Column(name = "cost_usd")
     public Double costUsd;
 
+    @Column(name = "duration_ms")
+    public Long durationMs;
+
     @Column(name = "created_on", nullable = false)
     public Instant createdOn;
 

@@ -33,6 +33,7 @@ export function SecretsPage() {
     const [secrets, setSecrets] = useState<Secret[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [editing, setEditing] = useState<Secret | null>(null);
     const [formName, setFormName] = useState("");
     const [formDescription, setFormDescription] = useState("");
@@ -73,8 +74,13 @@ export function SecretsPage() {
 
     const handleDelete = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm("Delete this secret? This cannot be undone.")) {
-            deleteSecret(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteSecret(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -137,6 +143,21 @@ export function SecretsPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Secret" />
+                <ModalBody>
+                    Delete this secret? This cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} variant="medium">
                 <ModalHeader title={editing ? "Update Secret" : "Add Secret"} />

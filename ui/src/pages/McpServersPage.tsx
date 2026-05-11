@@ -32,6 +32,7 @@ export function McpServersPage() {
     const [servers, setServers] = useState<McpServer[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [newName, setNewName] = useState("");
 
     const load = useCallback(() => {
@@ -53,8 +54,13 @@ export function McpServersPage() {
 
     const handleDelete = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm("Delete this MCP server?")) {
-            deleteMcpServer(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteMcpServer(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -113,6 +119,21 @@ export function McpServersPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete MCP Server" />
+                <ModalBody>
+                    Delete this MCP server?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} variant="medium">
                 <ModalHeader title="Add MCP Server" />

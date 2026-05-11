@@ -12,6 +12,10 @@ import {
     FormGroup,
     FormSelect,
     FormSelectOption,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     PageSection,
     Switch,
     Tab,
@@ -29,6 +33,7 @@ import { ReportAiModal } from "../components/ReportAiModal";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
 import MagicIcon from "@patternfly/react-icons/dist/esm/icons/magic-icon";
 import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
 import {
@@ -37,6 +42,7 @@ import {
     fetchReportDefinition,
     updateReportDefinition,
     runReportDefinition,
+    deleteReportDefinition,
 } from "../config/api";
 
 export function ReportDefinitionDetailPage() {
@@ -54,6 +60,7 @@ export function ReportDefinitionDetailPage() {
     const [activeTab, setActiveTab] = useState(0);
 
     const [aiModalOpen, setAiModalOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [tools, setTools] = useState<string[]>([]);
     const [envVars, setEnvVars] = useState<Record<string, string>>({});
 
@@ -69,6 +76,7 @@ export function ReportDefinitionDetailPage() {
                     scheduleDayOfWeek: def.scheduleDayOfWeek,
                     timeWindow: def.timeWindow,
                     promptTemplate: def.promptTemplate, enabled: def.enabled,
+                    timeoutSeconds: def.timeoutSeconds,
                 });
                 setTools(def.allowedTools || []);
                 setEnvVars(def.environment || {});
@@ -117,6 +125,12 @@ export function ReportDefinitionDetailPage() {
             .catch(console.error);
     };
 
+    const handleDelete = () => {
+        deleteReportDefinition(id)
+            .then(() => navigate("/report-definitions"))
+            .catch(console.error);
+    };
+
     if (loading) {
         return (
             <PageSection>
@@ -157,8 +171,13 @@ export function ReportDefinitionDetailPage() {
                         AI Assistant
                     </Button>
                     <Button variant="primary" icon={<SaveIcon />} onClick={handleSave}
-                        isDisabled={!dirty || !form.name || saving} isLoading={saving}>
+                        isDisabled={!dirty || !form.name || saving} isLoading={saving}
+                        style={{ marginRight: "8px" }}>
                         {saving ? "Saving..." : "Save Changes"}
+                    </Button>
+                    <Button variant="danger" icon={<TrashIcon />}
+                        onClick={() => setIsDeleteOpen(true)}>
+                        Delete
                     </Button>
                 </FlexItem>
             </Flex>
@@ -213,6 +232,21 @@ export function ReportDefinitionDetailPage() {
                     </TabContent>
                 </Tab>
             </Tabs>
+
+            <Modal isOpen={isDeleteOpen}
+                onClose={() => setIsDeleteOpen(false)}
+                variant="small"
+                aria-label="Confirm delete report definition">
+                <ModalHeader title="Delete Report Definition" />
+                <ModalBody>
+                    Are you sure you want to delete this report definition and all its
+                    generated reports? This action cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={handleDelete}>Delete</Button>
+                    <Button variant="link" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+                </ModalFooter>
+            </Modal>
         </PageSection>
     );
 }
@@ -269,6 +303,12 @@ function InfoTab({ form, updateForm }: {
                     <FormSelectOption value="last-7d" label="Last 7 Days" />
                     <FormSelectOption value="last-30d" label="Last 30 Days" />
                 </FormSelect>
+            </FormGroup>
+            <FormGroup label="Timeout (seconds)" fieldId="timeoutSeconds">
+                <TextInput id="timeoutSeconds" type="number"
+                    value={form.timeoutSeconds?.toString() || ""}
+                    onChange={(_e, v) => updateForm({ timeoutSeconds: v ? parseInt(v) : undefined })}
+                    placeholder="Global default (600)" />
             </FormGroup>
             <FormGroup fieldId="enabled">
                 <Switch id="enabled" label="Enabled — report will run automatically on schedule"

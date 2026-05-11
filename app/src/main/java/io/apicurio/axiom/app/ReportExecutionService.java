@@ -2,6 +2,7 @@ package io.apicurio.axiom.app;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.AiUsageEntity;
 import io.apicurio.axiom.core.entities.EventSourceEntity;
 import io.apicurio.axiom.core.entities.ReportDefinitionEntity;
@@ -12,7 +13,6 @@ import io.apicurio.axiom.core.services.EnvironmentResolver;
 import io.apicurio.axiom.core.services.ToolsetResolver;
 import io.apicurio.axiom.engine.spi.AiEngine;
 import io.apicurio.axiom.engine.spi.AiEngineConfig;
-import io.apicurio.axiom.engine.spi.AiEngineMcpManager;
 import io.apicurio.axiom.engine.spi.AiEngineResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -46,7 +46,7 @@ public class ReportExecutionService {
     AiEngine aiEngine;
 
     @Inject
-    AiEngineMcpManager mcpManager;
+    McpConfigGenerator mcpConfigGenerator;
 
     @Inject
     ToolsetResolver toolsetResolver;
@@ -120,13 +120,15 @@ public class ReportExecutionService {
 
         // Generate MCP config with report-related tools
         Map<String, String> env = buildEnvironment(definition.environment);
-        Path mcpConfig = mcpManager.configureMcpServers(reportId, env, allowedTools);
+        Path mcpConfig = mcpConfigGenerator.generateMcpConfig(reportId, env, allowedTools);
 
         // Build engine-agnostic config
+        int effectiveTimeout = definition.timeoutSeconds != null
+                ? definition.timeoutSeconds : timeoutSeconds;
         AiEngineConfig engineConfig = AiEngineConfig.builder()
                 .systemPrompt(SYSTEM_PROMPT)
                 .allowedTools(allowedTools)
-                .timeoutSeconds(timeoutSeconds)
+                .timeoutSeconds(effectiveTimeout)
                 .maxSteps(30)
                 .model(model.orElse(null))
                 .environment(env)
@@ -136,9 +138,17 @@ public class ReportExecutionService {
         // Mark as generating
         markGenerating(reportId, rangeStart, rangeEnd);
 
+        // Capture the current classloader so callbacks use the correct one
+        // after Quarkus dev-mode live reloads.
+        ClassLoader contextCl = Thread.currentThread().getContextClassLoader();
+
         aiEngine.prompt(engineConfig, prompt)
-                .thenAccept(result -> onReportCompleted(reportId, definition.id, result))
+                .thenAccept(result -> {
+                    Thread.currentThread().setContextClassLoader(contextCl);
+                    onReportCompleted(reportId, definition.id, result);
+                })
                 .exceptionally(throwable -> {
+                    Thread.currentThread().setContextClassLoader(contextCl);
                     LOG.errorf(throwable, "Report %d generation failed unexpectedly", reportId);
                     failReport(reportId, "Unexpected error: " + throwable.getMessage());
                     return null;
@@ -152,6 +162,11 @@ public class ReportExecutionService {
             report.status = "Generating";
             report.timeRangeStart = rangeStart;
             report.timeRangeEnd = rangeEnd;
+
+            ReportDefinitionEntity def = ReportDefinitionEntity.findById(report.definitionId);
+            String defName = def != null ? def.name : "Report #" + reportId;
+            logActivity("report-generating",
+                    "Report generation started: " + defName);
         }
     }
 
@@ -171,6 +186,7 @@ public class ReportExecutionService {
         report.executionLog = result.executionLog();
         report.costUsd = result.costUsd();
         report.completedOn = Instant.now();
+        report.durationMs = java.time.Duration.between(report.createdOn, report.completedOn).toMillis();
 
         LOG.infof("Report %d %s (cost: $%s)",
                 reportId, report.status,
@@ -185,6 +201,19 @@ public class ReportExecutionService {
         usage.outputTokens = result.outputTokens();
         usage.createdOn = Instant.now();
         usage.persist();
+
+        // Log activity
+        ReportDefinitionEntity def = ReportDefinitionEntity.findById(definitionId);
+        String defName = def != null ? def.name : "Report #" + reportId;
+        String statusText = result.success() ? "completed" : "failed";
+        String summary = "Report " + statusText + ": " + defName;
+        if (report.durationMs != null) {
+            summary += String.format(" (%ds)", report.durationMs / 1000);
+        }
+        if (result.costUsd() != null) {
+            summary += String.format(" — $%.4f", result.costUsd());
+        }
+        logActivity("report-" + statusText, summary);
     }
 
     @Transactional
@@ -194,6 +223,11 @@ public class ReportExecutionService {
             report.status = "Failed";
             report.content = reason;
             report.completedOn = Instant.now();
+            report.durationMs = java.time.Duration.between(report.createdOn, report.completedOn).toMillis();
+
+            ReportDefinitionEntity def = ReportDefinitionEntity.findById(report.definitionId);
+            String defName = def != null ? def.name : "Report #" + reportId;
+            logActivity("report-failed", "Report failed: " + defName + " — " + reason);
         }
     }
 
@@ -283,5 +317,15 @@ public class ReportExecutionService {
             }
         }
         return env;
+    }
+
+    private void logActivity(String entryType, String summary) {
+        ActivityLogEntity log = new ActivityLogEntity();
+        log.entryType = entryType;
+        log.summary = summary != null && summary.length() > 1024
+                ? summary.substring(0, 1021) + "..."
+                : summary;
+        log.createdOn = Instant.now();
+        log.persist();
     }
 }

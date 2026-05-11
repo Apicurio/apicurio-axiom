@@ -39,6 +39,7 @@ public class ClaudeCodeCommandBuilder {
         builder.allowedTools = context.getAllowedTools();
         builder.disallowedTools = context.getDisallowedTools();
         builder.systemPrompt = context.getSystemPrompt();
+        builder.mcpConfigFile = context.getMcpConfigFile();
         return builder;
     }
 

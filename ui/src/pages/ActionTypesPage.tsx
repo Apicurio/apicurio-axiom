@@ -37,6 +37,7 @@ export function ActionTypesPage() {
     const [actionTypes, setActionTypes] = useState<ActionType[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [newName, setNewName] = useState("");
     const [newMode, setNewMode] = useState("actor");
 
@@ -66,8 +67,13 @@ export function ActionTypesPage() {
 
     const handleDelete = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm("Delete this action type?")) {
-            deleteActionType(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteActionType(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -143,6 +149,21 @@ export function ActionTypesPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Action Type" />
+                <ModalBody>
+                    Delete this action type?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             {/* Simple create modal — just name and mode, then navigate to detail page */}
             <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} variant="small">

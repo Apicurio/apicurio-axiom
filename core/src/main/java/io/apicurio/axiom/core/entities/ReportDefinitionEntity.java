@@ -65,6 +65,12 @@ public class ReportDefinitionEntity extends PanacheEntity {
     @Column(columnDefinition = "TEXT")
     public String environment;
 
+    /**
+     * Optional per-report timeout in seconds. Overrides the global default when set.
+     */
+    @Column(name = "timeout_seconds")
+    public Integer timeoutSeconds;
+
     @Column(nullable = false)
     public boolean enabled;
 

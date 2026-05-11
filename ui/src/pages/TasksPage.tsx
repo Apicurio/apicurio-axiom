@@ -7,6 +7,10 @@ import {
     Label,
     MenuToggle,
     MenuToggleElement,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     PageSection,
     Pagination,
     Select,
@@ -53,6 +57,9 @@ export function TasksPage() {
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
     const [logProjectId, setLogProjectId] = useState<number | null>(null);
     const [logTaskId, setLogTaskId] = useState<number | null>(null);
+
+    // Cancel confirmation modal
+    const [cancelTarget, setCancelTarget] = useState<Task | null>(null);
 
     const loadData = useCallback(() => {
         setLoading(true);
@@ -114,10 +121,15 @@ export function TasksPage() {
     };
 
     const handleCancel = (task: Task) => {
-        if (confirm(`Cancel task #${task.id} (${task.actionType})?`)) {
-            cancelTask(task.projectId, task.id)
+        setCancelTarget(task);
+    };
+
+    const confirmCancel = () => {
+        if (cancelTarget) {
+            cancelTask(cancelTarget.projectId, cancelTarget.id)
                 .then(loadData)
                 .catch(console.error);
+            setCancelTarget(null);
         }
     };
 
@@ -268,6 +280,21 @@ export function TasksPage() {
                 taskId={logTaskId}
                 onClose={() => setIsLogModalOpen(false)}
             />
+
+            <Modal isOpen={cancelTarget !== null} onClose={() => setCancelTarget(null)} variant="small">
+                <ModalHeader title="Cancel Task" />
+                <ModalBody>
+                    {cancelTarget && `Cancel task #${cancelTarget.id} (${cancelTarget.actionType})?`}
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmCancel}>
+                        Cancel Task
+                    </Button>
+                    <Button variant="link" onClick={() => setCancelTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
         </PageSection>
     );
 }

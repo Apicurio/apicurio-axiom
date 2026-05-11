@@ -161,7 +161,7 @@ export function App() {
                         <ToolbarItem align={{ default: "alignEnd" }}>
                             <Button variant="plain" aria-label="About"
                                 onClick={() => setIsAboutOpen(true)}>
-                                <QuestionCircleIcon />
+                                <QuestionCircleIcon style={{ color: "#2082a3" }} />
                             </Button>
                         </ToolbarItem>
                     </ToolbarContent>

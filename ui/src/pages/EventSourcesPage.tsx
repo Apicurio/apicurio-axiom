@@ -45,6 +45,8 @@ export function EventSourcesPage() {
         name: "", sourceType: "github", enabled: true,
     });
 
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
     const [secrets, setSecrets] = useState<Secret[]>([]);
 
     // GitHub-specific fields
@@ -138,8 +140,13 @@ export function EventSourcesPage() {
     };
 
     const handleDelete = (id: number) => {
-        if (confirm("Delete this event source?")) {
-            deleteEventSource(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteEventSource(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -225,6 +232,21 @@ export function EventSourcesPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Event Source" />
+                <ModalBody>
+                    Delete this event source?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} variant="medium">
                 <ModalHeader title={editing ? "Edit Event Source" : "Add Event Source"} />

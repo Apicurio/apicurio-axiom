@@ -465,6 +465,28 @@ export async function deleteTool(id: number): Promise<void> {
     if (!response.ok) throw new Error(`Failed to delete tool: ${response.status}`);
 }
 
+export interface ToolTestRequest {
+    parameters?: Record<string, string>;
+}
+
+export interface ToolTestResponse {
+    success: boolean;
+    exitCode: number;
+    output: string;
+    resolvedScript: string;
+    durationMs: number;
+}
+
+export async function testTool(id: number, request: ToolTestRequest): Promise<ToolTestResponse> {
+    const response = await fetch(`${API}/tools/${id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(request),
+    });
+    if (!response.ok) throw new Error(`Failed to test tool: ${response.status}`);
+    return response.json();
+}
+
 export interface ToolAiEditRequest {
     message: string;
     currentTool?: NewToolDefinition;
@@ -711,6 +733,7 @@ export interface ReportDefinition {
     promptTemplate: string;
     allowedTools?: string[];
     enabled: boolean;
+    timeoutSeconds?: number;
     environment?: Record<string, string>;
     nextRunAt?: string;
     lastRunAt?: string;
@@ -729,6 +752,7 @@ export interface Report {
     timeRangeStart?: string;
     timeRangeEnd?: string;
     costUsd?: number;
+    durationMs?: number;
     createdOn: string;
     completedOn?: string;
 }
@@ -825,6 +849,11 @@ export async function fetchReport(id: number): Promise<Report> {
     const response = await fetch(`${API}/reports/${id}`);
     if (!response.ok) throw new Error(`Failed to fetch report: ${response.status}`);
     return response.json();
+}
+
+export async function deleteReport(id: number): Promise<void> {
+    const response = await fetch(`${API}/reports/${id}`, { method: "DELETE" });
+    if (!response.ok) throw new Error(`Failed to delete report: ${response.status}`);
 }
 
 // ── Metrics ──────────────────────────────────────────────────────

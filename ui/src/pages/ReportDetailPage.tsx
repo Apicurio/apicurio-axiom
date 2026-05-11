@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -15,20 +15,33 @@ import {
     Flex,
     FlexItem,
     Label,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     PageSection,
     Title,
 } from "@patternfly/react-core";
-import { type Report, fetchReport } from "../config/api";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
+import { type Report, fetchReport, deleteReport } from "../config/api";
 import { RenderedReport } from "../components/RenderedReport";
 import { ExecutionLogModal } from "../components/ExecutionLogModal";
 
 export function ReportDetailPage() {
     const { reportId } = useParams<{ reportId: string }>();
+    const navigate = useNavigate();
     const id = Number(reportId);
 
     const [report, setReport] = useState<Report | null>(null);
     const [loading, setLoading] = useState(true);
     const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+
+    const handleDelete = () => {
+        deleteReport(id)
+            .then(() => navigate("/reports"))
+            .catch(console.error);
+    };
 
     const loadData = useCallback(() => {
         if (!id) return;
@@ -72,13 +85,17 @@ export function ReportDetailPage() {
                         {report.title || `Report #${report.id}`}
                     </Title>
                 </FlexItem>
-                {(report.status === "Completed" || report.status === "Failed") && (
-                    <FlexItem>
-                        <Button variant="secondary" onClick={() => setIsLogModalOpen(true)}>
+                <FlexItem>
+                    {(report.status === "Completed" || report.status === "Failed") && (
+                        <Button variant="secondary" onClick={() => setIsLogModalOpen(true)}
+                            style={{ marginRight: "8px" }}>
                             View Execution Log
                         </Button>
-                    </FlexItem>
-                )}
+                    )}
+                    <Button variant="danger" icon={<TrashIcon />} onClick={() => setIsDeleteOpen(true)}>
+                        Delete
+                    </Button>
+                </FlexItem>
             </Flex>
 
             <Card style={{ marginBottom: "24px" }}>
@@ -109,6 +126,14 @@ export function ReportDetailPage() {
                                 {new Date(report.createdOn).toLocaleString()}
                             </DescriptionListDescription>
                         </DescriptionListGroup>
+                        {report.durationMs != null && (
+                            <DescriptionListGroup>
+                                <DescriptionListTerm>Duration</DescriptionListTerm>
+                                <DescriptionListDescription>
+                                    {formatDuration(report.durationMs)}
+                                </DescriptionListDescription>
+                            </DescriptionListGroup>
+                        )}
                         {report.costUsd != null && (
                             <DescriptionListGroup>
                                 <DescriptionListTerm>AI Cost</DescriptionListTerm>
@@ -138,6 +163,28 @@ export function ReportDetailPage() {
                 reportId={report.id}
                 onClose={() => setIsLogModalOpen(false)}
             />
+
+            <Modal isOpen={isDeleteOpen}
+                onClose={() => setIsDeleteOpen(false)}
+                variant="small"
+                aria-label="Confirm delete report">
+                <ModalHeader title="Delete Report" />
+                <ModalBody>
+                    Are you sure you want to delete this report? This action cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={handleDelete}>Delete</Button>
+                    <Button variant="link" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+                </ModalFooter>
+            </Modal>
         </PageSection>
     );
+}
+
+function formatDuration(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes === 0) return `${seconds}s`;
+    return `${minutes}m ${seconds}s`;
 }

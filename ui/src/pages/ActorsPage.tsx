@@ -36,6 +36,7 @@ export function ActorsPage() {
     const [actors, setActors] = useState<Actor[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [editing, setEditing] = useState<Actor | null>(null);
     const [form, setForm] = useState<NewActor>({
         name: "", type: "ai-agent", capabilities: [],
@@ -64,8 +65,13 @@ export function ActorsPage() {
     };
 
     const handleDelete = (id: number) => {
-        if (confirm("Delete this actor?")) {
-            deleteActor(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteActor(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -102,6 +108,21 @@ export function ActorsPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Actor" />
+                <ModalBody>
+                    Delete this actor?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} variant="medium">
                 <ModalHeader title={editing ? "Edit Actor" : "Create Actor"} />

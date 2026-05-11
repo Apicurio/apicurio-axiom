@@ -12,27 +12,38 @@ import {
     FormGroup,
     FormSelect,
     FormSelectOption,
+    ExpandableSection,
+    Label,
+    Modal,
+    ModalBody,
+    ModalHeader,
     PageSection,
+    Spinner,
     Tab,
     TabContent,
     TabTitleText,
     Tabs,
     TextArea,
     TextInput,
-    Title,
+    Title, Content,
 } from "@patternfly/react-core";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import SaveIcon from "@patternfly/react-icons/dist/esm/icons/save-icon";
+import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
 import MagicIcon from "@patternfly/react-icons/dist/esm/icons/magic-icon";
 import {
     type ToolDefinition,
     type ToolParameter,
+    type ToolTestResponse,
     type NewToolDefinition,
     fetchTool,
     updateTool,
+    testTool,
 } from "../config/api";
 import { ToolAiModal } from "../components/ToolAiModal";
 
@@ -186,6 +197,11 @@ export function ToolDetailPage() {
                         />
                     </TabContent>
                 </Tab>
+                <Tab eventKey={3} title={<TabTitleText>Test</TabTitleText>}>
+                    <TabContent id="test-tab" eventKey={3} activeKey={activeTab} style={{ marginTop: "24px" }}>
+                        <TestTab toolId={id} params={params} scriptTemplate={form.scriptTemplate} />
+                    </TabContent>
+                </Tab>
             </Tabs>
 
             <ToolAiModal
@@ -310,6 +326,176 @@ function ScriptTemplateTab({ value, onChange }: {
                 height="400px"
                 isLineNumbersVisible
             />
+        </div>
+    );
+}
+
+function isJson(text: string): boolean {
+    const trimmed = text.trim();
+    if (!(trimmed.startsWith("{") || trimmed.startsWith("["))) return false;
+    try {
+        JSON.parse(trimmed);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function formatJson(text: string): string {
+    try {
+        return JSON.stringify(JSON.parse(text.trim()), null, 2);
+    } catch {
+        return text;
+    }
+}
+
+function TestTab({ toolId, params, scriptTemplate }: {
+    toolId: number;
+    params: ToolParameter[];
+    scriptTemplate?: string;
+}) {
+    const [paramValues, setParamValues] = useState<Record<string, string>>({});
+    const [running, setRunning] = useState(false);
+    const [result, setResult] = useState<ToolTestResponse | null>(null);
+    const [resultOpen, setResultOpen] = useState(false);
+    const [scriptExpanded, setScriptExpanded] = useState(false);
+
+    if (!scriptTemplate || scriptTemplate.trim() === "") {
+        return (
+            <EmptyState>
+                <EmptyStateBody>
+                    Define a script template before testing this tool.
+                </EmptyStateBody>
+            </EmptyState>
+        );
+    }
+
+    const handleRun = () => {
+        setRunning(true);
+        setResult(null);
+        testTool(toolId, { parameters: paramValues })
+            .then((r) => {
+                setResult(r);
+                setResultOpen(true);
+                setScriptExpanded(false);
+            })
+            .catch((e) => {
+                const errorResult: ToolTestResponse = {
+                    success: false,
+                    exitCode: 1,
+                    output: "Request failed: " + e.message,
+                    resolvedScript: "",
+                    durationMs: 0,
+                };
+                setResult(errorResult);
+                setResultOpen(true);
+            })
+            .finally(() => setRunning(false));
+    };
+
+    const outputIsJson = result?.output ? isJson(result.output) : false;
+
+    return (
+        <div style={{ maxWidth: "800px" }}>
+            <p style={{ color: "#6a6e73", marginBottom: "16px" }}>
+                Test this tool by providing parameter values and executing the script template.
+                Secrets are not injected during testing.
+            </p>
+
+            {params.length > 0 && (
+                <Form style={{ marginBottom: "24px" }}>
+                    {params.map((p) => (
+                        <FormGroup key={p.name} label={p.name} fieldId={`test-${p.name}`}
+                            isRequired={p.required}>
+                            <TextInput
+                                id={`test-${p.name}`}
+                                value={paramValues[p.name] || ""}
+                                onChange={(_e, v) => setParamValues((prev) => ({ ...prev, [p.name]: v }))}
+                                placeholder={p.description || `${p.type} value`}
+                            />
+                        </FormGroup>
+                    ))}
+                </Form>
+            )}
+
+            <Button variant="primary" icon={<PlayIcon />}
+                onClick={handleRun}
+                isDisabled={running}
+                isLoading={running}>
+                {running ? "Running..." : "Run Test"}
+            </Button>
+
+            {running && (
+                <div style={{ marginTop: "24px", textAlign: "center" }}>
+                    <Spinner size="lg" />
+                </div>
+            )}
+
+            {result && (
+                <Modal isOpen={resultOpen}
+                    onClose={() => setResultOpen(false)}
+                    variant="large"
+                    aria-label="Tool test results">
+                    <ModalHeader title="Test Results" />
+                    <ModalBody>
+                        <Flex alignItems={{ default: "alignItemsCenter" }}
+                            style={{ marginBottom: "16px", gap: "12px" }}>
+                            <FlexItem>
+                                <Label color={result.success ? "green" : "red"}>
+                                    {result.success ? "Success" : "Failed"} (exit code {result.exitCode})
+                                </Label>
+                            </FlexItem>
+                            <FlexItem>
+                                <span style={{ color: "#6a6e73", fontSize: "13px" }}>
+                                    {result.durationMs}ms
+                                </span>
+                            </FlexItem>
+                        </Flex>
+
+                        {result.resolvedScript && (
+                            <ExpandableSection
+                                toggleText={scriptExpanded ? "Hide resolved script" : "Show resolved script"}
+                                isExpanded={scriptExpanded}
+                                onToggle={(_e, expanded) => setScriptExpanded(expanded)}
+                                style={{ marginBottom: "16px" }}
+                            >
+                                <CodeEditor
+                                    code={result.resolvedScript}
+                                    language={Language.shell}
+                                    height="150px"
+                                    isReadOnly
+                                    isLineNumbersVisible
+                                />
+                            </ExpandableSection>
+                        )}
+
+                        <div style={{ marginBottom: "8px", fontWeight: 600, fontSize: "14px" }}>Output</div>
+                        {!result.output || result.output.trim() === "" ? (
+                            <p style={{ color: "#6a6e73", fontStyle: "italic" }}>(no output)</p>
+                        ) : outputIsJson ? (
+                            <CodeEditor
+                                code={formatJson(result.output)}
+                                language={Language.json}
+                                height="400px"
+                                isReadOnly
+                                isLineNumbersVisible
+                            />
+                        ) : (
+                            <div style={{
+                                padding: "16px",
+                                backgroundColor: "var(--pf-t--global--background--color--secondary--default)",
+                                borderRadius: "4px",
+                                maxHeight: "400px",
+                                overflow: "auto",
+                            }}>
+                                <Content>
+                                    <Markdown remarkPlugins={[remarkGfm]}>{result.output}</Markdown>
+                                </Content>
+                            </div>
+                        )}
+                    </ModalBody>
+                </Modal>
+            )}
         </div>
     );
 }

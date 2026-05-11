@@ -31,6 +31,7 @@ export function ToolsetsPage() {
     const [toolsets, setToolsets] = useState<Toolset[]>([]);
     const [loading, setLoading] = useState(true);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [newName, setNewName] = useState("");
 
     const load = useCallback(() => {
@@ -52,8 +53,13 @@ export function ToolsetsPage() {
 
     const handleDelete = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm("Delete this toolset?")) {
-            deleteToolset(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteToolset(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -108,6 +114,21 @@ export function ToolsetsPage() {
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Toolset" />
+                <ModalBody>
+                    Delete this toolset?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} variant="medium">
                 <ModalHeader title="Add Toolset" />

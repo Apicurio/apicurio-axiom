@@ -36,6 +36,9 @@ public class ScriptAiService {
     @ConfigProperty(name = "axiom.manager.model")
     Optional<String> model;
 
+    @ConfigProperty(name = "axiom.ai-assistant.timeout-seconds", defaultValue = "300")
+    int assistantTimeoutSeconds;
+
     private static final String SYSTEM_PROMPT = """
             You are a script editor for Apicurio Axiom. Your job is to create or update \
             bash script templates for action types that are executed when triggered by the \
@@ -113,7 +116,7 @@ public class ScriptAiService {
         AiEngineConfig engineConfig = AiEngineConfig.builder()
                 .systemPrompt(SYSTEM_PROMPT)
                 .allowedTools(List.of("StructuredOutput"))
-                .timeoutSeconds(60)
+                .timeoutSeconds(assistantTimeoutSeconds)
                 .maxSteps(3)
                 .model(model.orElse(null))
                 .build();

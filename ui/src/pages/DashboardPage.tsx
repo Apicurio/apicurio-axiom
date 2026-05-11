@@ -24,6 +24,7 @@ import ArrowRightIcon from "@patternfly/react-icons/dist/esm/icons/arrow-right-i
 import {
     type Project,
     type ActivityLogEntry,
+    type Report,
     fetchProjects,
     fetchActivityLog,
     fetchActionTypes,
@@ -31,6 +32,7 @@ import {
     fetchEventSources,
     fetchTools,
     fetchReportDefinitions,
+    fetchReports,
 } from "../config/api";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"> = {
@@ -60,6 +62,9 @@ const ENTRY_TYPE_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "
     "event-ignored": "grey",
     "manager-escalation": "orange",
     "manager-no-decision": "grey",
+    "report-generating": "blue",
+    "report-completed": "green",
+    "report-failed": "red",
 };
 
 interface SetupRequirement {
@@ -73,6 +78,7 @@ interface SetupRequirement {
 export function DashboardPage() {
     const [projects, setProjects] = useState<Project[]>([]);
     const [recentActivity, setRecentActivity] = useState<ActivityLogEntry[]>([]);
+    const [recentReports, setRecentReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [requirements, setRequirements] = useState<SetupRequirement[]>([]);
     const [setupChecked, setSetupChecked] = useState(false);
@@ -90,10 +96,13 @@ export function DashboardPage() {
             fetchActionTypes(),
             fetchTools(1, 1),
             fetchReportDefinitions(),
+            fetchReports(1, 20),
         ])
-            .then(([p, a, eventSources, actors, actionTypes, toolsResult, reportDefs]) => {
+            .then(([p, a, eventSources, actors, actionTypes, toolsResult, reportDefs, reports]) => {
                 setProjects(p.items);
                 setRecentActivity(a.items);
+                const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                setRecentReports(reports.items.filter((r: Report) => r.createdOn >= oneDayAgo));
                 setConfigCounts({
                     actors: actors.length,
                     actionTypes: actionTypes.length,
@@ -353,6 +362,55 @@ export function DashboardPage() {
                         <CardFooter>
                             <Link to="/logs/activity">
                                 View full activity log <ArrowRightIcon />
+                            </Link>
+                        </CardFooter>
+                    </Card>
+
+                    <Card style={{ marginTop: "16px" }}>
+                        <CardHeader>
+                            <CardTitle>Recent Reports</CardTitle>
+                        </CardHeader>
+                        <CardBody>
+                            {recentReports.length === 0 ? (
+                                <EmptyState variant="xs">
+                                    <EmptyStateBody>No reports in the last 24 hours.</EmptyStateBody>
+                                </EmptyState>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                    {recentReports.map((report) => (
+                                        <div key={report.id} style={{
+                                            padding: "8px 0",
+                                            borderBottom: "1px solid var(--pf-t--global--border--color--default)",
+                                        }}>
+                                            <div style={{
+                                                display: "flex",
+                                                justifyContent: "space-between",
+                                                alignItems: "center",
+                                                marginBottom: "4px",
+                                            }}>
+                                                <Label isCompact color={
+                                                    report.status === "Completed" ? "green"
+                                                        : report.status === "Failed" ? "red" : "blue"
+                                                }>
+                                                    {report.status}
+                                                </Label>
+                                                <span style={{ fontSize: "12px", color: "#6a6e73" }}>
+                                                    {new Date(report.createdOn).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: "13px" }}>
+                                                <Link to={`/reports/${report.id}`}>
+                                                    {report.title || `Report #${report.id}`}
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardBody>
+                        <CardFooter>
+                            <Link to="/reports">
+                                View all reports <ArrowRightIcon />
                             </Link>
                         </CardFooter>
                     </Card>

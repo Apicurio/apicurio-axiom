@@ -206,6 +206,19 @@ public class ReportsResourceImpl implements ReportsResource {
         return toReportBean(entity);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    @Transactional
+    public void deleteReport(long reportId) {
+        ReportEntity entity = ReportEntity.findById(reportId);
+        if (entity == null) {
+            throw new WebApplicationException("Report not found: " + reportId, 404);
+        }
+        entity.delete();
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────
 
     private ReportDefinitionEntity findDefinitionOrThrow(long id) {
@@ -227,6 +240,7 @@ public class ReportsResourceImpl implements ReportsResource {
         entity.allowedTools = data.getAllowedTools() != null
                 ? String.join(",", data.getAllowedTools()) : null;
         entity.enabled = data.getEnabled() != null ? data.getEnabled() : false;
+        entity.timeoutSeconds = data.getTimeoutSeconds();
         entity.environment = environmentToJson(data.getEnvironment());
 
         // Compute nextRunAt when enabled (or schedule/time changes)
@@ -252,6 +266,7 @@ public class ReportsResourceImpl implements ReportsResource {
                     .map(String::trim).filter(s -> !s.isEmpty()).toList());
         }
         def.setEnabled(entity.enabled);
+        def.setTimeoutSeconds(entity.timeoutSeconds);
         def.setEnvironment(jsonToEnvironment(entity.environment));
         if (entity.nextRunAt != null) def.setNextRunAt(Date.from(entity.nextRunAt));
         if (entity.lastRunAt != null) def.setLastRunAt(Date.from(entity.lastRunAt));
@@ -270,6 +285,7 @@ public class ReportsResourceImpl implements ReportsResource {
         if (entity.timeRangeStart != null) report.setTimeRangeStart(Date.from(entity.timeRangeStart));
         if (entity.timeRangeEnd != null) report.setTimeRangeEnd(Date.from(entity.timeRangeEnd));
         report.setCostUsd(entity.costUsd);
+        report.setDurationMs(entity.durationMs);
         report.setCreatedOn(Date.from(entity.createdOn));
         if (entity.completedOn != null) report.setCompletedOn(Date.from(entity.completedOn));
         return report;

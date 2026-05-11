@@ -41,6 +41,8 @@ export function ToolsPage() {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [newName, setNewName] = useState("");
 
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+
     const [filterDraft, setFilterDraft] = useState("");
     const [filterApplied, setFilterApplied] = useState("");
     const [page, setPage] = useState(1);
@@ -87,8 +89,13 @@ export function ToolsPage() {
 
     const handleDelete = (e: React.MouseEvent, id: number) => {
         e.stopPropagation();
-        if (confirm("Delete this tool?")) {
-            deleteTool(id).then(load).catch(console.error);
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteTool(deleteTarget).then(load).catch(console.error);
+            setDeleteTarget(null);
         }
     };
 
@@ -190,6 +197,21 @@ export function ToolsPage() {
                     </>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Tool" />
+                <ModalBody>
+                    Delete this tool?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} variant="small">
                 <ModalHeader title="Create Tool" />

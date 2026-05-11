@@ -39,6 +39,9 @@ public class ToolAiService {
     @ConfigProperty(name = "axiom.manager.model")
     Optional<String> model;
 
+    @ConfigProperty(name = "axiom.ai-assistant.timeout-seconds", defaultValue = "300")
+    int assistantTimeoutSeconds;
+
     private static final String SYSTEM_PROMPT = """
             You are a tool definition editor for Apicurio Axiom. Your job is to create \
             or update tool definitions based on the user's instructions.
@@ -118,7 +121,7 @@ public class ToolAiService {
         AiEngineConfig engineConfig = AiEngineConfig.builder()
                 .systemPrompt(SYSTEM_PROMPT)
                 .allowedTools(List.of("StructuredOutput"))
-                .timeoutSeconds(60)
+                .timeoutSeconds(assistantTimeoutSeconds)
                 .maxSteps(3)
                 .model(model.orElse(null))
                 .build();

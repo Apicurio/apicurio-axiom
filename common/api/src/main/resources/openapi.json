@@ -1272,6 +1272,18 @@
           }
         }
       },
+      "delete": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Delete a report",
+        "operationId": "deleteReport",
+        "responses": {
+          "204": {
+            "description": "Report deleted"
+          }
+        }
+      },
       "parameters": [
         {
           "name": "reportId",
@@ -2576,6 +2588,47 @@
           }
         }
       ]
+    },
+    "/tools/{toolId}/test": {
+      "post": {
+        "tags": [
+          "Tools"
+        ],
+        "summary": "Test a tool by executing its script template with provided parameter values",
+        "operationId": "testTool",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolTestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Test execution result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolTestResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "toolId",
+          "in": "path",
+          "description": "Tool definition ID",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ]
     }
   },
   "components": {
@@ -3377,6 +3430,10 @@
           "scheduleDayOfWeek": {
             "description": "Day of week for weekly schedules (e.g. monday, tuesday)",
             "type": "string"
+          },
+          "timeoutSeconds": {
+            "description": "Optional timeout in seconds for report generation. Overrides the global default when set.",
+            "type": "integer"
           }
         }
       },
@@ -3426,6 +3483,10 @@
           "scheduleDayOfWeek": {
             "description": "Day of week for weekly schedules (e.g. monday, tuesday)",
             "type": "string"
+          },
+          "timeoutSeconds": {
+            "description": "Optional timeout in seconds for report generation. Overrides the global default when set.",
+            "type": "integer"
           }
         }
       },
@@ -3468,6 +3529,11 @@
           "completedOn": {
             "format": "date-time",
             "type": "string"
+          },
+          "durationMs": {
+            "format": "int64",
+            "description": "Report generation duration in milliseconds",
+            "type": "integer"
           }
         }
       },
@@ -4188,6 +4254,44 @@
             "type": "integer"
           },
           "limit": {
+            "type": "integer"
+          }
+        }
+      },
+      "ToolTestRequest": {
+        "type": "object",
+        "properties": {
+          "parameters": {
+            "description": "Parameter values to substitute into the script template",
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ToolTestResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "description": "Whether the script exited with code 0",
+            "type": "boolean"
+          },
+          "exitCode": {
+            "description": "Script exit code",
+            "type": "integer"
+          },
+          "output": {
+            "description": "Combined stdout and stderr from the script",
+            "type": "string"
+          },
+          "resolvedScript": {
+            "description": "The script after parameter substitution",
+            "type": "string"
+          },
+          "durationMs": {
+            "format": "int64",
+            "description": "Execution duration in milliseconds",
             "type": "integer"
           }
         }

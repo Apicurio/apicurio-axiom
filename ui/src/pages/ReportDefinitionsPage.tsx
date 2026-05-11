@@ -21,10 +21,12 @@ import {
 } from "@patternfly/react-core";
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import {
     type ReportDefinition,
     fetchReportDefinitions,
     createReportDefinition,
+    deleteReportDefinition,
 } from "../config/api";
 
 export function ReportDefinitionsPage() {
@@ -32,6 +34,7 @@ export function ReportDefinitionsPage() {
     const [definitions, setDefinitions] = useState<ReportDefinition[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [newName, setNewName] = useState("");
     const [newSchedule, setNewSchedule] = useState("daily");
 
@@ -44,6 +47,18 @@ export function ReportDefinitionsPage() {
     }, []);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    const handleDelete = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteReportDefinition(deleteTarget).then(loadData).catch(console.error);
+            setDeleteTarget(null);
+        }
+    };
 
     const handleCreate = () => {
         createReportDefinition({
@@ -91,6 +106,7 @@ export function ReportDefinitionsPage() {
                                 <Th>Time Window</Th>
                                 <Th>Enabled</Th>
                                 <Th>Last Run</Th>
+                                <Th />
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -117,12 +133,33 @@ export function ReportDefinitionsPage() {
                                             ? new Date(def.lastRunAt).toLocaleString()
                                             : "Never"}
                                     </Td>
+                                    <Td>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, def.id)}>
+                                            <TrashIcon />
+                                        </Button>
+                                    </Td>
                                 </Tr>
                             ))}
                         </Tbody>
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Report Definition" />
+                <ModalBody>
+                    Delete this report definition and all its generated reports?
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>
+                        Delete
+                    </Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>
+                        Cancel
+                    </Button>
+                </ModalFooter>
+            </Modal>
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} variant="medium">
                 <ModalHeader title="Create Report Definition" />

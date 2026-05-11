@@ -7,6 +7,10 @@ import {
     Label,
     MenuToggle,
     MenuToggleElement,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
     PageSection,
     Pagination,
     Select,
@@ -20,7 +24,8 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
-import { type Report, fetchReports } from "../config/api";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
+import { type Report, fetchReports, deleteReport } from "../config/api";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "grey" | "red"> = {
     Pending: "blue",
@@ -36,6 +41,8 @@ export function ReportsPage() {
     const [page, setPage] = useState(1);
     const [perPage, setPerPage] = useState(20);
     const [loading, setLoading] = useState(true);
+
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
 
     // Filters
     const [filterTitle, setFilterTitle] = useState("");
@@ -59,6 +66,18 @@ export function ReportsPage() {
     }, [page, perPage, filterTitle, filterStatus]);
 
     useEffect(() => { loadData(); }, [loadData]);
+
+    const handleDelete = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteReport(deleteTarget).then(loadData).catch(console.error);
+            setDeleteTarget(null);
+        }
+    };
 
     const hasActiveFilters = filterTitle || filterStatus.length > 0;
 
@@ -172,6 +191,7 @@ export function ReportsPage() {
                                 <Th>Status</Th>
                                 <Th>Time Range</Th>
                                 <Th>Generated</Th>
+                                <Th />
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -193,12 +213,29 @@ export function ReportsPage() {
                                     <Td style={{ whiteSpace: "nowrap" }}>
                                         {new Date(report.createdOn).toLocaleString()}
                                     </Td>
+                                    <Td>
+                                        <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                            onClick={(e) => handleDelete(e, report.id)}>
+                                            <TrashIcon />
+                                        </Button>
+                                    </Td>
                                 </Tr>
                             ))}
                         </Tbody>
                     </Table>
                 )}
             </div>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Report" />
+                <ModalBody>
+                    Are you sure you want to delete this report? This action cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+                </ModalFooter>
+            </Modal>
         </PageSection>
     );
 }
