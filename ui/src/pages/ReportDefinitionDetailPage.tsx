@@ -66,6 +66,7 @@ export function ReportDefinitionDetailPage() {
                 setForm({
                     name: def.name, description: def.description,
                     schedule: def.schedule, scheduleTime: def.scheduleTime,
+                    scheduleDayOfWeek: def.scheduleDayOfWeek,
                     timeWindow: def.timeWindow,
                     promptTemplate: def.promptTemplate, enabled: def.enabled,
                 });
@@ -239,6 +240,22 @@ function InfoTab({ form, updateForm }: {
                     <FormSelectOption value="monthly" label="Monthly" />
                 </FormSelect>
             </FormGroup>
+            {form.schedule === "weekly" && (
+                <FormGroup label="Day of Week" fieldId="scheduleDayOfWeek">
+                    <FormSelect id="scheduleDayOfWeek"
+                        value={form.scheduleDayOfWeek || ""}
+                        onChange={(_e, v) => updateForm({ scheduleDayOfWeek: v || undefined })}>
+                        <FormSelectOption value="" label="Same day each week" />
+                        <FormSelectOption value="monday" label="Monday" />
+                        <FormSelectOption value="tuesday" label="Tuesday" />
+                        <FormSelectOption value="wednesday" label="Wednesday" />
+                        <FormSelectOption value="thursday" label="Thursday" />
+                        <FormSelectOption value="friday" label="Friday" />
+                        <FormSelectOption value="saturday" label="Saturday" />
+                        <FormSelectOption value="sunday" label="Sunday" />
+                    </FormSelect>
+                </FormGroup>
+            )}
             <FormGroup label="Time of Day" fieldId="scheduleTime">
                 <TextInput id="scheduleTime" value={form.scheduleTime || ""}
                     onChange={(_e, v) => updateForm({ scheduleTime: v })}

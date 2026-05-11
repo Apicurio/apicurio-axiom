@@ -706,6 +706,7 @@ export interface ReportDefinition {
     description?: string;
     schedule: string;
     scheduleTime?: string;
+    scheduleDayOfWeek?: string;
     timeWindow: string;
     promptTemplate: string;
     allowedTools?: string[];

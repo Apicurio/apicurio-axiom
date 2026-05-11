@@ -34,6 +34,12 @@ public class ReportDefinitionEntity extends PanacheEntity {
     public String scheduleTime;
 
     /**
+     * Day of week for weekly schedules (e.g. "monday", "tuesday").
+     */
+    @Column(name = "schedule_day_of_week")
+    public String scheduleDayOfWeek;
+
+    /**
      * Time window for the report: "since-last-run", "last-24h", "last-7d", "last-30d".
      */
     @Column(name = "time_window", nullable = false)

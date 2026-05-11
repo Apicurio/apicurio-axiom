@@ -221,6 +221,7 @@ public class ReportsResourceImpl implements ReportsResource {
         entity.description = data.getDescription();
         entity.schedule = data.getSchedule();
         entity.scheduleTime = data.getScheduleTime();
+        entity.scheduleDayOfWeek = data.getScheduleDayOfWeek();
         entity.timeWindow = data.getTimeWindow();
         entity.promptTemplate = data.getPromptTemplate();
         entity.allowedTools = data.getAllowedTools() != null
@@ -243,6 +244,7 @@ public class ReportsResourceImpl implements ReportsResource {
         def.setDescription(entity.description);
         def.setSchedule(entity.schedule);
         def.setScheduleTime(entity.scheduleTime);
+        def.setScheduleDayOfWeek(entity.scheduleDayOfWeek);
         def.setTimeWindow(entity.timeWindow);
         def.setPromptTemplate(entity.promptTemplate);
         if (entity.allowedTools != null && !entity.allowedTools.isBlank()) {

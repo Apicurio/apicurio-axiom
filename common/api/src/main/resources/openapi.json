@@ -3373,6 +3373,10 @@
           "updatedOn": {
             "format": "date-time",
             "type": "string"
+          },
+          "scheduleDayOfWeek": {
+            "description": "Day of week for weekly schedules (e.g. monday, tuesday)",
+            "type": "string"
           }
         }
       },
@@ -3418,6 +3422,10 @@
           },
           "enabled": {
             "type": "boolean"
+          },
+          "scheduleDayOfWeek": {
+            "description": "Day of week for weekly schedules (e.g. monday, tuesday)",
+            "type": "string"
           }
         }
       },

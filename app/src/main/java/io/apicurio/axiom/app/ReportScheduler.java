@@ -8,12 +8,14 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 /**
@@ -136,6 +138,11 @@ public class ReportScheduler {
                 return todayAtTime.plusDays(1).toInstant();
             }
             case "weekly" -> {
+                DayOfWeek targetDay = parseDayOfWeek(definition.scheduleDayOfWeek);
+                if (targetDay != null) {
+                    ZonedDateTime nextOccurrence = todayAtTime.with(TemporalAdjusters.next(targetDay));
+                    return nextOccurrence.toInstant();
+                }
                 return todayAtTime.plusWeeks(1).toInstant();
             }
             case "monthly" -> {
@@ -162,6 +169,15 @@ public class ReportScheduler {
      */
     public Instant computeInitialNextRunAt(ReportDefinitionEntity definition) {
         return computeNextRunAt(definition);
+    }
+
+    private DayOfWeek parseDayOfWeek(String dayOfWeek) {
+        if (dayOfWeek == null || dayOfWeek.isBlank()) return null;
+        try {
+            return DayOfWeek.valueOf(dayOfWeek.trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     private LocalTime parseTimeOfDay(String scheduleTime) {
