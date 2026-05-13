@@ -287,6 +287,65 @@ export function DashboardPage() {
                         )}
                     </Card>
 
+                    {/* Recent Reports */}
+                    <Card style={{ marginTop: "16px" }}>
+                        <CardHeader>
+                            <CardTitle>Recent Reports</CardTitle>
+                        </CardHeader>
+                        <CardBody isFilled={false}>
+                            {recentReports.length === 0 ? (
+                                <EmptyState variant="xs">
+                                    <EmptyStateBody>No reports in the last 24 hours.</EmptyStateBody>
+                                </EmptyState>
+                            ) : (
+                                <Table aria-label="Recent Reports" variant="compact">
+                                    <Thead>
+                                        <Tr>
+                                            <Th>Title</Th>
+                                            <Th>Status</Th>
+                                            <Th>Duration</Th>
+                                            <Th>Cost</Th>
+                                            <Th>Generated</Th>
+                                        </Tr>
+                                    </Thead>
+                                    <Tbody>
+                                        {recentReports.map((report) => (
+                                            <Tr key={report.id} isClickable>
+                                                <Td>
+                                                    <Link to={`/reports/${report.id}`}>
+                                                        {report.title || `Report #${report.id}`}
+                                                    </Link>
+                                                </Td>
+                                                <Td>
+                                                    <Label isCompact color={
+                                                        report.status === "Completed" ? "green"
+                                                            : report.status === "Failed" ? "red" : "blue"
+                                                    }>
+                                                        {report.status}
+                                                    </Label>
+                                                </Td>
+                                                <Td style={{ whiteSpace: "nowrap" }}>
+                                                    {report.durationMs != null ? formatDuration(report.durationMs) : "—"}
+                                                </Td>
+                                                <Td style={{ whiteSpace: "nowrap" }}>
+                                                    {report.costUsd != null ? `$${report.costUsd.toFixed(4)}` : "—"}
+                                                </Td>
+                                                <Td style={{ whiteSpace: "nowrap" }}>
+                                                    {new Date(report.createdOn).toLocaleString()}
+                                                </Td>
+                                            </Tr>
+                                        ))}
+                                    </Tbody>
+                                </Table>
+                            )}
+                        </CardBody>
+                        <CardFooter>
+                            <Link to="/reports">
+                                View all reports <ArrowRightIcon />
+                            </Link>
+                        </CardFooter>
+                    </Card>
+
                     {/* Configuration summary */}
                     <Card style={{ marginTop: "16px" }}>
                         <CardHeader>
@@ -366,54 +425,6 @@ export function DashboardPage() {
                         </CardFooter>
                     </Card>
 
-                    <Card style={{ marginTop: "16px" }}>
-                        <CardHeader>
-                            <CardTitle>Recent Reports</CardTitle>
-                        </CardHeader>
-                        <CardBody>
-                            {recentReports.length === 0 ? (
-                                <EmptyState variant="xs">
-                                    <EmptyStateBody>No reports in the last 24 hours.</EmptyStateBody>
-                                </EmptyState>
-                            ) : (
-                                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                                    {recentReports.map((report) => (
-                                        <div key={report.id} style={{
-                                            padding: "8px 0",
-                                            borderBottom: "1px solid var(--pf-t--global--border--color--default)",
-                                        }}>
-                                            <div style={{
-                                                display: "flex",
-                                                justifyContent: "space-between",
-                                                alignItems: "center",
-                                                marginBottom: "4px",
-                                            }}>
-                                                <Label isCompact color={
-                                                    report.status === "Completed" ? "green"
-                                                        : report.status === "Failed" ? "red" : "blue"
-                                                }>
-                                                    {report.status}
-                                                </Label>
-                                                <span style={{ fontSize: "12px", color: "#6a6e73" }}>
-                                                    {new Date(report.createdOn).toLocaleString()}
-                                                </span>
-                                            </div>
-                                            <div style={{ fontSize: "13px" }}>
-                                                <Link to={`/reports/${report.id}`}>
-                                                    {report.title || `Report #${report.id}`}
-                                                </Link>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </CardBody>
-                        <CardFooter>
-                            <Link to="/reports">
-                                View all reports <ArrowRightIcon />
-                            </Link>
-                        </CardFooter>
-                    </Card>
                 </GridItem>
             </Grid>
 
@@ -457,4 +468,12 @@ function ConfigCard({ label, count, path }: {
             </div>
         </div>
     );
+}
+
+function formatDuration(ms: number): string {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    if (minutes === 0) return `${seconds}s`;
+    return `${minutes}m ${seconds}s`;
 }
