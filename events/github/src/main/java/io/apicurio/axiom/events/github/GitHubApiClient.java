@@ -1,7 +1,7 @@
 package io.apicurio.axiom.events.github;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.apicurio.axiom.events.core.ApiResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
@@ -13,7 +13,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Optional;
 
 /**
  * Simple client for the GitHub REST API. Uses Java's built-in HttpClient.
@@ -38,8 +37,8 @@ public class GitHubApiClient {
      * @param token GitHub API token (may be null for public repos)
      * @return the JSON array of issues, or empty if the request fails
      */
-    public Optional<JsonNode> fetchIssuesUpdatedSince(String owner, String repo,
-                                                       Instant since, String token) {
+    public ApiResult fetchIssuesUpdatedSince(String owner, String repo,
+                                              Instant since, String token) {
         String url = GITHUB_API_BASE + "/repos/" + owner + "/" + repo
                 + "/issues?state=all&sort=updated&direction=asc&per_page=100";
         if (since != null) {
@@ -55,10 +54,10 @@ public class GitHubApiClient {
      * @param repo the repository name
      * @param since only return comments created after this time (may be null for first poll)
      * @param token GitHub API token (may be null for public repos)
-     * @return the JSON array of comments, or empty if the request fails
+     * @return the API result with the JSON array of comments
      */
-    public Optional<JsonNode> fetchCommentsUpdatedSince(String owner, String repo,
-                                                         Instant since, String token) {
+    public ApiResult fetchCommentsUpdatedSince(String owner, String repo,
+                                                Instant since, String token) {
         String url = GITHUB_API_BASE + "/repos/" + owner + "/" + repo
                 + "/issues/comments?sort=updated&direction=asc&per_page=100";
         if (since != null) {
@@ -67,7 +66,7 @@ public class GitHubApiClient {
         return doGet(url, token);
     }
 
-    private Optional<JsonNode> doGet(String url, String token) {
+    private ApiResult doGet(String url, String token) {
         try {
             HttpRequest.Builder builder = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -82,18 +81,19 @@ public class GitHubApiClient {
             HttpResponse<String> response = httpClient.send(builder.build(),
                     HttpResponse.BodyHandlers.ofString());
 
+            String body = response.body();
             if (response.statusCode() == 200) {
-                return Optional.of(objectMapper.readTree(response.body()));
+                return ApiResult.ok(objectMapper.readTree(body), "GET", url, null, body);
             } else {
                 LOG.warnf("GitHub API returned %d for %s", response.statusCode(), url);
-                return Optional.empty();
+                return ApiResult.httpError(response.statusCode(), "GET", url, null, body);
             }
         } catch (IOException | InterruptedException e) {
             LOG.errorf(e, "Failed to call GitHub API: %s", url);
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            return Optional.empty();
+            return ApiResult.exception(e, "GET", url, null);
         }
     }
 }

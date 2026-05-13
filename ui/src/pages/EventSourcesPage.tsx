@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Button,
     EmptyState,
@@ -37,6 +38,7 @@ import {
 } from "../config/api";
 
 export function EventSourcesPage() {
+    const navigate = useNavigate();
     const [sources, setSources] = useState<EventSource[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -95,22 +97,6 @@ export function EventSourcesPage() {
         setForm({ name: "", sourceType: "github", enabled: true });
         setGhUrl("");
         setJiraUrl("");
-        setIsModalOpen(true);
-    };
-
-    const openEdit = (s: EventSource) => {
-        setEditing(s);
-        setForm({
-            name: s.name, description: s.description, sourceType: s.sourceType,
-            enabled: s.enabled, pollInterval: s.pollInterval, secretName: s.secretName,
-        });
-        const config = s.configuration || {};
-        if (s.sourceType === "github") {
-            setGhUrl((config as Record<string, string>).url || "");
-        } else if (s.sourceType === "jira") {
-            const c = config as Record<string, string>;
-            setJiraUrl(c.url || (c.baseUrl && c.project ? `${c.baseUrl}/projects/${c.project}` : ""));
-        }
         setIsModalOpen(true);
     };
 
@@ -210,7 +196,7 @@ export function EventSourcesPage() {
                         </Thead>
                         <Tbody>
                             {sources.map((s) => (
-                                <Tr key={s.id} isClickable onRowClick={() => openEdit(s)}>
+                                <Tr key={s.id} isClickable onRowClick={() => navigate(`/event-sources/${s.id}`)}>
                                     <Td>{s.name}</Td>
                                     <Td>{s.sourceType}</Td>
                                     <Td><code>{describeSource(s)}</code></Td>

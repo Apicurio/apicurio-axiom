@@ -712,6 +712,33 @@ export async function deleteEventSource(id: number): Promise<void> {
     if (!response.ok) throw new Error(`Failed to delete event source: ${response.status}`);
 }
 
+export async function fetchEventSource(id: number): Promise<EventSource> {
+    const response = await fetch(`${API}/event-sources/${id}`);
+    if (!response.ok) throw new Error(`Failed to fetch event source: ${response.status}`);
+    return response.json();
+}
+
+export interface EventSourceLog {
+    id: number;
+    eventSourceId: number;
+    status: string;
+    message: string;
+    detail?: string;
+    eventsIngested?: number;
+    createdOn: string;
+}
+
+export async function fetchEventSourceLogs(
+    id: number, page = 1, limit = 20
+): Promise<SearchResults<EventSourceLog>> {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    const response = await fetch(`${API}/event-sources/${id}/logs?${params}`);
+    if (!response.ok) throw new Error(`Failed to fetch event source logs: ${response.status}`);
+    return response.json();
+}
+
 // ── Thread ────────────────────────────────────────────────────────
 
 export async function fetchThreadEntries(projectId: number): Promise<ThreadEntry[]> {

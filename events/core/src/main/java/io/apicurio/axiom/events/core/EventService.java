@@ -3,6 +3,7 @@ package io.apicurio.axiom.events.core;
 import io.apicurio.axiom.core.entities.ActivityLogEntity;
 import io.apicurio.axiom.core.entities.EventEntity;
 import io.apicurio.axiom.core.entities.EventQueueEntity;
+import io.apicurio.axiom.core.entities.EventSourceLogEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
@@ -80,5 +81,27 @@ public class EventService {
                 source, eventType, issueRef, queueEntry.id);
 
         return event;
+    }
+
+    /**
+     * Records a poll log entry for an event source.
+     *
+     * @param eventSourceId the event source that was polled
+     * @param status "success" or "error"
+     * @param message short summary of the poll result
+     * @param detail full detailed log of the poll cycle
+     * @param eventsIngested number of events ingested (0 on error)
+     */
+    @Transactional
+    public void recordPollLog(Long eventSourceId, String status, String message,
+                               String detail, int eventsIngested) {
+        EventSourceLogEntity log = new EventSourceLogEntity();
+        log.eventSourceId = eventSourceId;
+        log.status = status;
+        log.message = message;
+        log.detail = detail;
+        log.eventsIngested = eventsIngested;
+        log.createdOn = Instant.now();
+        log.persist();
     }
 }

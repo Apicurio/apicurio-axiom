@@ -56,6 +56,7 @@ import { ToolsetDetailPage } from "./pages/ToolsetDetailPage";
 import { SecretsPage } from "./pages/SecretsPage";
 import { ConfigurationWarning } from "./components/ConfigurationWarning";
 import { EngineSettingsPage } from "./pages/EngineSettingsPage";
+import { EventSourceDetailPage } from "./pages/EventSourceDetailPage";
 import { type StartupCheck, fetchSystemHealth, fetchSystemConfig } from "./config/api";
 import { sseClient, type AxiomSseEvent } from "./config/sse";
 
@@ -363,6 +364,7 @@ export function App() {
                     <Route path="/metrics/ai-usage" element={<AiUsagePage />} />
                     <Route path="/metrics/disk-usage" element={<DiskUsagePage />} />
                     <Route path="/event-sources" element={<EventSourcesPage />} />
+                    <Route path="/event-sources/:eventSourceId" element={<EventSourceDetailPage />} />
                     <Route path="/secrets" element={<SecretsPage />} />
                 </Routes>
             )}

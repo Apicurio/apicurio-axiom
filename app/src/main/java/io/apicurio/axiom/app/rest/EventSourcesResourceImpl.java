@@ -3,15 +3,22 @@ package io.apicurio.axiom.app.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apicurio.axiom.api.EventResource;
 import io.apicurio.axiom.api.beans.EventSource;
+import io.apicurio.axiom.api.beans.EventSourceLog;
+import io.apicurio.axiom.api.beans.EventSourceLogSearchResults;
 import io.apicurio.axiom.api.beans.NewEventSource;
 import io.apicurio.axiom.core.entities.EventSourceEntity;
+import io.apicurio.axiom.core.entities.EventSourceLogEntity;
+import io.quarkus.panache.common.Page;
+import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.WebApplicationException;
 
+import java.math.BigInteger;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -141,5 +148,44 @@ public class EventSourcesResourceImpl implements EventResource {
             }
         }
         return bean;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public EventSourceLogSearchResults listEventSourceLogs(BigInteger eventSourceId,
+                                                            BigInteger page, BigInteger limit) {
+        findOrThrow(eventSourceId.longValue());
+        int pageNum = page != null ? page.intValue() : 1;
+        int pageSize = limit != null ? limit.intValue() : 20;
+
+        long totalCount = EventSourceLogEntity.count("eventSourceId", eventSourceId.longValue());
+        List<EventSourceLog> items = EventSourceLogEntity.<EventSourceLogEntity>find(
+                        "eventSourceId", Sort.descending("createdOn"),
+                        eventSourceId.longValue())
+                .page(Page.of(pageNum - 1, pageSize))
+                .list().stream()
+                .map(this::toLogBean)
+                .toList();
+
+        EventSourceLogSearchResults results = new EventSourceLogSearchResults();
+        results.setItems(items);
+        results.setTotalCount(totalCount);
+        results.setPage(pageNum);
+        results.setLimit(pageSize);
+        return results;
+    }
+
+    private EventSourceLog toLogBean(EventSourceLogEntity entity) {
+        EventSourceLog log = new EventSourceLog();
+        log.setId(entity.id);
+        log.setEventSourceId(entity.eventSourceId);
+        log.setStatus(entity.status);
+        log.setMessage(entity.message);
+        log.setDetail(entity.detail);
+        log.setEventsIngested(entity.eventsIngested);
+        log.setCreatedOn(Date.from(entity.createdOn));
+        return log;
     }
 }

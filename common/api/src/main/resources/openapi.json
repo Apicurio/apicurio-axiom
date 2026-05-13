@@ -2629,6 +2629,62 @@
           }
         }
       ]
+    },
+    "/event-sources/{eventSourceId}/logs": {
+      "get": {
+        "tags": [
+          "Event Sources"
+        ],
+        "summary": "List poll logs for an event source",
+        "operationId": "listEventSourceLogs",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number (1-indexed)",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of poll log entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventSourceLogSearchResults",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventSourceLog"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": [
+        {
+          "name": "eventSourceId",
+          "in": "path",
+          "description": "Event source ID",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ]
     }
   },
   "components": {
@@ -4292,6 +4348,58 @@
           "durationMs": {
             "format": "int64",
             "description": "Execution duration in milliseconds",
+            "type": "integer"
+          }
+        }
+      },
+      "EventSourceLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "eventSourceId": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "status": {
+            "description": "success or error",
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "eventsIngested": {
+            "type": "integer"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Full detailed log of the poll cycle",
+            "type": "string"
+          }
+        }
+      },
+      "EventSourceLogSearchResults": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventSourceLog"
+            }
+          },
+          "totalCount": {
+            "format": "int64",
+            "type": "integer"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
             "type": "integer"
           }
         }

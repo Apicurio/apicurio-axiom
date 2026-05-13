@@ -13,7 +13,7 @@
 
     <artifactId>apicurio-axiom-events-jira</artifactId>
     <name>Apicurio Axiom - Events - Jira</name>
-    <description>Jira webhook receiver and polling event source</description>
+    <description>Jira Cloud polling event source</description>
 
     <dependencies>
         <dependency>
@@ -24,5 +24,22 @@
             <groupId>jakarta.enterprise</groupId>
             <artifactId>jakarta.enterprise.cdi-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-annotation</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>jandex-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

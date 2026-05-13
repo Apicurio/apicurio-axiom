@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.apicurio.axiom.core.entities.EventSourceEntity;
 import io.apicurio.axiom.core.entities.SecretEntity;
 import io.apicurio.axiom.core.services.EncryptionService;
+import io.apicurio.axiom.events.core.ApiResult;
 import io.apicurio.axiom.events.core.EventService;
 import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -14,8 +15,8 @@ import org.jboss.logging.Logger;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Polls the GitHub API for new issue and comment events on monitored event sources.
@@ -85,6 +86,7 @@ public class GitHubPoller {
         String token = resolveToken(source);
         Instant pollStartedAt = Instant.now();
         Instant since = source.lastPolledAt;
+        List<String> logLines = new ArrayList<>();
 
         // Parse owner and name from configuration JSON
         String owner;
@@ -95,62 +97,101 @@ public class GitHubPoller {
             name = config.path("name").asText(null);
         } catch (Exception e) {
             LOG.warnf(e, "Failed to parse configuration for event source %d (%s)", source.id, source.name);
+            eventService.recordPollLog(source.id, "error",
+                    "Configuration error",
+                    "Unable to parse event source configuration JSON.\n"
+                            + e.getClass().getSimpleName() + ": " + e.getMessage()
+                            + "\nRaw configuration: " + source.configuration, 0);
             return;
         }
 
         if (owner == null || name == null) {
             LOG.warnf("Event source %d (%s) missing owner or name in configuration", source.id, source.name);
+            eventService.recordPollLog(source.id, "error",
+                    "Configuration error",
+                    "Missing 'owner' or 'name' in event source configuration.\n"
+                            + "Current configuration: " + source.configuration, 0);
             return;
         }
 
-        // On first poll, skip historical data — only track events from now on
+        String repo = owner + "/" + name;
+        boolean hasToken = token != null && !token.isBlank();
+        logLines.add("Polling GitHub repository " + repo);
+        logLines.add("Authentication: " + (hasToken ? "token configured" : "no token (public access only)"));
+
         if (since == null) {
-            LOG.infof("First poll for %s/%s — setting baseline to now, skipping historical events",
-                    owner, name);
+            LOG.infof("First poll for %s — setting baseline to now, skipping historical events", repo);
             updateLastPolledAt(source.id, pollStartedAt);
+            logLines.add("First poll — baseline set to now, skipping historical events.");
+            logLines.add("Subsequent polls will check for changes since this timestamp.");
+            eventService.recordPollLog(source.id, "success",
+                    "First poll — baseline set", String.join("\n", logLines), 0);
             return;
         }
 
-        LOG.tracef("Polling GitHub repository %s/%s (since: %s)",
-                owner, name, since);
+        logLines.add("Checking for changes since: " + since);
 
-        int eventsIngested = 0;
+        ApiResult issuesResult = apiClient.fetchIssuesUpdatedSince(owner, name, since, token);
+        logLines.add("\n── Issues API ──");
+        logLines.add(issuesResult.formatDetail());
+        if (!issuesResult.success()) {
+            LOG.warnf("GitHub Issues API failed for %s: %s", repo, issuesResult.errorMessage());
+            updateLastPolledAt(source.id, pollStartedAt);
+            eventService.recordPollLog(source.id, "error",
+                    "Issues API failed: HTTP " + issuesResult.statusCode(),
+                    String.join("\n", logLines), 0);
+            return;
+        }
 
-        // Poll for updated issues
-        eventsIngested += pollIssues(source.id, owner, name, since, token);
+        ApiResult commentsResult = apiClient.fetchCommentsUpdatedSince(owner, name, since, token);
+        logLines.add("\n── Comments API ──");
+        logLines.add(commentsResult.formatDetail());
+        if (!commentsResult.success()) {
+            LOG.warnf("GitHub Comments API failed for %s: %s", repo, commentsResult.errorMessage());
+            updateLastPolledAt(source.id, pollStartedAt);
+            eventService.recordPollLog(source.id, "error",
+                    "Comments API failed: HTTP " + commentsResult.statusCode(),
+                    String.join("\n", logLines), 0);
+            return;
+        }
 
-        // Poll for new comments
-        eventsIngested += pollComments(source.id, owner, name, since, token);
+        logLines.add("\n── Events ──");
+        int issueEvents = processIssues(source.id, issuesResult, owner, name, since, logLines);
+        int commentEvents = processComments(source.id, commentsResult, owner, name, since, logLines);
+        int eventsIngested = issueEvents + commentEvents;
 
-        // Update the last polled timestamp
         updateLastPolledAt(source.id, pollStartedAt);
 
+        long durationMs = java.time.Duration.between(pollStartedAt, Instant.now()).toMillis();
+        logLines.add("\nPoll completed in " + durationMs + "ms.");
+
+        String summary = eventsIngested > 0
+                ? "Polled " + eventsIngested + " event(s) from " + repo
+                : "No new events from " + repo;
+
         if (eventsIngested > 0) {
-            LOG.infof("Ingested %d event(s) from %s/%s", eventsIngested, owner, name);
+            LOG.infof("Ingested %d event(s) from %s", eventsIngested, repo);
         }
+        eventService.recordPollLog(source.id, "success", summary,
+                String.join("\n", logLines), eventsIngested);
     }
 
-    private int pollIssues(Long eventSourceId, String owner, String name, Instant since, String token) {
-        Optional<JsonNode> result = apiClient.fetchIssuesUpdatedSince(
-                owner, name, since, token);
-
-        if (result.isEmpty() || !result.get().isArray()) {
+    private int processIssues(Long eventSourceId, ApiResult result, String owner, String name,
+                               Instant since, List<String> logLines) {
+        if (result.data() == null || !result.data().isArray()) {
+            logLines.add("Issues: no data returned");
             return 0;
         }
 
+        int total = result.data().size();
         int count = 0;
         String repoFullName = owner + "/" + name;
 
-        for (JsonNode issue : result.get()) {
-            // Skip pull requests (GitHub includes PRs in the issues endpoint)
-            if (issue.has("pull_request")) {
-                continue;
-            }
+        for (JsonNode issue : result.data()) {
+            if (issue.has("pull_request")) continue;
 
             String eventType = determineIssueEventType(issue, since);
-            if (eventType == null) {
-                continue;
-            }
+            if (eventType == null) continue;
 
             int number = issue.path("number").asInt(0);
             String issueRef = repoFullName + "#" + number;
@@ -159,27 +200,28 @@ public class GitHubPoller {
                 String payload = objectMapper.writeValueAsString(wrapIssueAsWebhookPayload(
                         issue, repoFullName, eventType));
                 eventService.ingestEvent(eventSourceId, "github", eventType, issueRef, repoFullName, payload);
+                logLines.add("  " + eventType + ": " + issueRef + " — " + issue.path("title").asText(""));
                 count++;
             } catch (Exception e) {
+                logLines.add("  Failed to ingest " + issueRef + ": " + e.getMessage());
                 LOG.warnf(e, "Failed to ingest issue event for %s", issueRef);
             }
         }
+        logLines.add("Issues: " + total + " returned by API, " + count + " event(s) ingested");
         return count;
     }
 
-    private int pollComments(Long eventSourceId, String owner, String name, Instant since, String token) {
-        Optional<JsonNode> result = apiClient.fetchCommentsUpdatedSince(
-                owner, name, since, token);
-
-        if (result.isEmpty() || !result.get().isArray()) {
+    private int processComments(Long eventSourceId, ApiResult result, String owner, String name,
+                                 Instant since, List<String> logLines) {
+        if (result.data() == null || !result.data().isArray()) {
+            logLines.add("Comments: no data returned");
             return 0;
         }
 
         int count = 0;
         String repoFullName = owner + "/" + name;
 
-        for (JsonNode comment : result.get()) {
-            // Extract issue number from the issue_url field
+        for (JsonNode comment : result.data()) {
             String issueUrl = comment.path("issue_url").asText("");
             int issueNumber = extractIssueNumberFromUrl(issueUrl);
             if (issueNumber == 0) {
@@ -198,11 +240,15 @@ public class GitHubPoller {
                 String payload = objectMapper.writeValueAsString(wrapCommentAsWebhookPayload(
                         comment, repoFullName, issueNumber));
                 eventService.ingestEvent(eventSourceId, "github", "comment-added", issueRef, repoFullName, payload);
+                String author = comment.path("user").path("login").asText("unknown");
+                logLines.add("  comment-added: " + issueRef + " by " + author);
                 count++;
             } catch (Exception e) {
+                logLines.add("  Failed to ingest comment for " + issueRef + ": " + e.getMessage());
                 LOG.warnf(e, "Failed to ingest comment event for %s", issueRef);
             }
         }
+        logLines.add("Comments: " + result.data().size() + " returned by API, " + count + " new comment(s) ingested");
         return count;
     }
 
