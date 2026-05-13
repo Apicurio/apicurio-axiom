@@ -142,6 +142,16 @@ export function ToolsPage() {
                             <SyncAltIcon />
                         </Button>
                     </ToolbarItem>
+                    <ToolbarItem variant="pagination" align={{ default: "alignEnd" }}>
+                        <Pagination
+                            itemCount={totalCount}
+                            perPage={perPage}
+                            page={page}
+                            onSetPage={(_e, p) => setPage(p)}
+                            onPerPageSelect={(_e, pp) => { setPerPage(pp); setPage(1); }}
+                            isCompact
+                        />
+                    </ToolbarItem>
                 </ToolbarContent>
             </Toolbar>
 
@@ -183,17 +193,6 @@ export function ToolsPage() {
                                 ))}
                             </Tbody>
                         </Table>
-                        {totalCount > perPage && (
-                            <Pagination
-                                itemCount={totalCount}
-                                perPage={perPage}
-                                page={page}
-                                onSetPage={(_e, p) => setPage(p)}
-                                onPerPageSelect={(_e, pp) => { setPerPage(pp); setPage(1); }}
-                                variant="bottom"
-                                style={{ marginTop: "8px" }}
-                            />
-                        )}
                     </>
                 )}
             </div>
