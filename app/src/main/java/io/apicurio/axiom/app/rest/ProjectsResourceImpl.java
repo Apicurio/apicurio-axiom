@@ -12,12 +12,15 @@ import io.apicurio.axiom.api.beans.Task;
 import io.apicurio.axiom.api.beans.TaskResponse;
 import io.apicurio.axiom.api.beans.ThreadEntry;
 import io.apicurio.axiom.api.beans.UpdateProject;
+import io.apicurio.axiom.core.entities.ActivityLogEntity;
+import io.apicurio.axiom.core.entities.AiUsageEntity;
 import io.apicurio.axiom.core.entities.EventEntity;
 import io.apicurio.axiom.core.entities.ProjectEntity;
 import io.apicurio.axiom.core.entities.TaskEntity;
 import io.apicurio.axiom.core.entities.ThreadEntryEntity;
 import io.apicurio.axiom.core.lifecycle.ProjectLifecycle;
 import io.apicurio.axiom.core.lifecycle.ProjectStatus;
+import io.apicurio.axiom.core.services.WorkspaceService;
 import io.quarkus.panache.common.Page;
 import io.quarkus.panache.common.Sort;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -48,6 +51,9 @@ public class ProjectsResourceImpl implements ProjectsResource {
 
     @Inject
     EntityManager entityManager;
+
+    @Inject
+    WorkspaceService workspaceService;
 
     // ── Projects ──────────────────────────────────────────────────────
 
@@ -156,6 +162,17 @@ public class ProjectsResourceImpl implements ProjectsResource {
     @Transactional
     public void deleteProject(long projectId) {
         ProjectEntity entity = findProjectOrThrow(projectId);
+        if (!"Completed".equals(entity.status)) {
+            throw new WebApplicationException(
+                    "Only closed projects can be deleted. Current status: " + entity.status, 409);
+        }
+
+        ThreadEntryEntity.delete("projectId", projectId);
+        AiUsageEntity.delete("projectId", projectId);
+        ActivityLogEntity.delete("projectId", projectId);
+        EventEntity.update("projectId = null where projectId = ?1", projectId);
+        TaskEntity.delete("projectId", projectId);
+        workspaceService.deleteWorkspace(entity);
         entity.delete();
     }
 

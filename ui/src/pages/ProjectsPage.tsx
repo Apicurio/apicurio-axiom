@@ -30,11 +30,13 @@ import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlusCircleIcon from "@patternfly/react-icons/dist/esm/icons/plus-circle-icon";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
 import TimesIcon from "@patternfly/react-icons/dist/esm/icons/times-icon";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import {
     type Project,
     type NewProject,
     fetchProjects,
     createProject,
+    deleteProject,
 } from "../config/api";
 
 const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey"> = {
@@ -67,6 +69,7 @@ export function ProjectsPage() {
     const [isStatusSelectOpen, setIsStatusSelectOpen] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
     const [newProject, setNewProject] = useState<NewProject>({
         name: "",
         type: "other",
@@ -128,6 +131,18 @@ export function ProjectsPage() {
                 : "Status"}
         </MenuToggle>
     );
+
+    const handleDelete = (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        setDeleteTarget(id);
+    };
+
+    const confirmDelete = () => {
+        if (deleteTarget !== null) {
+            deleteProject(deleteTarget).then(loadProjects).catch(console.error);
+            setDeleteTarget(null);
+        }
+    };
 
     const handleCreate = () => {
         createProject(newProject)
@@ -244,6 +259,7 @@ export function ProjectsPage() {
                                 <Th>Issue</Th>
                                 <Th>Repository</Th>
                                 <Th>Updated</Th>
+                                <Th />
                             </Tr>
                         </Thead>
                         <Tbody>
@@ -265,6 +281,14 @@ export function ProjectsPage() {
                                     <Td>{project.issueRef}</Td>
                                     <Td>{project.repository}</Td>
                                     <Td>{new Date(project.updatedOn).toLocaleString()}</Td>
+                                    <Td>
+                                        {project.status === "Completed" && (
+                                            <Button variant="plain" size="sm" style={{ padding: 0 }}
+                                                onClick={(e) => handleDelete(e, project.id)}>
+                                                <TrashIcon />
+                                            </Button>
+                                        )}
+                                    </Td>
                                 </Tr>
                             ))}
                         </Tbody>
@@ -381,6 +405,18 @@ export function ProjectsPage() {
                     >
                         Cancel
                     </Button>
+                </ModalFooter>
+            </Modal>
+
+            <Modal isOpen={deleteTarget !== null} onClose={() => setDeleteTarget(null)} variant="small">
+                <ModalHeader title="Delete Project" />
+                <ModalBody>
+                    Delete this project and all its data? This will remove all tasks,
+                    activity, thread entries, and workspace files. This cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+                    <Button variant="link" onClick={() => setDeleteTarget(null)}>Cancel</Button>
                 </ModalFooter>
             </Modal>
         </PageSection>

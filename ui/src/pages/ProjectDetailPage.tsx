@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
@@ -39,6 +39,7 @@ import {
 import { Table, Tbody, Td, Th, Thead, Tr } from "@patternfly/react-table";
 import PlayIcon from "@patternfly/react-icons/dist/esm/icons/play-icon";
 import SyncAltIcon from "@patternfly/react-icons/dist/esm/icons/sync-alt-icon";
+import TrashIcon from "@patternfly/react-icons/dist/esm/icons/trash-icon";
 import {
     type ActionType,
     type AxiomEvent,
@@ -54,6 +55,7 @@ import {
     fetchProjectTasks,
     fetchThreadEntries,
     createTask,
+    deleteProject,
     formatBytes,
     respondToTask,
 } from "../config/api";
@@ -72,6 +74,7 @@ const STATUS_COLORS: Record<string, "blue" | "green" | "orange" | "grey" | "red"
 
 export function ProjectDetailPage() {
     const { projectId } = useParams<{ projectId: string }>();
+    const navigate = useNavigate();
     const [project, setProject] = useState<Project | null>(null);
     const [tasks, setTasks] = useState<Task[]>([]);
     const [thread, setThread] = useState<ThreadEntry[]>([]);
@@ -80,6 +83,8 @@ export function ProjectDetailPage() {
     const [actorNames, setActorNames] = useState<Record<number, string>>({});
     const [activeTab, setActiveTab] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     // Trigger Action state
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
@@ -209,6 +214,13 @@ export function ProjectDetailPage() {
                     >
                         Trigger Action
                     </Button>
+                    {project.status === "Completed" && (
+                        <Button variant="danger" icon={<TrashIcon />}
+                            onClick={() => setIsDeleteOpen(true)}
+                            style={{ marginRight: "8px" }}>
+                            Delete
+                        </Button>
+                    )}
                     <Label color={STATUS_COLORS[project.status] || "grey"}>
                         {project.status}
                     </Label>
@@ -368,6 +380,22 @@ export function ProjectDetailPage() {
                     >
                         Cancel
                     </Button>
+                </ModalFooter>
+            </Modal>
+
+            <Modal isOpen={isDeleteOpen} onClose={() => setIsDeleteOpen(false)} variant="small">
+                <ModalHeader title="Delete Project" />
+                <ModalBody>
+                    Delete this project and all its data? This will remove all tasks,
+                    activity, thread entries, and workspace files. This cannot be undone.
+                </ModalBody>
+                <ModalFooter>
+                    <Button variant="danger" onClick={() => {
+                        deleteProject(id)
+                            .then(() => navigate("/projects"))
+                            .catch(console.error);
+                    }}>Delete</Button>
+                    <Button variant="link" onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
                 </ModalFooter>
             </Modal>
         </PageSection>
