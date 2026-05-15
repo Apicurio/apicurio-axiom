@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
  */
 public class ClaudeCodeCommandBuilder {
 
+    private String executable = "claude";
     private String prompt;
     private Path workingDirectory;
     private String model;
@@ -41,6 +42,11 @@ public class ClaudeCodeCommandBuilder {
         builder.systemPrompt = context.getSystemPrompt();
         builder.mcpConfigFile = context.getMcpConfigFile();
         return builder;
+    }
+
+    public ClaudeCodeCommandBuilder executable(String executable) {
+        this.executable = executable;
+        return this;
     }
 
     public ClaudeCodeCommandBuilder model(String model) {
@@ -85,7 +91,7 @@ public class ClaudeCodeCommandBuilder {
      */
     public List<String> build() {
         List<String> cmd = new ArrayList<>();
-        cmd.add("claude");
+        cmd.add(executable);
         cmd.add("-p");
         cmd.add(prompt);
 
