@@ -268,6 +268,7 @@ function InfoTab({ form, updateForm }: {
             <FormGroup label="Schedule" isRequired fieldId="schedule">
                 <FormSelect id="schedule" value={form.schedule}
                     onChange={(_e, v) => updateForm({ schedule: v })}>
+                    <FormSelectOption value="none" label="Not Scheduled (ad hoc only)" />
                     <FormSelectOption value="hourly" label="Hourly" />
                     <FormSelectOption value="daily" label="Daily" />
                     <FormSelectOption value="weekly" label="Weekly" />
@@ -290,11 +291,13 @@ function InfoTab({ form, updateForm }: {
                     </FormSelect>
                 </FormGroup>
             )}
-            <FormGroup label="Time of Day" fieldId="scheduleTime">
-                <TextInput id="scheduleTime" value={form.scheduleTime || ""}
-                    onChange={(_e, v) => updateForm({ scheduleTime: v })}
-                    placeholder="08:00" />
-            </FormGroup>
+            {form.schedule !== "none" && (
+                <FormGroup label="Time of Day" fieldId="scheduleTime">
+                    <TextInput id="scheduleTime" value={form.scheduleTime || ""}
+                        onChange={(_e, v) => updateForm({ scheduleTime: v })}
+                        placeholder="08:00" />
+                </FormGroup>
+            )}
             <FormGroup label="Time Window" isRequired fieldId="timeWindow">
                 <FormSelect id="timeWindow" value={form.timeWindow}
                     onChange={(_e, v) => updateForm({ timeWindow: v })}>
@@ -310,11 +313,13 @@ function InfoTab({ form, updateForm }: {
                     onChange={(_e, v) => updateForm({ timeoutSeconds: v ? parseInt(v) : undefined })}
                     placeholder="Global default (600)" />
             </FormGroup>
-            <FormGroup fieldId="enabled">
-                <Switch id="enabled" label="Enabled — report will run automatically on schedule"
-                    isChecked={form.enabled}
-                    onChange={(_e, v) => updateForm({ enabled: v })} />
-            </FormGroup>
+            {form.schedule !== "none" && (
+                <FormGroup fieldId="enabled">
+                    <Switch id="enabled" label="Enabled — report will run automatically on schedule"
+                        isChecked={form.enabled}
+                        onChange={(_e, v) => updateForm({ enabled: v })} />
+                </FormGroup>
+            )}
         </Form>
     );
 }

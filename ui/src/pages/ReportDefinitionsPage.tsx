@@ -172,6 +172,7 @@ export function ReportDefinitionsPage() {
                         <FormGroup label="Schedule" isRequired fieldId="schedule">
                             <FormSelect id="schedule" value={newSchedule}
                                 onChange={(_e, v) => setNewSchedule(v)}>
+                                <FormSelectOption value="none" label="Not Scheduled (ad hoc only)" />
                                 <FormSelectOption value="hourly" label="Hourly" />
                                 <FormSelectOption value="daily" label="Daily" />
                                 <FormSelectOption value="weekly" label="Weekly" />

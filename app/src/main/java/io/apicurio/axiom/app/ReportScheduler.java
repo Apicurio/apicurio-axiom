@@ -130,6 +130,9 @@ public class ReportScheduler {
                 .atZone(ZoneId.systemDefault());
 
         switch (definition.schedule) {
+            case "none" -> {
+                return null;
+            }
             case "daily" -> {
                 // If today's time hasn't passed, schedule for today; otherwise tomorrow
                 if (todayAtTime.isAfter(now)) {

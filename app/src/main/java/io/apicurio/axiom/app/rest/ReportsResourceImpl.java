@@ -239,7 +239,8 @@ public class ReportsResourceImpl implements ReportsResource {
         entity.promptTemplate = data.getPromptTemplate();
         entity.allowedTools = data.getAllowedTools() != null
                 ? String.join(",", data.getAllowedTools()) : null;
-        entity.enabled = data.getEnabled() != null ? data.getEnabled() : false;
+        entity.enabled = "none".equals(data.getSchedule()) ? false
+                : (data.getEnabled() != null ? data.getEnabled() : false);
         entity.timeoutSeconds = data.getTimeoutSeconds();
         entity.environment = environmentToJson(data.getEnvironment());
 
