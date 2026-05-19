@@ -230,6 +230,17 @@ class ClaudeCodeCommandBuilderTest {
     }
 
     @Test
+    void testCustomExecutable() {
+        ActorContext context = ActorContext.builder().build();
+        List<String> cmd = ClaudeCodeCommandBuilder.fromContext("test", context)
+                .executable("/usr/local/bin/claude")
+                .build();
+
+        assertEquals("/usr/local/bin/claude", cmd.get(0));
+        assertFalse(cmd.contains("claude"));
+    }
+
+    @Test
     void testAllowedToolsEmptyListFallsBackToAcceptEdits() {
         ActorContext context = ActorContext.builder()
                 .allowedTools(List.of())

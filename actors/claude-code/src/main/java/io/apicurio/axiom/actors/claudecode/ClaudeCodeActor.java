@@ -26,6 +26,9 @@ public class ClaudeCodeActor implements Actor {
 
     private static final Logger LOG = Logger.getLogger(ClaudeCodeActor.class);
 
+    @ConfigProperty(name = "axiom.claude-code.executable", defaultValue = "claude")
+    String executable;
+
     @ConfigProperty(name = "axiom.claude-code.model")
     Optional<String> model;
 
@@ -67,6 +70,7 @@ public class ClaudeCodeActor implements Actor {
 
         ClaudeCodeCommandBuilder cmdBuilder = ClaudeCodeCommandBuilder
                 .fromContext(prompt, context)
+                .executable(executable)
                 .maxTurns(maxTurns)
                 .maxBudgetUsd(maxBudgetUsd);
 
